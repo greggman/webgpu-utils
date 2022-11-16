@@ -1,194 +1,10 @@
 import { describe, it } from '../mocha-support.js';
-import { makeStructuredView, makeTypedArrayViews, setStructuredView } from '../../dist/0.x/webgpu-utils.module.js';
+import { makeStructuredView, makeTypedArrayViews, setStructuredView, makeStructureDescriptions } from '../../dist/0.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertEqual, assertTruthy } from '../assert.js';
 
-import { WgslReflect } from '../../src/3rdParty/wgsl_reflect/wgsl_reflect.module.js';
-
 describe('webgpu-utils-tests', () => {
-    it('test builds typedarray views', () => {
-        const vertexDesc = {
-            offset: 'u32',
-            stride: 'u32',
-            size: 'u32',
-            padding: 'u32',
-        };
 
-        const lineInfo = {
-            triDiv: 'u32',
-            triMul: 'u32',
-            midMod: 'u32',
-            midDiv: 'u32',
-            oddMod: 'u32',
-            triMod: 'u32',
-            pad0: 'u32',
-            pad1: 'u32',
-        };
-
-        const uniformDesc = {
-            worldViewProjection: 'mat4x4<f32>',
-            position: vertexDesc,
-            lineInfo: lineInfo,
-            color: 'vec4<f32>',
-            lightDirection: 'vec3<f32>',
-        };
-
-        const views = makeTypedArrayViews(uniformDesc);
-        const arrayBuffer = views.worldViewProjection.buffer;
-        assertEqual(arrayBuffer.byteLength, (16 + 4 + 8 + 4 + 3) * 4);
-
-        assertTruthy(views.worldViewProjection instanceof Float32Array);
-        assertEqual(views.worldViewProjection.length, 16);
-        assertEqual(views.worldViewProjection.byteOffset, 0);
-
-        assertTruthy(views.lightDirection instanceof Float32Array);
-        assertEqual(views.lightDirection.length, 3);
-        assertEqual(views.lightDirection.byteOffset, (16 + 4 + 8 + 4) * 4);
-    });
-
-    it('test builds typedarray views with vec3', () => {
-        const vertexDesc = {
-            offset: 'vec3<f32>',
-            stride: 'u32',
-            size: 'u32',
-            padding: 'u32',
-        };
-
-        const lineInfo = {
-            triDiv: 'u32',
-            triMul: 'u32',
-            midMod: 'u32',
-            midDiv: 'u32',
-            oddMod: 'u32',
-            triMod: 'u32',
-            pad0: 'u32',
-            pad1: 'u32',
-        };
-
-        const uniformDesc = {
-            foo: 'vec3<f32>',
-            worldViewProjection: 'mat4x4<f32>',
-            position: vertexDesc,
-            lineInfo: lineInfo,
-            color: 'vec4<f32>',
-            lightDirection: 'vec3<f32>',
-        };
-
-        const views = makeTypedArrayViews(uniformDesc);
-        const arrayBuffer = views.worldViewProjection.buffer;
-        assertEqual(arrayBuffer.byteLength, (4 + 16 + 6 + 8 + 2 + 4 + 3) * 4);
-
-        assertTruthy(views.worldViewProjection instanceof Float32Array);
-        assertEqual(views.worldViewProjection.length, 16);
-        assertEqual(views.worldViewProjection.byteOffset, 16);
-
-        assertTruthy(views.lightDirection instanceof Float32Array);
-        assertEqual(views.lightDirection.length, 3);
-        assertEqual(views.lightDirection.byteOffset, (4 + 16 + 6 + 8 + 2 + 4) * 4);
-    });
-
-    it('test setStructuredView', () => {
-        const vertexDesc = {
-            offset: 'vec3<f32>',
-            stride: 'u32',
-            size: 'u32',
-            padding: 'u32',
-        };
-
-        const lineInfo = {
-            triDiv: 'u32',
-            triMul: 'u32',
-            midMod: 'u32',
-            midDiv: 'u32',
-            oddMod: 'u32',
-            triMod: 'u32',
-            pad0: 'u32',
-            pad1: 'u32',
-        };
-
-        const uniformDesc = {
-            foo: 'vec3<f32>',
-            worldViewProjection: 'mat4x4<f32>',
-            position: vertexDesc,
-            lineInfo: lineInfo,
-            color: 'vec4<f32>',
-            lightDirection: 'vec3<f32>',
-        };
-
-        const views = makeTypedArrayViews(uniformDesc);
-        setStructuredView({
-            foo: [1, 2, 3],
-            worldViewProjection: new Float32Array([1, 2, 3, 4, 11, 22, 33, 44, 12, 13, 14, 15, 21, 22, 23, 24]),
-            lineInfo: {
-                triDiv: 111,
-                triMod: 222,
-                midMod: [333],
-            },
-            position: {
-                stride: 789,
-            },
-            lightDirection: [333, 444, 555],
-        }, views);
-        assertArrayEqual(views.foo, [1, 2, 3]);
-        assertArrayEqual(views.worldViewProjection, [1, 2, 3, 4, 11, 22, 33, 44, 12, 13, 14, 15, 21, 22, 23, 24]);
-        assertArrayEqual(views.lineInfo.triDiv, [111]);
-        assertArrayEqual(views.lineInfo.triMod, [222]);
-        assertArrayEqual(views.lineInfo.midMod, [333]);
-        assertArrayEqual(views.position.stride, [789]);
-        assertArrayEqual(views.lightDirection, [333, 444, 555]);
-    });
-
-    it('test makeStructuredView', () => {
-        const vertexDesc = {
-            offset: 'vec3<f32>',
-            stride: 'u32',
-            size: 'u32',
-            padding: 'u32',
-        };
-
-        const lineInfo = {
-            triDiv: 'u32',
-            triMul: 'u32',
-            midMod: 'u32',
-            midDiv: 'u32',
-            oddMod: 'u32',
-            triMod: 'u32',
-            pad0: 'u32',
-            pad1: 'u32',
-        };
-
-        const uniformDesc = {
-            foo: 'vec3<f32>',
-            worldViewProjection: 'mat4x4<f32>',
-            position: vertexDesc,
-            lineInfo: lineInfo,
-            color: 'vec4<f32>',
-            lightDirection: 'vec3<f32>',
-        };
-
-        const views = makeStructuredView(uniformDesc);
-        views.set({
-            foo: [1, 2, 3],
-            worldViewProjection: new Float32Array([1, 2, 3, 4, 11, 22, 33, 44, 12, 13, 14, 15, 21, 22, 23, 24]),
-            lineInfo: {
-                triDiv: 111,
-                triMod: 222,
-                midMod: [333],
-            },
-            position: {
-                stride: 789,
-            },
-            lightDirection: [333, 444, 555],
-        }, views);
-        assertArrayEqual(views.foo, [1, 2, 3]);
-        assertArrayEqual(views.worldViewProjection, [1, 2, 3, 4, 11, 22, 33, 44, 12, 13, 14, 15, 21, 22, 23, 24]);
-        assertArrayEqual(views.lineInfo.triDiv, [111]);
-        assertArrayEqual(views.lineInfo.triMod, [222]);
-        assertArrayEqual(views.lineInfo.midMod, [333]);
-        assertArrayEqual(views.position.stride, [789]);
-        assertArrayEqual(views.lightDirection, [333, 444, 555]);
-    });
-
-    it('foo', () => {
+    it('generates views from shader source', () => {
         const shader = `
     struct VertexDesc {
         offset: u32,
@@ -248,9 +64,154 @@ describe('webgpu-utils-tests', () => {
         return vsUniforms.color + vec4(vsUniforms.lightDirection, 0) * 0.0;
     }
         `;
-        const reflect = new WgslReflect(shader);
-        window.r = reflect;
-        console.log(reflect);
+        const descriptions = makeStructureDescriptions(shader);
+        const {views, arrayBuffer} = makeStructuredView(descriptions['VSUniforms']);
+        assertEqual(arrayBuffer.byteLength, (16 + 4 + 8 + 4 + (3 + 1)) * 4);
+
+        assertTruthy(views.worldViewProjection instanceof Float32Array);
+        assertEqual(views.worldViewProjection.length, 16);
+        assertEqual(views.worldViewProjection.byteOffset, 0);
+
+        assertTruthy(views.lightDirection instanceof Float32Array);
+        assertEqual(views.lightDirection.length, 3);
+        assertEqual(views.lightDirection.byteOffset, (16 + 4 + 8 + 4) * 4);
+
+    });
+
+    it('generates views from structure source', () => {
+        const shader = `
+    struct VertexDesc {
+        offset: u32,
+        stride: u32,
+        size: u32,
+        padding: u32,
+    };
+
+    struct LineInfo {
+        triDiv: u32,
+        triMul: u32,
+        midMod: u32,
+        midDiv: u32,
+        oddMod: u32,
+        triMod: u32,
+        pad0: u32,
+        pad1: u32,
+    };
+
+    struct VSUniforms {
+        worldViewProjection: mat4x4<f32>,
+        position: VertexDesc,
+        lineInfo: LineInfo,
+        color: vec4<f32>,
+        lightDirection: vec3<f32>,
+    };
+        `;
+        const descriptions = makeStructureDescriptions(shader);
+        const {views, arrayBuffer} = makeStructuredView(descriptions['VSUniforms']);
+        assertEqual(arrayBuffer.byteLength, (16 + 4 + 8 + 4 + (3 + 1)) * 4);
+
+        assertTruthy(views.worldViewProjection instanceof Float32Array);
+        assertEqual(views.worldViewProjection.length, 16);
+        assertEqual(views.worldViewProjection.byteOffset, 0);
+
+        assertTruthy(views.lightDirection instanceof Float32Array);
+        assertEqual(views.lightDirection.length, 3);
+        assertEqual(views.lightDirection.byteOffset, (16 + 4 + 8 + 4) * 4);
+
+    });
+
+    it('it handles arrays of structs', () => {
+        const shader = `
+    struct VertexDesc {
+        offset: u32,
+        stride: u32,
+        size: u32,
+    };
+
+    struct LineInfo {
+        triDiv: u32,
+        triMul: u32,
+        midMod: u32,
+        midDiv: u32,
+        oddMod: u32,
+        triMod: u32,
+    };
+
+    struct VSUniforms {
+        worldViewProjection: mat4x4<f32>,
+        position: array<VertexDesc, 4>,
+        lineInfo: array<LineInfo, 5>,
+        color: vec4<f32>,
+        lightDirection: array<vec3<f32>, 6>,
+    };
+        `;
+        const descriptions = makeStructureDescriptions(shader);
+        const {views, set, arrayBuffer} = makeStructuredView(descriptions['VSUniforms']);
+        assertEqual(arrayBuffer.byteLength, (16 + 3 * 4 + 6 * 5 + 2 + 4 + (3 + 1) * 6) * 4);
+
+        assertTruthy(views.worldViewProjection instanceof Float32Array);
+        assertEqual(views.worldViewProjection.length, 16);
+        assertEqual(views.worldViewProjection.byteOffset, 0);
+
+        assertTruthy(views.lightDirection instanceof Float32Array);
+        assertEqual(views.lightDirection.length, 6 * 4);
+        assertEqual(views.lightDirection.byteOffset, (16 + 3 * 4 + 6 * 5 + 2 + 4) * 4);
+
+        set({
+            worldViewProjection: [1, 2, 3, 4, 11, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34],
+            position: [
+                ,
+                ,
+                ,
+                {offset: 111, stride: 222, size: 333},
+            ],
+            lineInfo: [
+                ,
+                ,
+                ,
+                {midMod: 444, triMod: 666},
+            ],
+            color: [100, 101, 102, 103],
+            lightDirection: new Float32Array([
+                901, 902, 903, 0,
+                801, 802, 803, 0,
+                701, 702, 703, 0,
+                601, 602, 603, 0,
+                501, 502, 503, 0,
+                401, 402, 403, 0,
+            ]),
+        });
+
+        assertArrayEqual(views.worldViewProjection, [1, 2, 3, 4, 11, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34]);
+
+        assertEqual(views.position[0].offset[0], 0);
+        assertEqual(views.position[0].stride[0], 0);
+        assertEqual(views.position[0].size[0], 0);
+
+        assertEqual(views.position[1].offset[0], 0);
+        assertEqual(views.position[1].stride[0], 0);
+        assertEqual(views.position[1].size[0], 0);
+
+        assertEqual(views.position[2].offset[0], 0);
+        assertEqual(views.position[2].stride[0], 0);
+        assertEqual(views.position[2].size[0], 0);
+
+        assertEqual(views.position[3].offset[0], 111);
+        assertEqual(views.position[3].stride[0], 222);
+        assertEqual(views.position[3].size[0], 333);
+
+        assertEqual(views.lineInfo[3].midMod[0], 444);
+        assertEqual(views.lineInfo[3].triMod[0], 666);
+
+        assertArrayEqual(views.color, [100, 101, 102, 103]);
+        assertArrayEqual(views.lightDirection, [
+                901, 902, 903, 0,
+                801, 802, 803, 0,
+                701, 702, 703, 0,
+                601, 602, 603, 0,
+                501, 502, 503, 0,
+                401, 402, 403, 0,
+            ]);
     });
 
 });

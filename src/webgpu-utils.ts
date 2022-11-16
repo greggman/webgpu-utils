@@ -1,3 +1,5 @@
+import { WgslReflect, StructInfo, UniformBufferInfo, Member } from './3rdParty/wgsl_reflect/wgsl_reflect.module';
+
 export const roundUpToMultipleOf = (v: number, multiple: number) => (((v + multiple - 1) / multiple) | 0) * multiple;
 
 // TODO: fix better?
@@ -43,37 +45,21 @@ export class TypedArrayViewGenerator {
         this.byteOffset += view.byteLength;
         return view as T;
     }
-    i8(numElements: number): Int8Array {
-        return this.getView(Int8Array, numElements);
-    }
-    u8(numElements: number): Uint8Array {
-        return this.getView(Uint8Array, numElements);
-    }
-    i16(numElements: number): Int16Array {
-        return this.getView(Int16Array, numElements);
-    }
-    u16(numElements: number): Uint16Array {
-        return this.getView(Uint16Array, numElements);
-    }
-    i32(numElements: number): Int32Array {
-        return this.getView(Int32Array, numElements);
-    }
-    u32(numElements: number): Uint32Array {
-        return this.getView(Uint32Array, numElements);
-    }
-    f32(numElements: number): Float32Array {
-        return this.getView(Float32Array, numElements);
-    }
-    f64(numElements: number): Float64Array {
-        return this.getView(Float64Array, numElements);
-    }
 }
 
-interface StructDescription {
-    [x: string]: FieldDescription;
+export interface StructDescription {
+    fields: FieldDescriptions;
+    size: number;
 };
-type FieldDescription = string | StructDescription | ArrayDescription;
-type ArrayDescription = [ FieldDescription, number ];
+export type FieldDescription = {
+    offset: number;
+    size: number;
+    type: string;
+    numElements?: number;
+};
+export type FieldDescriptions = {
+    [x: string]: FieldDescription | StructDescription | FieldDescription[] | StructDescription[];
+};
 
 type TypeDef = {
     numElements: number;
@@ -91,136 +77,313 @@ const typeInfo: Record<string, TypeDef> = {
     'vec2<i32>': { numElements: 2, align:  8, size:  8, type: 'i32', view: Int32Array },
     'vec2<u32>': { numElements: 2, align:  8, size:  8, type: 'u32', view: Uint32Array },
     'vec2<f32>': { numElements: 2, align:  8, size:  8, type: 'f32', view: Float32Array },
+    'vec2': { numElements: 2, align:  8, size:  8, type: 'f32', view: Float32Array },
     'vec2<f16>': { numElements: 2, align:  4, size:  4, type: 'u16', view: Uint16Array },
     'vec3<i32>': { numElements: 3, align: 16, size: 12, type: 'i32', view: Int32Array },
     'vec3<u32>': { numElements: 3, align: 16, size: 12, type: 'u32', view: Uint32Array },
     'vec3<f32>': { numElements: 3, align: 16, size: 12, type: 'f32', view: Float32Array },
+    'vec3': { numElements: 3, align: 16, size: 12, type: 'f32', view: Float32Array },
     'vec3<f16>': { numElements: 3, align:  8, size:  6, type: 'u16', view: Uint16Array },
     'vec4<i32>': { numElements: 4, align: 16, size: 16, type: 'i32', view: Int32Array },
     'vec4<u32>': { numElements: 4, align: 16, size: 16, type: 'u32', view: Uint32Array },
     'vec4<f32>': { numElements: 4, align: 16, size: 16, type: 'f32', view: Float32Array },
+    'vec4': { numElements: 4, align: 16, size: 16, type: 'f32', view: Float32Array },
     'vec4<f16>': { numElements: 4, align:  8, size:  8, type: 'u16', view: Uint16Array },
     // AlignOf(vecR)	SizeOf(array<vecR, C>)
     'mat2x2<f32>': { numElements:  8, align:  8, size: 16, type: 'f32', view: Float32Array },
+    'mat2x2': { numElements:  8, align:  8, size: 16, type: 'f32', view: Float32Array },
     'mat2x2<f16>': { numElements:  4, align:  4, size:  8, type: 'u16', view: Uint16Array },
     'mat3x2<f32>': { numElements:  8, align:  8, size: 24, type: 'f32', view: Float32Array },
+    'mat3x2': { numElements:  8, align:  8, size: 24, type: 'f32', view: Float32Array },
     'mat3x2<f16>': { numElements:  8, align:  4, size: 12, type: 'u16', view: Uint16Array },
     'mat4x2<f32>': { numElements:  8, align:  8, size: 32, type: 'f32', view: Float32Array },
+    'mat4x2': { numElements:  8, align:  8, size: 32, type: 'f32', view: Float32Array },
     'mat4x2<f16>': { numElements:  8, align:  4, size: 16, type: 'u16', view: Uint16Array },
     'mat2x3<f32>': { numElements: 12, align: 16, size: 32, type: 'f32', view: Float32Array },
+    'mat2x3': { numElements: 12, align: 16, size: 32, type: 'f32', view: Float32Array },
     'mat2x3<f16>': { numElements: 12, align:  8, size: 16, type: 'u16', view: Uint16Array },
     'mat3x3<f32>': { numElements: 12, align: 16, size: 48, type: 'f32', view: Float32Array },
+    'mat3x3': { numElements: 12, align: 16, size: 48, type: 'f32', view: Float32Array },
     'mat3x3<f16>': { numElements: 12, align:  8, size: 24, type: 'u16', view: Uint16Array },
     'mat4x3<f32>': { numElements: 16, align: 16, size: 64, type: 'f32', view: Float32Array },
+    'mat4x3': { numElements: 16, align: 16, size: 64, type: 'f32', view: Float32Array },
     'mat4x3<f16>': { numElements: 16, align:  8, size: 32, type: 'u16', view: Uint16Array },
     'mat2x4<f32>': { numElements: 16, align: 16, size: 32, type: 'f32', view: Float32Array },
+    'mat2x4': { numElements: 16, align: 16, size: 32, type: 'f32', view: Float32Array },
     'mat2x4<f16>': { numElements: 16, align:  8, size: 16, type: 'u16', view: Uint16Array },
     'mat3x4<f32>': { numElements: 16, align: 16, size: 48, type: 'f32', view: Float32Array },
+    'mat3x4': { numElements: 16, align: 16, size: 48, type: 'f32', view: Float32Array },
     'mat3x4<f16>': { numElements: 16, align:  8, size: 24, type: 'u16', view: Uint16Array },
     'mat4x4<f32>': { numElements: 16, align: 16, size: 64, type: 'f32', view: Float32Array },
+    'mat4x4': { numElements: 16, align: 16, size: 64, type: 'f32', view: Float32Array },
     'mat4x4<f16>': { numElements: 16, align:  8, size: 32, type: 'u16', view: Uint16Array },
 };
 
-type TypedArrayOrViews = TypedArray | Views | Views[];
+export type TypedArrayOrViews = TypedArray | Views | Views[];
 export interface Views {
   [x: string]: TypedArrayOrViews;
 }
-
-/*
-struct S with members M1...MN	max(AlignOfMember(S,1), ... , AlignOfMember(S,N))
-roundUp(AlignOf(S), justPastLastMember)
-
-where justPastLastMember = OffsetOfMember(S,N) + SizeOfMember(S,N)
-array<E, N>
-AlignOf(E)	N × roundUp(AlignOf(E), SizeOf(E))
-array<E>
-AlignOf(E)	Nruntime × roundUp(AlignOf(E),SizeOf(E))
-
-where Nruntime is the runtime-determined number of elements of T
-*/
-type AlignInfo = {
-    align: number;
-    size: number;
-};
-
-function getAlignSize(type: FieldDescription): AlignInfo {
-    if (typeof type === 'string') {
-        return typeInfo[type];
-    } else if (Array.isArray(type)) {
-        const [arrayElementType, numElements] = type;
-        const {align, size} = getAlignSize(arrayElementType);
-        return {
-            align,
-            size: size * numElements,
-        };
-    } else {
-        return computeSizeForTypedArrayViews(type);
-    }
+export type ArrayBufferViews = {
+    views: TypedArrayOrViews;
+    arrayBuffer: ArrayBuffer;
 }
 
-function computeSizeForTypedArrayViews(structDesc: StructDescription) {
-    let totalSize = 0;
-    let firstAlign = 0;
-    for (const [name, type] of Object.entries(structDesc)) {
-        const { align, size } = getAlignSize(type);
-        firstAlign = firstAlign || align;
-        totalSize = roundUpToMultipleOf(totalSize, align);
-        totalSize += size;
-    }
-    return { align: firstAlign, size: totalSize };
-}
+/**
+ * Creates a set of named TypedArray views on an ArrayBuffer
+ * @param structDesc Description of the various types of views.
+ * @param arrayBuffer Optional ArrayBuffer to use (if one provided one will be created)
+ * @param offset Optional offset in existing ArrayBuffer to start the views.
+ * @returns A bunch of named TypedArray views and the ArrayBuffer
+ */
+export function makeTypedArrayViews(structDesc: StructDescription, arrayBuffer?: ArrayBuffer, offset?: number): ArrayBufferViews {
+    const baseOffset = offset || 0;
+    const buffer = arrayBuffer || new ArrayBuffer(structDesc.size);
 
-export function makeTypedArrayViews(structDesc: StructDescription, views = {}): Views {
-    const { size: totalSize } = computeSizeForTypedArrayViews(structDesc);
-    const gen = new TypedArrayViewGenerator(totalSize);
-
-    const makeViews = (structDesc: StructDescription) => {
-        const views: Views = {};
-        for (const [name, type] of Object.entries(structDesc)) {
-            const { align, size } = getAlignSize(type);
-            if (typeof type === 'string') {
-                const { size, type: viewType, view } = typeInfo[type];
-                const numElements = size / view.BYTES_PER_ELEMENT;
-                gen.align(align);
-                views[name] = gen[viewType](numElements);
-            } else if (Array.isArray(type)) {
-                //
-            } else {
-                views[name] = makeViews(type);
-            }
-        }
-        return views;
-    };
-    return makeViews(structDesc);
-}
-
-export function setStructuredView(data: any, views: Views) {
-    for (const [key, newValue] of Object.entries(data)) {
-        const view = views[key];
-        if (view) {
-            if (isTypedArray(view)) {
-                if (view.length === 1 && typeof newValue === 'number') {
-                    (view as TypedArray)[0] = newValue;
+    const makeViews = (structDesc: StructDescription): TypedArrayOrViews => {
+        if (Array.isArray(structDesc)) {
+            return (structDesc as StructDescription[]).map(elemDesc => makeViews(elemDesc)) as Views[];
+        } else if (typeof structDesc === 'string') {
+            throw Error('unreachable');
+        } else {
+            const views: Views = {};
+            for (const [name, desc] of Object.entries(structDesc.fields)) {
+                const { size, offset, type } = desc as FieldDescription;
+                if (typeof type === 'string') {
+                    const { view } = typeInfo[type];
+                    const numElements = size / view.BYTES_PER_ELEMENT;
+                    views[name] = new view(buffer, baseOffset + offset, numElements);
                 } else {
-                    (view as TypedArray).set(newValue as number[]);
+                    views[name] = makeViews(desc as StructDescription);
                 }
-            } else {
-                setStructuredView(newValue, view as Views);
+            }
+            return views;
+        }
+    };
+    return { views: makeViews(structDesc), arrayBuffer: buffer };
+}
+
+/**
+ * Given a set of TypeArrayViews and matching JavaScript data
+ * sets the content of the views.
+ * @param data The new values
+ * @param views TypedArray views as returned from {@link makeTypedArrayViews}
+ */
+export function setStructuredView(data: any, views: TypedArrayOrViews): void {
+    if (data === undefined) {
+        return;
+    } else if (isTypedArray(views)) {
+        const view = views as TypedArray;
+        if (view.length === 1 && typeof data === 'number') {
+            view[0] = data;
+        } else {
+            view.set(data as number[]);
+        }
+    } else if (Array.isArray(views)) {
+        const asArray = views as Views[];
+        (data as any[]).forEach((newValue, ndx) => {
+            setStructuredView(newValue, asArray[ndx]);
+        });
+    } else {
+        const asViews = views as Views;
+        for (const [key, newValue] of Object.entries(data)) {
+            const view = asViews[key];
+            if (view) {
+                setStructuredView(newValue, view);
             }
         }
     }
 }
 
-type StructuredView = Views & {
+export type StructuredView = ArrayBufferViews & {
+    /**
+     * Sets the contents of the TypedArrays based on the data passed in
+     * Note: The data may be sparse
+     * 
+     * example:
+     * 
+     * ```js
+     * const code = `
+     * struct HSL {
+     *   hue: f32,
+     *   sat: f32,
+     *   lum: f32,
+     * };
+     * struct MyUniforms {
+     *    colors: array<HSL, 4>,
+     *    brightness: f32,
+     *    kernel: array<f32, 9>,
+     * };
+     * @group(0) @binding(0) var<uniform> myUniforms: MyUniforms;
+     * `;
+     * const descriptions = makeUniformDescriptions(code);
+     * const myUniformValues = makeStructuredView(descriptions['myUniforms']);
+     * 
+     * myUniformValues.set({
+     *   colors: [
+     *     ,
+     *     ,
+     *     { hue: 0.5, sat: 1.0, lum: 0.5 },  // only set the 3rd color
+     *   ],
+     *   brightness: 0.8,
+     *   kernel: [
+     *      1, 0, -1,
+     *      2, 0, -2,
+     *      1, 0, -1,
+     *   ],
+     * });
+     * ```
+     * 
+     * @param data 
+     */
     set(data: any): void;
 }
 
-export function makeStructuredView(structDesc: StructDescription): StructuredView {
-    const views = makeTypedArrayViews(structDesc);
-    Object.defineProperty(views, 'set', {
-        value: (data: any) => {
-            setStructuredView(data, views);
+/**
+ * Given a StructDescription
+ * @param structDesc A StructDescription as returned from {@link makeStructureDescriptions} or {@link makeUniformDescriptions}
+ * @param arrayBuffer Optional ArrayBuffer for the views
+ * @param offset Optional offset into the ArrayBuffer for the views
+ * @returns TypedArray views for the various named fields of the structure as well
+ *    as a `set` function to make them easy to set, and the arrayBuffer
+ */
+export function makeStructuredView(structDesc: StructDescription, arrayBuffer?: ArrayBuffer, offset?: number): StructuredView {
+    const views = makeTypedArrayViews(structDesc, arrayBuffer, offset);
+    return {
+        ...views,
+        set(data: any) {
+            setStructuredView(data, views.views);
         },
-    });
-    return views as StructuredView;
+    };
+}
+
+export type StructDescriptions = {
+    [x: string]: StructDescription;
+}
+
+function addMembers(reflect: WgslReflect, members: Member[], size: number, offset: number = 0): StructDescription {
+    const fields: FieldDescriptions = Object.fromEntries(members.map(m => {
+        if (m.isArray) {
+            if (m.isStruct) {
+                return [
+                    m.name,
+                    new Array(m.arrayCount).fill(0).map((_, ndx) => {
+                        return addMembers(reflect, m.members!, m.structSize!, offset + m.offset + m.structSize! * ndx)
+                    }),
+                ];
+            } else {
+                return [
+                    m.name,
+                    {
+                        offset: offset + m.offset,
+                        size: m.size,
+                        type: m.type.format!.name!,
+                        numElements: m.arrayCount,
+                    }
+                ]
+            }
+        } else if (m.isStruct) {
+            return [
+                m.name,
+                addMembers(reflect, m.members!, m.size, offset + m.offset),
+            ];
+        } else {
+            return [
+                m.name,
+                {
+                    offset: offset + m.offset,
+                    size: m.size,
+                    type: m.type.name!,
+                },
+            ];
+        }
+    }));
+
+    return {
+        fields,
+        size,
+    };
+}
+
+/**
+ * Given a WGSL shader, returns structure definitions by structure name
+ *
+ * Example:
+ * 
+ * ```js
+ * const code = `
+ * struct MyStruct {
+ *    color: vec4<f32>,
+ *    brightness: f32,
+ *    kernel: array<f32, 9>,
+ * };
+ * `;
+ * const descriptions = makeStructureDescriptions(code);
+ * const myStructValues = makeStructuredView(descriptions['MyStruct']);
+ * 
+ * myStructValues.set({
+ *   color: [1, 0, 1, 1],
+ *   brightness: 0.8,
+ *   kernel: [
+ *      1, 0, -1,
+ *      2, 0, -2,
+ *      1, 0, -1,
+ *   ],
+ * });
+ * 
+ * console.log(myStructValues.arrayBuffer);
+ * ```
+ * 
+ * @param code WGSL shader. Note: it is not required for this to be a complete shader
+ * @returns descriptions of the structures by name. Useful for passing to {@link makeStructuredView}
+ */
+export function makeStructureDescriptions(code: string): StructDescriptions {
+    const reflect = new WgslReflect(code);
+
+    return Object.fromEntries(reflect.structs.map(struct => {
+        const info = reflect.getStructInfo(struct);
+        return [struct.name, addMembers(reflect, info.members, info.size)];
+    }));
+}
+
+/**
+ * Given a WGSL shader returns uniform structure descriptions by uniform name.
+ * 
+ * You can pass them to {@link makeStructuredView}
+ * 
+ * Example:
+ * 
+ * ```js
+ * const code = `
+ * struct MyUniforms {
+ *    color: vec4<f32>,
+ *    brightness: f32,
+ *    kernel: array<f32, 9>,
+ * };
+ * @group(0) @binding(0) var<uniform> myUniforms: MyUniforms;
+ * `;
+ * const descriptions = makeUniformDescriptions(code);
+ * const myUniformValues = makeStructuredView(descriptions['myUniforms']);
+ * 
+ * myUniformValues.set({
+ *   color: [1, 0, 1, 1],
+ *   brightness: 0.8,
+ *   kernel: [
+ *      1, 0, -1,
+ *      2, 0, -2,
+ *      1, 0, -1,
+ *   ],
+ * });
+ * device.queue.writeBuffer(uniformBuffer, 0, myUniformValues.arrayBuffer);
+ * ```
+ * 
+ * @param code a WGSL shader source. Note: it is not required to be a complete shader
+ * @returns descriptions of the uniforms by name. Useful for passing to {@link makeStructuredView}
+ */
+export function makeUniformDescriptions(code: string): StructDescriptions {
+    const reflect = new WgslReflect(code);
+
+    return Object.fromEntries(reflect.uniforms.map(uniform => {
+        const info = reflect.getUniformBufferInfo(uniform);
+        return [uniform.name, addMembers(reflect, info.members, info.size)];
+    }));
 }
