@@ -11,7 +11,7 @@
 /* global vec3, mat4 */
 /* global webgpuUtils */
 const { 
-  makeUniformDescriptions,
+  makeUniformDefinitions,
   makeStructuredView,
 } = webgpuUtils;
 const {
@@ -158,9 +158,9 @@ async function main() {
     },
   });
 
-  const descriptions = makeUniformDescriptions(shaderSrc);
-  const vsUniformValues = makeStructuredView(descriptions.vsUniforms);
-  const fsUniformValues = makeStructuredView(descriptions.fsUniforms);
+  const defs = makeUniformDefinitions(shaderSrc);
+  const vsUniformValues = makeStructuredView(defs.vsUniforms);
+  const fsUniformValues = makeStructuredView(defs.fsUniforms);
 
   const vsUniformBuffer = device.createBuffer({
     size: vsUniformValues.arrayBuffer.byteLength,

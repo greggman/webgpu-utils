@@ -15,7 +15,7 @@ Example:
 
 ```js
 import {
-  makeStructuredDescriptions,
+  makeUniformDefinitions,
   makeStructuredView,
 } from 'webgpu-utils';
 
@@ -24,13 +24,15 @@ struct MyUniforms {
    color: vec4<f32>,
    brightness: f32,
    kernel: array<f32, 9>,
+   projectionMatrix: mat4x4<f32>,
 };
 @group(0) @binding(0) var<uniform> myUniforms: MyUniforms;
 `;
 
-const descriptions = makeUniformDescriptions(code);
-const myUniformValues = makeStructuredView(descriptions['myUniforms']);
+const defs = makeUniformDefinitions(code);
+const myUniformValues = makeStructuredView(defs.myUniforms);
 
+// Set some values via set
 myUniformValues.set({
   color: [1, 0, 1, 1],
   brightness: 0.8,
@@ -40,8 +42,36 @@ myUniformValues.set({
      1, 0, -1,
   ],
 });
+
+// Set a value by passing it to a math library
+mat4.perspective(
+    degToRad(45),
+    canvas.clientWidth / canvas.clientHeight,
+    0.1,
+    20,
+    myUniformValues.views.projectionMatrix);
+
+// Upload the data to the GPU
 device.queue.writeBuffer(uniformBuffer, 0, myUniformValues.arrayBuffer);
 ```
+
+## Development
+
+```
+git clone https://github.com/greggman/webgpu-utils.git
+cd webgpu-utils
+npm install
+npm start
+```
+
+This will run rollup in watch mode, building from typescript into
+`dist/0.x/webgpu-utils.js`.
+
+```
+npx servez
+```
+
+Now open [`http://localhost:8080/test/`](http://localhost:8080/test/) to run tests.
 
 ## License
 

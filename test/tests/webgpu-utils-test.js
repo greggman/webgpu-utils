@@ -1,5 +1,5 @@
 import { describe, it } from '../mocha-support.js';
-import { makeStructuredView, makeTypedArrayViews, setStructuredView, makeStructureDescriptions } from '../../dist/0.x/webgpu-utils.module.js';
+import { makeStructuredView, makeTypedArrayViews, setStructuredView, makeStructureDefinitions } from '../../dist/0.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertEqual, assertTruthy } from '../assert.js';
 
 describe('webgpu-utils-tests', () => {
@@ -64,8 +64,8 @@ describe('webgpu-utils-tests', () => {
         return vsUniforms.color + vec4(vsUniforms.lightDirection, 0) * 0.0;
     }
         `;
-        const descriptions = makeStructureDescriptions(shader);
-        const {views, arrayBuffer} = makeStructuredView(descriptions['VSUniforms']);
+        const defs = makeStructureDefinitions(shader);
+        const {views, arrayBuffer} = makeStructuredView(defs.VSUniforms);
         assertEqual(arrayBuffer.byteLength, (16 + 4 + 8 + 4 + (3 + 1)) * 4);
 
         assertTruthy(views.worldViewProjection instanceof Float32Array);
@@ -106,8 +106,8 @@ describe('webgpu-utils-tests', () => {
         lightDirection: vec3<f32>,
     };
         `;
-        const descriptions = makeStructureDescriptions(shader);
-        const {views, arrayBuffer} = makeStructuredView(descriptions['VSUniforms']);
+        const defs = makeStructureDefinitions(shader);
+        const {views, arrayBuffer} = makeStructuredView(defs.VSUniforms);
         assertEqual(arrayBuffer.byteLength, (16 + 4 + 8 + 4 + (3 + 1)) * 4);
 
         assertTruthy(views.worldViewProjection instanceof Float32Array);
@@ -145,8 +145,8 @@ describe('webgpu-utils-tests', () => {
         lightDirection: array<vec3<f32>, 6>,
     };
         `;
-        const descriptions = makeStructureDescriptions(shader);
-        const {views, set, arrayBuffer} = makeStructuredView(descriptions['VSUniforms']);
+        const defs = makeStructureDefinitions(shader);
+        const {views, set, arrayBuffer} = makeStructuredView(defs.VSUniforms);
         assertEqual(arrayBuffer.byteLength, (16 + 3 * 4 + 6 * 5 + 2 + 4 + (3 + 1) * 6) * 4);
 
         assertTruthy(views.worldViewProjection instanceof Float32Array);

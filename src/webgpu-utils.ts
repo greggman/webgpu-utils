@@ -47,18 +47,18 @@ export class TypedArrayViewGenerator {
     }
 }
 
-export interface StructDescription {
-    fields: FieldDescriptions;
+export interface StructDefinition {
+    fields: FieldDefinitions;
     size: number;
 };
-export type FieldDescription = {
+export type FieldDefinition = {
     offset: number;
     size: number;
     type: string;
     numElements?: number;
 };
-export type FieldDescriptions = {
-    [x: string]: FieldDescription | StructDescription | FieldDescription[] | StructDescription[];
+export type FieldDefinitions = {
+    [x: string]: FieldDefinition | StructDefinition | FieldDefinition[] | StructDefinition[];
 };
 
 type TypeDef = {
@@ -130,36 +130,36 @@ export type ArrayBufferViews = {
 
 /**
  * Creates a set of named TypedArray views on an ArrayBuffer
- * @param structDesc Description of the various types of views.
+ * @param structDef Definition of the various types of views.
  * @param arrayBuffer Optional ArrayBuffer to use (if one provided one will be created)
  * @param offset Optional offset in existing ArrayBuffer to start the views.
  * @returns A bunch of named TypedArray views and the ArrayBuffer
  */
-export function makeTypedArrayViews(structDesc: StructDescription, arrayBuffer?: ArrayBuffer, offset?: number): ArrayBufferViews {
+export function makeTypedArrayViews(structDef: StructDefinition, arrayBuffer?: ArrayBuffer, offset?: number): ArrayBufferViews {
     const baseOffset = offset || 0;
-    const buffer = arrayBuffer || new ArrayBuffer(structDesc.size);
+    const buffer = arrayBuffer || new ArrayBuffer(structDef.size);
 
-    const makeViews = (structDesc: StructDescription): TypedArrayOrViews => {
-        if (Array.isArray(structDesc)) {
-            return (structDesc as StructDescription[]).map(elemDesc => makeViews(elemDesc)) as Views[];
-        } else if (typeof structDesc === 'string') {
+    const makeViews = (structDef: StructDefinition): TypedArrayOrViews => {
+        if (Array.isArray(structDef)) {
+            return (structDef as StructDefinition[]).map(elemDef => makeViews(elemDef)) as Views[];
+        } else if (typeof structDef === 'string') {
             throw Error('unreachable');
         } else {
             const views: Views = {};
-            for (const [name, desc] of Object.entries(structDesc.fields)) {
-                const { size, offset, type } = desc as FieldDescription;
+            for (const [name, def] of Object.entries(structDef.fields)) {
+                const { size, offset, type } = def as FieldDefinition;
                 if (typeof type === 'string') {
                     const { view } = typeInfo[type];
                     const numElements = size / view.BYTES_PER_ELEMENT;
                     views[name] = new view(buffer, baseOffset + offset, numElements);
                 } else {
-                    views[name] = makeViews(desc as StructDescription);
+                    views[name] = makeViews(def as StructDefinition);
                 }
             }
             return views;
         }
     };
-    return { views: makeViews(structDesc), arrayBuffer: buffer };
+    return { views: makeViews(structDef), arrayBuffer: buffer };
 }
 
 /**
@@ -215,8 +215,8 @@ export type StructuredView = ArrayBufferViews & {
      * };
      * @group(0) @binding(0) var<uniform> myUniforms: MyUniforms;
      * `;
-     * const descriptions = makeUniformDescriptions(code);
-     * const myUniformValues = makeStructuredView(descriptions['myUniforms']);
+     * const defs = makeUniformDefinitions(code);
+     * const myUniformValues = makeStructuredView(defs.myUniforms);
      * 
      * myUniformValues.set({
      *   colors: [
@@ -239,15 +239,15 @@ export type StructuredView = ArrayBufferViews & {
 }
 
 /**
- * Given a StructDescription
- * @param structDesc A StructDescription as returned from {@link makeStructureDescriptions} or {@link makeUniformDescriptions}
+ * Given a StructDefinition, create matching TypedArray views
+ * @param structDef A StructDefinition as returned from {@link makeStructureDefinitions} or {@link makeUniformDefinitions}
  * @param arrayBuffer Optional ArrayBuffer for the views
  * @param offset Optional offset into the ArrayBuffer for the views
  * @returns TypedArray views for the various named fields of the structure as well
  *    as a `set` function to make them easy to set, and the arrayBuffer
  */
-export function makeStructuredView(structDesc: StructDescription, arrayBuffer?: ArrayBuffer, offset?: number): StructuredView {
-    const views = makeTypedArrayViews(structDesc, arrayBuffer, offset);
+export function makeStructuredView(structDef: StructDefinition, arrayBuffer?: ArrayBuffer, offset?: number): StructuredView {
+    const views = makeTypedArrayViews(structDef, arrayBuffer, offset);
     return {
         ...views,
         set(data: any) {
@@ -256,12 +256,12 @@ export function makeStructuredView(structDesc: StructDescription, arrayBuffer?: 
     };
 }
 
-export type StructDescriptions = {
-    [x: string]: StructDescription;
+export type StructDefinitions = {
+    [x: string]: StructDefinition;
 }
 
-function addMembers(reflect: WgslReflect, members: Member[], size: number, offset: number = 0): StructDescription {
-    const fields: FieldDescriptions = Object.fromEntries(members.map(m => {
+function addMembers(reflect: WgslReflect, members: Member[], size: number, offset: number = 0): StructDefinition {
+    const fields: FieldDefinitions = Object.fromEntries(members.map(m => {
         if (m.isArray) {
             if (m.isStruct) {
                 return [
@@ -317,8 +317,8 @@ function addMembers(reflect: WgslReflect, members: Member[], size: number, offse
  *    kernel: array<f32, 9>,
  * };
  * `;
- * const descriptions = makeStructureDescriptions(code);
- * const myStructValues = makeStructuredView(descriptions['MyStruct']);
+ * const defs = makeStructureDefinitions(code);
+ * const myStructValues = makeStructuredView(defs.MyStruct);
  * 
  * myStructValues.set({
  *   color: [1, 0, 1, 1],
@@ -334,9 +334,9 @@ function addMembers(reflect: WgslReflect, members: Member[], size: number, offse
  * ```
  * 
  * @param code WGSL shader. Note: it is not required for this to be a complete shader
- * @returns descriptions of the structures by name. Useful for passing to {@link makeStructuredView}
+ * @returns definitions of the structures by name. Useful for passing to {@link makeStructuredView}
  */
-export function makeStructureDescriptions(code: string): StructDescriptions {
+export function makeStructureDefinitions(code: string): StructDefinitions {
     const reflect = new WgslReflect(code);
 
     return Object.fromEntries(reflect.structs.map(struct => {
@@ -346,7 +346,7 @@ export function makeStructureDescriptions(code: string): StructDescriptions {
 }
 
 /**
- * Given a WGSL shader returns uniform structure descriptions by uniform name.
+ * Given a WGSL shader returns uniform structure definitions by uniform name.
  * 
  * You can pass them to {@link makeStructuredView}
  * 
@@ -361,8 +361,8 @@ export function makeStructureDescriptions(code: string): StructDescriptions {
  * };
  * @group(0) @binding(0) var<uniform> myUniforms: MyUniforms;
  * `;
- * const descriptions = makeUniformDescriptions(code);
- * const myUniformValues = makeStructuredView(descriptions['myUniforms']);
+ * const defs = makeUniformDefinitions(code);
+ * const myUniformValues = makeStructuredView(defs.myUniforms);
  * 
  * myUniformValues.set({
  *   color: [1, 0, 1, 1],
@@ -377,9 +377,9 @@ export function makeStructureDescriptions(code: string): StructDescriptions {
  * ```
  * 
  * @param code a WGSL shader source. Note: it is not required to be a complete shader
- * @returns descriptions of the uniforms by name. Useful for passing to {@link makeStructuredView}
+ * @returns definitions of the uniforms by name. Useful for passing to {@link makeStructuredView}
  */
-export function makeUniformDescriptions(code: string): StructDescriptions {
+export function makeUniformDefinitions(code: string): StructDefinitions {
     const reflect = new WgslReflect(code);
 
     return Object.fromEntries(reflect.uniforms.map(uniform => {

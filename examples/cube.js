@@ -1,6 +1,6 @@
 import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/1.x/wgpu-matrix.module.js';
 import { 
-  makeUniformDescriptions,
+  makeUniformDefinitions,
   makeStructuredView,
 } from '../dist/0.x/webgpu-utils.module.js';
 
@@ -143,9 +143,9 @@ async function main() {
     },
   });
 
-  const descriptions = makeUniformDescriptions(shaderSrc);
-  const vsUniformValues = makeStructuredView(descriptions.vsUniforms);
-  const fsUniformValues = makeStructuredView(descriptions.fsUniforms);
+  const defs = makeUniformDefinitions(shaderSrc);
+  const vsUniformValues = makeStructuredView(defs.vsUniforms);
+  const fsUniformValues = makeStructuredView(defs.fsUniforms);
 
   const vsUniformBuffer = device.createBuffer({
     size: vsUniformValues.arrayBuffer.byteLength,
