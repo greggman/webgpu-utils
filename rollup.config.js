@@ -25,7 +25,7 @@ export default [
         input: 'src/webgpu-utils.ts',
         output: [
             {
-                name: 'wgpuMatrix',
+                name: 'webgpuUtils',
                 file: 'dist/0.x/webgpu-utils.js',
                 format: 'umd',
                 sourcemap: true,
