@@ -402,3 +402,39 @@ export function makeUniformDefinitions(code: string): FieldDefinition {
         return [uniform.name, addMember(reflect, info, 0)[1]];
     }));
 }
+
+type ViewsByCtor = Map<TypedArrayConstructor, TypedArray>;
+const s_views = new WeakMap<ArrayBuffer, ViewsByCtor>;
+
+
+function getViewsByCtor(arrayBuffer: ArrayBuffer): ViewsByCtor {
+    let viewsByCtor = s_views.get(arrayBuffer);
+    if (!viewsByCtor) {
+        viewsByCtor = new Map();
+        s_views.set(arrayBuffer, viewsByCtor);
+    }
+    return viewsByCtor;
+}
+
+function getView<T extends TypedArray>(arrayBuffer: ArrayBuffer, Ctor: TypedArrayConstructor): T {
+    const viewsByCtor = getViewsByCtor(arrayBuffer);
+    let view = viewsByCtor.get(Ctor);
+    if (!view) {
+        view = new Ctor(arrayBuffer);
+        viewsByCtor.set(Ctor, view);
+    }
+    return view;
+}
+
+export function setStructuredValues(fieldDefs: FieldDefinitions, data: any, arrayBuffer: ArrayBuffer, offset: number = 0) {
+    if (data === undefined) {
+        return;
+    } else {
+        for (const [key, newValue] of Object.entries(data)) {
+            const fieldDef = structDef.fields[key];
+            if (fieldDef) {
+                setStructuredValues(fieldDef, newValue, arrayBuffer, offset);
+            }
+        }
+    }
+}
