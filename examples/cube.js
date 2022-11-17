@@ -1,23 +1,8 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>UMD Test</title>
-  </head>
-  <body>
-    <canvas></canvas>
-    <script src="https://wgpu-matrix.org/dist/1.x/wgpu-matrix.js"></script>
-    <script src="../dist/0.x/webgpu-utils.js"></script>
-    <script>
-/* global vec3, mat4 */
-/* global webgpuUtils */
-const { 
+import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/1.x/wgpu-matrix.module.js';
+import { 
   makeUniformDescriptions,
   makeStructuredView,
-} = webgpuUtils;
-const {
-  mat4,
-  vec3,
-} = wgpuMatrix;
+} from '../dist/0.x/webgpu-utils.module.js';
 
 async function main() {
   const gpu = navigator.gpu;
@@ -184,7 +169,7 @@ async function main() {
       {
         // view: undefined, // Assigned later
         // resolveTarget: undefined, // Assigned Later
-        clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+        clearValue: [ 0.2, 0.2, 0.2, 1.0 ],
         loadOp: 'clear',
         storeOp: 'store',
       },
@@ -296,7 +281,3 @@ function fail(msg) {
 }
 
 main();
-
-    </script>
-  </body>
-</html>
