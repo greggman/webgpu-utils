@@ -73,6 +73,10 @@ npx servez
 
 Now open [`http://localhost:8080/test/`](http://localhost:8080/test/) to run tests.
 
+## Thanks
+
+Super thanks to Brendan Duncan for [wgsl-reflect](https://github.com/brendan-duncan/wgsl_reflect) on which much of this is based.
+
 ## License
 
 [MIT](LICENSE.md)
