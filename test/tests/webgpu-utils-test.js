@@ -1,5 +1,11 @@
 import { describe, it } from '../mocha-support.js';
-import { makeStructuredView, makeTypedArrayViews, setStructuredView, makeStructureDefinitions } from '../../dist/0.x/webgpu-utils.module.js';
+import {
+    makeStructuredView,
+    makeTypedArrayViews,
+    setStructuredView,
+    makeStructureDefinitions,
+    makeUniformDefinitions,
+} from '../../dist/0.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertEqual, assertTruthy } from '../assert.js';
 
 describe('webgpu-utils-tests', () => {
@@ -212,6 +218,16 @@ describe('webgpu-utils-tests', () => {
                 501, 502, 503, 0,
                 401, 402, 403, 0,
             ]);
+    });
+
+    it('it handles array of base types', () => {
+        const shader = `
+        @group(0) @binding(0) var<uniform> myUniforms: array<vec3<f32>, 16>;
+        `;
+        const defs = makeUniformDefinitions(shader);
+        const {views, set, arrayBuffer} = makeStructuredView(defs.myUniforms);
+        console.log(devs);
+        console.log(views);
     });
 
 });

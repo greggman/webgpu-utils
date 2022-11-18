@@ -2044,6 +2044,29 @@ class WgslReflect {
         return { name: node.name, type: node.type, group, binding };
     }
 
+    _getMemberInfo(member, offset = 0, lastSize = 0) {
+        let name = member.name;
+
+        let info = this.getTypeInfo(member);
+        if (!info)
+            return;
+
+        let type = member.type;
+        let align = info.align;
+        let size = info.size;
+        offset = this._roundUp(align, offset + lastSize);
+        let isArray = member.type._type === "array";
+        let s = this.getStruct(type) || (isArray ? this.getStruct(member.type.format.name) : null);
+        let isStruct = !!s;
+        let si = isStruct ? this.getStructInfo(s) : undefined;
+        let structSize = si?.size;
+        
+        let arrayCount = parseInt(member.type.count ?? 0);
+        let members = isStruct ? si?.members : undefined;
+
+        return { name, offset, size, type, member, align, isArray, arrayCount, isStruct, structSize, members };
+    }
+
     getStructInfo(node) {
         const struct = node._type === 'struct' ? node : this.getStruct(node.type);
         if (!struct)
@@ -2057,30 +2080,14 @@ class WgslReflect {
 
         for (let mi = 0, ml = struct.members.length; mi < ml; ++mi) {
             let member = struct.members[mi];
-            let name = member.name;
-
-            let info = this.getTypeInfo(member);
-            if (!info)
-                continue;
-
-            let type = member.type;
-            let align = info.align;
-            let size = info.size;
-            offset = this._roundUp(align, offset + lastSize);
-            lastSize = size;
-            lastOffset = offset;
-            structAlign = Math.max(structAlign, align);
-            let isArray = member.type._type === "array";
-            let s = this.getStruct(type) || (isArray ? this.getStruct(member.type.format.name) : null);
-            let isStruct = !!s;
-            let si = isStruct ? this.getStructInfo(s) : undefined;
-            let structSize = si?.size;
-            
-            let arrayCount = parseInt(member.type.count ?? 0);
-            let members = isStruct ? si?.members : undefined;
-
-            let u = { name, offset, size, type, member, isArray, arrayCount, isStruct, structSize, members };
-            buffer.members.push(u);
+            const u = this._getMemberInfo(member, offset, lastSize);
+            if (u) {
+                buffer.members.push(u);
+                lastSize = u.size;
+                offset = u.offset;
+                lastOffset = offset;
+                structAlign = Math.max(structAlign, u.align);
+            }
         }
 
         buffer.size = this._roundUp(structAlign, lastOffset + lastSize);
@@ -2100,7 +2107,7 @@ class WgslReflect {
         binding = binding && binding.value ? parseInt(binding.value) : 0;
 
         return {
-            ...this.getStructInfo(node),
+            ...this.getStructInfo(node) || this._getMemberInfo(node.type),
             group,
             binding,
         }
