@@ -1,8 +1,35 @@
 import { describe, it } from '../mocha-support.js';
-import { makeStructuredView, makeTypedArrayViews, setStructuredView, makeStructureDefinitions } from '../../dist/0.x/webgpu-utils.module.js';
-import { assertArrayEqual, assertEqual, assertTruthy } from '../assert.js';
+import {
+    makeStructuredView,
+    makeTypedArrayViews,
+    setStructuredView,
+    makeStructureDefinitions,
+    makeUniformDefinitions,
+} from '../../dist/0.x/webgpu-utils.module.js';
+import { assertArrayEqual, assertEqual, assertFalsy, assertTruthy } from '../assert.js';
 
 describe('webgpu-utils-tests', () => {
+
+    it('generates expected types', () => {
+        const shader = `
+    struct VSUniforms {
+        foo: u32,
+    };
+    @group(0) @binding(0) var<uniform> uni1: f32;
+    @group(0) @binding(1) var<uniform> uni2: array<f32, 5>;
+    @group(0) @binding(2) var<uniform> uni3: VSUniforms;
+    @group(0) @binding(3) var<uniform> uni4: array<VSUniforms, 6>;
+        `;
+        const defs = makeUniformDefinitions(shader);
+        assertEqual(defs.uni1.type, 'f32');
+        assertFalsy(defs.uni1.numElements);
+        assertEqual(defs.uni2.type, 'f32');
+        assertEqual(defs.uni2.numElements, 5);
+        assertEqual(defs.uni3.fields.foo.type, 'u32');
+        assertFalsy(defs.uni3.fields.foo.numElements);
+        assertEqual(defs.uni4.length, 6);
+        assertEqual(defs.uni4[0].fields.foo.type, 'u32');
+    })
 
     it('generates views from shader source', () => {
         const shader = `
@@ -105,9 +132,13 @@ describe('webgpu-utils-tests', () => {
         color: vec4<f32>,
         lightDirection: vec3<f32>,
     };
+    @group(0) @binding(0) var<uniform> vsUniforms: VSUniforms;
+
         `;
-        const defs = makeStructureDefinitions(shader);
-        const {views, arrayBuffer} = makeStructuredView(defs.VSUniforms);
+        const defsS = makeStructureDefinitions(shader);
+        const defsU = makeUniformDefinitions(shader);
+        const {views, arrayBuffer} = makeStructuredView(defsU.vsUniforms);
+//        const {views, arrayBuffer} = makeUniformView(defs.VSUniforms);
         assertEqual(arrayBuffer.byteLength, (16 + 4 + 8 + 4 + (3 + 1)) * 4);
 
         assertTruthy(views.worldViewProjection instanceof Float32Array);
@@ -212,6 +243,44 @@ describe('webgpu-utils-tests', () => {
                 501, 502, 503, 0,
                 401, 402, 403, 0,
             ]);
+    });
+
+    it('makes arrays of base types the same as uniforms and shaders', () => {
+        const shader = `
+        struct Test {
+            foo: array<vec3<f32>, 16>,
+        };
+        @group(0) @binding(0) var<uniform> myUniformsStruct: Test;
+        @group(0) @binding(1) var<uniform> myUniformsArray: array<vec3<f32>, 16>;
+        `;
+        const defs = makeUniformDefinitions(shader);
+        const {views, set, arrayBuffer} = makeStructuredView(defs.myUniformsStruct);
+        set({foo: [1, 22, 33]});
+        const expected = new Float32Array(64);
+        expected.set([1, 22, 333]);
+        assertArrayEqual(views, {foo: expected});
+    });
+
+    it('handles base types', () => {
+        const shader = `
+        @group(0) @binding(0) var<uniform> myUniforms: i32;
+        `;
+        const defs = makeUniformDefinitions(shader);
+        const {views, set, arrayBuffer} = makeStructuredView(defs.myUniforms);
+        set([123]);
+        assertArrayEqual(views, [123]);
+    });
+
+    it('handles array of base types', () => {
+        const shader = `
+        @group(0) @binding(0) var<uniform> myUniforms: array<vec3<f32>, 16>;
+        `;
+        const defs = makeUniformDefinitions(shader);
+        const {views, set, arrayBuffer} = makeStructuredView(defs.myUniforms);
+        set([1, 22, 333]);
+        const expected = new Float32Array(64);
+        expected.set([1, 22, 333]);
+        assertArrayEqual(views, expected);
     });
 
 });
