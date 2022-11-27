@@ -426,12 +426,27 @@ function getView<T extends TypedArray>(arrayBuffer: ArrayBuffer, Ctor: TypedArra
     return view;
 }
 
-export function setStructuredValues(fieldDefs: FieldDefinitions, data: any, arrayBuffer: ArrayBuffer, offset: number = 0) {
-    if (data === undefined) {
-        return;
+export function setStructuredValues(fieldDef: FieldDefinition, data: any, arrayBuffer: ArrayBuffer, offset: number = 0) {
+    const asIntrinsicDefinition = fieldDef as IntrinsicDefinition;
+    if (asIntrinsicDefinition.type) {
+        const type = typeInfo[asIntrinsicDefinition.type];
+        const view = getView(arrayBuffer, type.view);
+        const index = (offset + asIntrinsicDefinition.offset) / view.BYTES_PER_ELEMENT;
+        if (typeof data === 'number') {
+            view[index] = data;
+        } else {
+            view.set(data, index);
+        }
+    } else if (Array.isArray(fieldDef)) {
+        // It's IntrinsicDefinition[] or StructDefinition[]
+        data.forEach((newValue: any, ndx: number) => {
+            setStructuredValues(fieldDef[ndx], newValue, arrayBuffer, offset);
+        });
     } else {
+        // It's StructDefinition
+        const asStructDefinition = fieldDef as StructDefinition;
         for (const [key, newValue] of Object.entries(data)) {
-            const fieldDef = structDef.fields[key];
+            const fieldDef = asStructDefinition.fields[key];
             if (fieldDef) {
                 setStructuredValues(fieldDef, newValue, arrayBuffer, offset);
             }

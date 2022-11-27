@@ -79,6 +79,7 @@ export function assertStrictNotEqual(actual, expected, msg = '') {
 }
 
 export function assertArrayEqual(actual, expected, msg = '') {
+  assertTruthy(typeof actual.length === 'number');
   if (actual.length !== expected.length) {
     throw new Error(`${formatMsg(msg)}expected: array.length ${expected.length} to equal actual.length: ${actual.length}`);
   }

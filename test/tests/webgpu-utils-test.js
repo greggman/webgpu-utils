@@ -3,6 +3,7 @@ import {
     makeStructuredView,
     makeTypedArrayViews,
     setStructuredView,
+    setStructuredValues,
     makeStructureDefinitions,
     makeUniformDefinitions,
 } from '../../dist/0.x/webgpu-utils.module.js';
@@ -137,18 +138,22 @@ describe('webgpu-utils-tests', () => {
         `;
         const defsS = makeStructureDefinitions(shader);
         const defsU = makeUniformDefinitions(shader);
-        const {views, arrayBuffer} = makeStructuredView(defsU.vsUniforms);
-//        const {views, arrayBuffer} = makeUniformView(defs.VSUniforms);
-        assertEqual(arrayBuffer.byteLength, (16 + 4 + 8 + 4 + (3 + 1)) * 4);
+        
+        const test = (f) => {
+            const {views, arrayBuffer} = makeStructuredView(f);
+            assertEqual(arrayBuffer.byteLength, (16 + 4 + 8 + 4 + (3 + 1)) * 4);
 
-        assertTruthy(views.worldViewProjection instanceof Float32Array);
-        assertEqual(views.worldViewProjection.length, 16);
-        assertEqual(views.worldViewProjection.byteOffset, 0);
+            assertTruthy(views.worldViewProjection instanceof Float32Array);
+            assertEqual(views.worldViewProjection.length, 16);
+            assertEqual(views.worldViewProjection.byteOffset, 0);
 
-        assertTruthy(views.lightDirection instanceof Float32Array);
-        assertEqual(views.lightDirection.length, 3);
-        assertEqual(views.lightDirection.byteOffset, (16 + 4 + 8 + 4) * 4);
+            assertTruthy(views.lightDirection instanceof Float32Array);
+            assertEqual(views.lightDirection.length, 3);
+            assertEqual(views.lightDirection.byteOffset, (16 + 4 + 8 + 4) * 4);
+        };
 
+        test(defsU.vsUniforms);
+        test(defsS.VSUniforms);
     });
 
     it('it handles arrays of structs', () => {
@@ -245,7 +250,7 @@ describe('webgpu-utils-tests', () => {
             ]);
     });
 
-    it('makes arrays of base types the same as uniforms and shaders', () => {
+    it('makes arrays of base types the same for uniforms and structures', () => {
         const shader = `
         struct Test {
             foo: array<vec3<f32>, 16>,
@@ -254,11 +259,21 @@ describe('webgpu-utils-tests', () => {
         @group(0) @binding(1) var<uniform> myUniformsArray: array<vec3<f32>, 16>;
         `;
         const defs = makeUniformDefinitions(shader);
-        const {views, set, arrayBuffer} = makeStructuredView(defs.myUniformsStruct);
-        set({foo: [1, 22, 33]});
-        const expected = new Float32Array(64);
-        expected.set([1, 22, 333]);
-        assertArrayEqual(views, {foo: expected});
+        {
+            const {views, set, arrayBuffer} = makeStructuredView(defs.myUniformsStruct);
+            set({foo: [1, 22, 333]});
+            const expected = new Float32Array(64);
+            expected.set([1, 22, 333]);
+            const actual = new Float32Array(arrayBuffer);
+            assertArrayEqual(actual, expected);
+        }
+        {
+            const {views, set} = makeStructuredView(defs.myUniformsArray);
+            set([1, 22, 333]);
+            const expected = new Float32Array(64);
+            expected.set([1, 22, 333]);
+            assertArrayEqual(views, expected);
+        }
     });
 
     it('handles base types', () => {
@@ -281,6 +296,109 @@ describe('webgpu-utils-tests', () => {
         const expected = new Float32Array(64);
         expected.set([1, 22, 333]);
         assertArrayEqual(views, expected);
+    });
+
+    it('sets structured values', () => {
+        const shader = `
+            struct VertexDesc {
+                offset: u32,
+                stride: u32,
+                size: u32,
+            };
+
+            struct LineInfo {
+                triDiv: u32,
+                triMul: u32,
+                midMod: u32,
+                midDiv: u32,
+                oddMod: u32,
+                triMod: u32,
+            };
+
+            struct VSUniforms {
+                worldViewProjection: mat4x4<f32>,    // 0
+                position: array<VertexDesc, 4>,      // (16 + (3 * ndx)) * 4 
+                lineInfo: array<LineInfo, 5>,        // (16 + (3 * 4  ) + (6 * ndx)) * 4
+                color: vec4<f32>,                    // (16 + (3 * 4  ) + (6 * 5  )) * 4
+                lightDirection: array<vec3<f32>, 6>, // (16 + (3 * 4  ) + (6 * 5  ) + 4) * 4 
+            };
+            @group(0) @binding(0) var<uniform> vsUniforms: VSUniforms;
+        `;
+        const defs = makeUniformDefinitions(shader);
+        const def = defs.vsUniforms;
+        const arrayBuffer = new ArrayBuffer(def.size);
+
+        setStructuredValues(def, {
+            worldViewProjection: [1, 2, 3, 4, 11, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34],
+            position: [
+                ,
+                ,
+                ,
+                {offset: 111, stride: 222, size: 333},
+            ],
+            lineInfo: [
+                ,
+                ,
+                ,
+                {midMod: 444, triMod: 666},
+            ],
+            color: [100, 101, 102, 103],
+            lightDirection: new Float32Array([
+                901, 902, 903, 0,
+                801, 802, 803, 0,
+                701, 702, 703, 0,
+                601, 602, 603, 0,
+                501, 502, 503, 0,
+                401, 402, 403, 0,
+            ]),
+        }, arrayBuffer);
+
+        const f32 = new Float32Array(arrayBuffer);
+        const u32 = new Uint32Array(arrayBuffer);
+
+        assertArrayEqual(f32.subarray(0, 16), [1, 2, 3, 4, 11, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34]);
+
+        const makeSub = (base, stride, size) => {
+            return ndx => {
+                const offset = base + stride * ndx;
+                const range = [offset, offset + (size || stride)];
+                return range;
+            };
+        }
+
+        {
+            const sub = makeSub(16, 3);
+            assertArrayEqual(u32.subarray(...sub(0)), [0, 0, 0]);
+            assertArrayEqual(u32.subarray(...sub(1)), [0, 0, 0]);
+            assertArrayEqual(u32.subarray(...sub(2)), [0, 0, 0]);
+            assertArrayEqual(u32.subarray(...sub(3)), [111, 222, 333]);
+        }
+
+        {
+            const sub = makeSub(16 + 3 * 4, 6);
+            assertArrayEqual(u32.subarray(...sub(0)), [0, 0, 0, 0, 0, 0]);
+            assertArrayEqual(u32.subarray(...sub(1)), [0, 0, 0, 0, 0, 0]);
+            assertArrayEqual(u32.subarray(...sub(2)), [0, 0, 0, 0, 0, 0]);
+            assertArrayEqual(u32.subarray(...sub(3)), [0, 0, 444, 0, 0, 666]);
+            assertArrayEqual(u32.subarray(...sub(4)), [0, 0, 0, 0, 0, 0]);
+        }
+
+        {
+            const base = 16 + 3 * 4 + 6 * 5 + 2
+            assertArrayEqual(f32.subarray(base, base + 4), [100, 101, 102, 103]);
+        }
+
+        {
+            const base = 16 + 3 * 4 + 6 * 5 + 2 + 4;
+            assertArrayEqual(f32.subarray(base, base + 4 * 6), [
+                    901, 902, 903, 0,
+                    801, 802, 803, 0,
+                    701, 702, 703, 0,
+                    601, 602, 603, 0,
+                    501, 502, 503, 0,
+                    401, 402, 403, 0,
+                ]);
+        }
     });
 
 });
