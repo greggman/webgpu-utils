@@ -2041,7 +2041,13 @@ class WgslReflect {
         group = group && group.value ? parseInt(group.value) : 0;
         binding = binding && binding.value ? parseInt(binding.value) : 0;
 
-        return { name: node.name, type: node.type, group, binding };
+        let info = this._getUniformInfo(node);
+
+        return {
+            ...info,
+            group,
+            binding,
+        }
     }
 
     /// Returns information about a struct type, null if the type is not a struct.
@@ -2057,7 +2063,7 @@ class WgslReflect {
     getStructInfo(node) {
         if (!node)
             return null;
-
+ 
         const struct = node._type === 'struct' ? node : this.getStruct(node.type);
         if (!struct)
             return null;
