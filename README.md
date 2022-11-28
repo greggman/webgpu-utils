@@ -15,7 +15,7 @@ Example:
 
 ```js
 import {
-  makeUniformDefinitions,
+  makeShaderDataDefinitions,
   makeStructuredView,
 } from 'webgpu-utils';
 
@@ -29,8 +29,8 @@ struct MyUniforms {
 @group(0) @binding(0) var<uniform> myUniforms: MyUniforms;
 `;
 
-const defs = makeUniformDefinitions(code);
-const myUniformValues = makeStructuredView(defs.myUniforms);
+const defs = makeShaderDataDefinitions(code);
+const myUniformValues = makeStructuredView(defs.uniforms.myUniforms);
 
 // Set some values via set
 myUniformValues.set({

@@ -8,10 +8,12 @@
     <script src="https://wgpu-matrix.org/dist/1.x/wgpu-matrix.js"></script>
     <script src="../dist/0.x/webgpu-utils.js"></script>
     <script>
-/* global vec3, mat4 */
+/* global GPUBufferUsage */
+/* global GPUTextureUsage */
 /* global webgpuUtils */
-const { 
-  makeUniformDefinitions,
+/* global wgpuMatrix */
+const {
+  makeShaderDataDefinitions,
   makeStructuredView,
 } = webgpuUtils;
 const {
@@ -158,9 +160,9 @@ async function main() {
     },
   });
 
-  const defs = makeUniformDefinitions(shaderSrc);
-  const vsUniformValues = makeStructuredView(defs.vsUniforms);
-  const fsUniformValues = makeStructuredView(defs.fsUniforms);
+  const defs = makeShaderDataDefinitions(shaderSrc);
+  const vsUniformValues = makeStructuredView(defs.uniforms.vsUniforms);
+  const fsUniformValues = makeStructuredView(defs.uniforms.fsUniforms);
 
   const vsUniformBuffer = device.createBuffer({
     size: vsUniformValues.arrayBuffer.byteLength,
@@ -290,9 +292,9 @@ async function main() {
 
 function fail(msg) {
   const elem = document.createElement('p');
-  p.textContent = msg;
-  p.style.color = 'red';
-  document.body.appendChild(p);
+  elem.textContent = msg;
+  elem.style.color = 'red';
+  document.body.appendChild(elem);
 }
 
 main();

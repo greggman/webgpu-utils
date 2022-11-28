@@ -1,6 +1,8 @@
+/* global GPUBufferUsage */
+/* global GPUTextureUsage */
 import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/1.x/wgpu-matrix.module.js';
-import { 
-  makeUniformDefinitions,
+import {
+  makeShaderDataDefinitions,
   makeStructuredView,
 } from '../dist/0.x/webgpu-utils.module.js';
 
@@ -143,9 +145,9 @@ async function main() {
     },
   });
 
-  const defs = makeUniformDefinitions(shaderSrc);
-  const vsUniformValues = makeStructuredView(defs.vsUniforms);
-  const fsUniformValues = makeStructuredView(defs.fsUniforms);
+  const defs = makeShaderDataDefinitions(shaderSrc);
+  const vsUniformValues = makeStructuredView(defs.uniforms.vsUniforms);
+  const fsUniformValues = makeStructuredView(defs.uniforms.fsUniforms);
 
   const vsUniformBuffer = device.createBuffer({
     size: vsUniformValues.arrayBuffer.byteLength,
@@ -275,9 +277,9 @@ async function main() {
 
 function fail(msg) {
   const elem = document.createElement('p');
-  p.textContent = msg;
-  p.style.color = 'red';
-  document.body.appendChild(p);
+  elem.textContent = msg;
+  elem.style.color = 'red';
+  document.body.appendChild(elem);
 }
 
 main();
