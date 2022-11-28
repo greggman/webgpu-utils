@@ -24,9 +24,7 @@ module.exports = {
         'eslint-plugin-require-trailing-comma',
     ],
     extends: [
-        'plugin:react/recommended', // Uses the recommended rules from @eslint-plugin-react
         'plugin:@typescript-eslint/recommended', // Uses the recommended rules from the @typescript-eslint/eslint-plugin
-        'plugin:prettier/recommended', // Enables eslint-plugin-prettier and eslint-config-prettier. This will display prettier errors as ESLint errors. Make sure this is always the last configuration in the extends array.
     ],
     rules: {
         'brace-style': [2, '1tbs', { allowSingleLine: false }],
@@ -110,12 +108,4 @@ module.exports = {
         '@typescript-eslint/no-non-null-assertion': 'off',
         '@typescript-eslint/no-unused-vars': 2,
     },
-    overrides: [
-        {
-            files: ['*.ts', '*.tsx', 'src/samples/**/*', 'example/**/*'],
-            rules: {
-                'no-undef': 'off',
-            },
-        },
-    ],
 };
