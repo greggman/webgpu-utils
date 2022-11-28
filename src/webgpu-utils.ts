@@ -149,30 +149,25 @@ export function makeTypedArrayViews(structDef: StructDefinition, arrayBuffer?: A
     const baseOffset = offset || 0;
     const buffer = arrayBuffer || new ArrayBuffer(structDef.size);
 
-    const makeViews = (structDef: StructDefinition): TypedArrayOrViews => {
+    const makeViews = (structDef: FieldDefinition): TypedArrayOrViews => {
         if (Array.isArray(structDef)) {
             return (structDef as StructDefinition[]).map(elemDef => makeViews(elemDef)) as Views[];
         } else if (typeof structDef === 'string') {
             throw Error('unreachable');
-        } else if (structDef.fields) {
-            const views: Views = {};
-            for (const [name, def] of Object.entries(structDef.fields)) {
-                //const { size, offset, type } = def as IntrinsicDefinition;
-                views[name] = makeViews(def as StructDefinition);
-                //if (typeof type === 'string') {
-                //    const { view } = typeInfo[type];
-                //    const numElements = size / view.BYTES_PER_ELEMENT;
-                //    views[name] = new view(buffer, baseOffset + offset, numElements);
-                //} else {
-                //    views[name] = makeViews(def as StructDefinition);
-                //}
-            }
-            return views;
         } else {
-            const { size, offset, type } = structDef as IntrinsicDefinition;
-            const { View } = typeInfo[type];
-            const numElements = size / View.BYTES_PER_ELEMENT;
-            return new View(buffer, baseOffset + offset, numElements);
+            const fields = (structDef as StructDefinition).fields;
+            if (fields) {
+                const views: Views = {};
+                for (const [name, def] of Object.entries(fields)) {
+                    views[name] = makeViews(def as StructDefinition);
+                }
+                return views;
+            } else {
+                const { size, offset, type } = structDef as IntrinsicDefinition;
+                const { View } = typeInfo[type];
+                const numElements = size / View.BYTES_PER_ELEMENT;
+                return new View(buffer, baseOffset + offset, numElements);
+            }
         }
     };
     return { views: makeViews(structDef), arrayBuffer: buffer };
@@ -272,14 +267,6 @@ export function makeStructuredView(structDef: StructDefinition, arrayBuffer?: Ar
     };
 }
 
-export type StructDefinitions = {
-    [x: string]: StructDefinition;
-}
-
-export type StorageDefinitions = {
-    [x: string]: StorageDefinition;
-}
-
 function addMember(reflect: WgslReflect, m: Member, offset: number): [string, StructDefinition | IntrinsicDefinition | IntrinsicDefinition[] | StructDefinition[]] {
     if (m.isArray) {
         if (m.isStruct) {
@@ -326,6 +313,14 @@ function addMembers(reflect: WgslReflect, members: Member[], size: number, offse
         fields,
         size,
     };
+}
+
+export type StructDefinitions = {
+    [x: string]: StructDefinition;
+}
+
+export type StorageDefinitions = {
+    [x: string]: StorageDefinition;
 }
 
 type ShaderDataDefinitions = {
