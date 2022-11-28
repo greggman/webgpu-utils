@@ -8,17 +8,19 @@ import { assertArrayEqual, assertEqual, assertFalsy, assertTruthy } from '../ass
 
 describe('webgpu-utils-tests', () => {
 
-    it('generates expected types', () => {
+    it('generates expected types, bindings, groups', () => {
         const shader = `
     struct VSUniforms {
         foo: u32,
     };
-    @group(0) @binding(0) var<uniform> uni1: f32;
-    @group(0) @binding(1) var<uniform> uni2: array<f32, 5>;
-    @group(0) @binding(2) var<uniform> uni3: VSUniforms;
-    @group(0) @binding(3) var<uniform> uni4: array<VSUniforms, 6>;
+    @group(4) @binding(1) var<uniform> uni1: f32;
+    @group(3) @binding(2) var<uniform> uni2: array<f32, 5>;
+    @group(2) @binding(3) var<uniform> uni3: VSUniforms;
+    @group(1) @binding(4) var<uniform> uni4: array<VSUniforms, 6>;
         `;
-        const defs = makeShaderDataDefinitions(shader).uniforms;
+        const d = makeShaderDataDefinitions(shader);
+        console.log(d);
+        const defs = d.uniforms;
         assertEqual(defs.uni1.type, 'f32');
         assertFalsy(defs.uni1.numElements);
         assertEqual(defs.uni2.type, 'f32');
@@ -27,6 +29,16 @@ describe('webgpu-utils-tests', () => {
         assertFalsy(defs.uni3.fields.foo.numElements);
         assertEqual(defs.uni4.length, 6);
         assertEqual(defs.uni4[0].fields.foo.type, 'u32');
+
+        assertEqual(defs.uni1.binding, 1);
+        assertEqual(defs.uni2.binding, 2);
+        assertEqual(defs.uni3.binding, 3);
+        assertEqual(defs.uni4.binding, 4);
+
+        assertEqual(defs.uni1.group, 4);
+        assertEqual(defs.uni2.group, 3);
+        assertEqual(defs.uni3.group, 2);
+        assertEqual(defs.uni4.group, 1);
     });
 
     it('generates views from shader source', () => {

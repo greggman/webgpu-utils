@@ -52,6 +52,11 @@ export interface StructDefinition {
     size: number;
 }
 
+export interface StorageDefinition extends StructDefinition {
+    binding: number;
+    group: number;
+}
+
 export type IntrinsicDefinition = {
     offset: number;
     size: number;
@@ -271,6 +276,10 @@ export type StructDefinitions = {
     [x: string]: StructDefinition;
 }
 
+export type StorageDefinitions = {
+    [x: string]: StorageDefinition;
+}
+
 function addMember(reflect: WgslReflect, m: Member, offset: number): [string, StructDefinition | IntrinsicDefinition | IntrinsicDefinition[] | StructDefinition[]] {
     if (m.isArray) {
         if (m.isStruct) {
@@ -320,8 +329,8 @@ function addMembers(reflect: WgslReflect, members: Member[], size: number, offse
 }
 
 type ShaderDataDefinitions = {
-    uniforms: StructDefinitions,
-    storages: StructDefinitions,
+    uniforms: StorageDefinitions,
+    storages: StorageDefinitions,
     structs: StructDefinitions,
 };
 
@@ -368,12 +377,18 @@ export function makeShaderDataDefinitions(code: string): ShaderDataDefinitions {
 
     const uniforms = Object.fromEntries(reflect.uniforms.map(uniform => {
         const info = reflect.getUniformBufferInfo(uniform);
-        return [uniform.name, addMember(reflect, info, 0)[1]];
+        const member = addMember(reflect, info, 0)[1] as StorageDefinition;
+        member.binding = info.binding;
+        member.group = info.group;
+        return [uniform.name, member];
     }));
 
     const storages = Object.fromEntries(reflect.storage.map(uniform => {
         const info = reflect.getStorageBufferInfo(uniform);
-        return [uniform.name, addMember(reflect, info, 0)[1]];
+        const member = addMember(reflect, info, 0)[1] as StorageDefinition;
+        member.binding = info.binding;
+        member.group = info.group;
+        return [uniform.name, member];
     }));
 
     return {
@@ -403,7 +418,7 @@ function getView<T extends TypedArray>(arrayBuffer: ArrayBuffer, Ctor: TypedArra
         view = new Ctor(arrayBuffer);
         viewsByCtor.set(Ctor, view);
     }
-    return view;
+    return view as T;
 }
 
 export function setStructuredValues(fieldDef: FieldDefinition, data: any, arrayBuffer: ArrayBuffer, offset = 0) {

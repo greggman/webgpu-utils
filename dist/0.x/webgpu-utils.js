@@ -2557,11 +2557,17 @@
         }));
         const uniforms = Object.fromEntries(reflect.uniforms.map(uniform => {
             const info = reflect.getUniformBufferInfo(uniform);
-            return [uniform.name, addMember(reflect, info, 0)[1]];
+            const member = addMember(reflect, info, 0)[1];
+            member.binding = info.binding;
+            member.group = info.group;
+            return [uniform.name, member];
         }));
         const storages = Object.fromEntries(reflect.storage.map(uniform => {
             const info = reflect.getStorageBufferInfo(uniform);
-            return [uniform.name, addMember(reflect, info, 0)[1]];
+            const member = addMember(reflect, info, 0)[1];
+            member.binding = info.binding;
+            member.group = info.group;
+            return [uniform.name, member];
         }));
         return {
             structs,

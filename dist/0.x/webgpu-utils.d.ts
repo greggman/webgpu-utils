@@ -14,6 +14,10 @@ export interface StructDefinition {
     fields: FieldDefinitions;
     size: number;
 }
+export interface StorageDefinition extends StructDefinition {
+    binding: number;
+    group: number;
+}
 export declare type IntrinsicDefinition = {
     offset: number;
     size: number;
@@ -102,9 +106,12 @@ export declare function makeStructuredView(structDef: StructDefinition, arrayBuf
 export declare type StructDefinitions = {
     [x: string]: StructDefinition;
 };
+export declare type StorageDefinitions = {
+    [x: string]: StorageDefinition;
+};
 declare type ShaderDataDefinitions = {
-    uniforms: StructDefinitions;
-    storages: StructDefinitions;
+    uniforms: StorageDefinitions;
+    storages: StorageDefinitions;
     structs: StructDefinitions;
 };
 /**
