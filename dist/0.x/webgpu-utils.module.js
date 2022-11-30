@@ -1,4 +1,4 @@
-/* webgpu-utils@0.0.1, license MIT */
+/* webgpu-utils@0.1.0, license MIT */
 /**
  * @author Brendan Duncan / https://github.com/brendan-duncan
  */
@@ -2386,26 +2386,21 @@ function makeTypedArrayViews(structDef, arrayBuffer, offset) {
         else if (typeof structDef === 'string') {
             throw Error('unreachable');
         }
-        else if (structDef.fields) {
-            const views = {};
-            for (const [name, def] of Object.entries(structDef.fields)) {
-                //const { size, offset, type } = def as IntrinsicDefinition;
-                views[name] = makeViews(def);
-                //if (typeof type === 'string') {
-                //    const { view } = typeInfo[type];
-                //    const numElements = size / view.BYTES_PER_ELEMENT;
-                //    views[name] = new view(buffer, baseOffset + offset, numElements);
-                //} else {
-                //    views[name] = makeViews(def as StructDefinition);
-                //}
-            }
-            return views;
-        }
         else {
-            const { size, offset, type } = structDef;
-            const { View } = typeInfo[type];
-            const numElements = size / View.BYTES_PER_ELEMENT;
-            return new View(buffer, baseOffset + offset, numElements);
+            const fields = structDef.fields;
+            if (fields) {
+                const views = {};
+                for (const [name, def] of Object.entries(fields)) {
+                    views[name] = makeViews(def);
+                }
+                return views;
+            }
+            else {
+                const { size, offset, type } = structDef;
+                const { View } = typeInfo[type];
+                const numElements = size / View.BYTES_PER_ELEMENT;
+                return new View(buffer, baseOffset + offset, numElements);
+            }
         }
     };
     return { views: makeViews(structDef), arrayBuffer: buffer };
