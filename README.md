@@ -9,7 +9,7 @@
 As I do more WebGPU I find I need more and more helpers to make things
 less tedious. These are the result. I expect I'll add more over time.
 
-## Create easy to set uniform `ArrayBuffer` views.
+## Create easy to set uniform and storage `ArrayBuffer` views.
 
 Example:
 
