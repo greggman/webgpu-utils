@@ -1,3 +1,4 @@
+import terser from '@rollup/plugin-terser';
 import typescript from '@rollup/plugin-typescript';
 import fs from 'fs';
 
@@ -33,5 +34,21 @@ export default [
             },
         ],
         plugins,
+    },
+    {
+        input: 'src/webgpu-utils.ts',
+        output: [
+            {
+                name: 'webgpuUtils',
+                file: 'dist/0.x/webgpu-utils.min.js',
+                format: 'umd',
+                sourcemap: true,
+                banner,
+            },
+        ],
+        plugins: [
+            ...plugins,
+            terser(),
+        ],
     },
 ];
