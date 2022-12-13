@@ -2,11 +2,16 @@
 
 - [ ] handle without views via index
 - [ ] make defs smaller (don't expand arrays)
-- [ ] handle sub setting `set('foo.bar', value);
-
+- [ ] add group/binding map
 - [ ] check makeStructuredView.set doesn't conflict with field named `'set'`
+- [ ] allow querying offset and range for manual setting
+- [ ] show creating your own spec.
 
 ## Done
+
+- [X] handle sub setting `set('foo.bar', value);
+
+  This already works. you can do `set({foo: {bar: value}})`;
 
 - [X] Uniform and Storage defs should be different than Structure defs
 
