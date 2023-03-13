@@ -1,7 +1,7 @@
 /* global mocha */
 import './tests/webgpu-utils-test.js';
 
-const settings = Object.fromEntries(new URLSearchParams(window.location.search).entries());
+const settings = typeof window === 'undefined' ? {} : Object.fromEntries(new URLSearchParams(window.location.search).entries());
 if (settings.reporter) {
   mocha.reporter(settings.reporter);
 }

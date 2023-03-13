@@ -6,9 +6,7 @@ export declare type SizeAlign = {
 // opaque type
 export declare interface AST {
   name?: string;
-  format?: {
-    name?: string;
-  };
+  format?: AST;
 };
 
 export declare type Member = {

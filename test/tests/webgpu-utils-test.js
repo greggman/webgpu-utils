@@ -19,7 +19,6 @@ describe('webgpu-utils-tests', () => {
     @group(1) @binding(4) var<uniform> uni4: array<VSUniforms, 6>;
         `;
         const d = makeShaderDataDefinitions(shader);
-        console.log(d);
         const defs = d.uniforms;
         assertEqual(defs.uni1.type, 'f32');
         assertFalsy(defs.uni1.numElements);
@@ -189,11 +188,15 @@ describe('webgpu-utils-tests', () => {
         lineInfo: array<LineInfo, 5>,
         color: vec4<f32>,
         lightDirection: array<vec3<f32>, 6>,
+        kernel: vec4<u32>,
+        colorMult: vec4f,
+        colorMultU: vec4u,
+        colorMultI: vec4i,
     };
         `;
         const defs = makeShaderDataDefinitions(shader).structs;
         const {views, set, arrayBuffer} = makeStructuredView(defs.VSUniforms);
-        assertEqual(arrayBuffer.byteLength, (16 + 3 * 4 + 6 * 5 + 2 + 4 + (3 + 1) * 6) * 4);
+        assertEqual(arrayBuffer.byteLength, (16 + 3 * 4 + 6 * 5 + 2 + 4 + (3 + 1) * 6 + 4 + 4 + 4 + 4) * 4);
 
         assertTruthy(views.worldViewProjection instanceof Float32Array);
         assertEqual(views.worldViewProjection.length, 16);
@@ -202,6 +205,10 @@ describe('webgpu-utils-tests', () => {
         assertTruthy(views.lightDirection instanceof Float32Array);
         assertEqual(views.lightDirection.length, 6 * 4);
         assertEqual(views.lightDirection.byteOffset, (16 + 3 * 4 + 6 * 5 + 2 + 4) * 4);
+
+        assertTruthy(views.colorMult instanceof Float32Array);
+        assertTruthy(views.colorMultU instanceof Uint32Array);
+        assertTruthy(views.colorMultI instanceof Int32Array);
 
         set({
             worldViewProjection: [1, 2, 3, 4, 11, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34],
@@ -226,6 +233,7 @@ describe('webgpu-utils-tests', () => {
                 501, 502, 503, 0,
                 401, 402, 403, 0,
             ]),
+            colorMultI: [51, 52, 53, -54],
         });
 
         assertArrayEqual(views.worldViewProjection, [1, 2, 3, 4, 11, 12, 13, 14, 21, 22, 23, 24, 31, 32, 33, 34]);
@@ -258,6 +266,7 @@ describe('webgpu-utils-tests', () => {
                 501, 502, 503, 0,
                 401, 402, 403, 0,
             ]);
+        assertArrayEqual(views.colorMultI, [51, 52, 53, -54]);
     });
 
     it('makes arrays of base types the same for uniforms and structures', () => {
