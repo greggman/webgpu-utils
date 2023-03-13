@@ -1,6 +1,6 @@
 # webgpu-utils
 
-[![NPM Package][npm]][npm-url]
+![](https://img.shields.io/npm/v/webgpu-utils)
 
 ## [Docs](docs)
 
