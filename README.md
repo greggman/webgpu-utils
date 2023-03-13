@@ -2,7 +2,7 @@
 
 ![](https://img.shields.io/npm/v/webgpu-utils)
 
-## [Docs](docs)
+## [Docs](https://greggman.github.io/webgpu-utils)
 
 ## Random useful things for WebGPU
 
