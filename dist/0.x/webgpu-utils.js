@@ -1,4 +1,4 @@
-/* webgpu-utils@0.2.2, license MIT */
+/* webgpu-utils@0.2.3, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -2824,7 +2824,7 @@
         vec4f: { numElements: 4, align: 16, size: 16, type: 'f32', View: Float32Array },
         vec4h: { numElements: 4, align: 8, size: 8, type: 'u16', View: Uint16Array },
         // AlignOf(vecR)	SizeOf(array<vecR, C>)
-        mat2x2f: { numElements: 8, align: 8, size: 16, type: 'f32', View: Float32Array },
+        mat2x2f: { numElements: 4, align: 8, size: 16, type: 'f32', View: Float32Array },
         mat2x2h: { numElements: 4, align: 4, size: 8, type: 'u16', View: Uint16Array },
         mat3x2f: { numElements: 6, align: 8, size: 24, type: 'f32', View: Float32Array },
         mat3x2h: { numElements: 6, align: 4, size: 12, type: 'u16', View: Uint16Array },
@@ -2836,8 +2836,8 @@
         mat3x3h: { numElements: 12, align: 8, size: 24, pad: [3, 1], type: 'u16', View: Uint16Array },
         mat4x3f: { numElements: 16, align: 16, size: 64, pad: [3, 1], type: 'f32', View: Float32Array },
         mat4x3h: { numElements: 16, align: 8, size: 32, pad: [3, 1], type: 'u16', View: Uint16Array },
-        mat2x4f: { numElements: 16, align: 16, size: 32, type: 'f32', View: Float32Array },
-        mat2x4h: { numElements: 16, align: 8, size: 16, type: 'u16', View: Uint16Array },
+        mat2x4f: { numElements: 8, align: 16, size: 32, type: 'f32', View: Float32Array },
+        mat2x4h: { numElements: 8, align: 8, size: 16, type: 'u16', View: Uint16Array },
         mat3x4f: { numElements: 12, align: 16, size: 48, pad: [3, 1], type: 'f32', View: Float32Array },
         mat3x4h: { numElements: 12, align: 8, size: 24, pad: [3, 1], type: 'u16', View: Uint16Array },
         mat4x4f: { numElements: 16, align: 16, size: 64, type: 'f32', View: Float32Array },
