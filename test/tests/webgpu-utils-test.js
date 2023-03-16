@@ -495,4 +495,38 @@ describe('webgpu-utils-tests', () => {
         }
     });
 
+   it('generates correct offsets for vec3 arrays vs vec3 fields', () => {
+        const shader = `
+    struct VSUniforms {
+        v3f: vec3f,
+        f1: f32,  // this should be at offset 12
+        v3fArr: array<vec3f, 1>,
+        f2: f32,  // this should be at offset 32
+    };
+
+    @group(0) @binding(0) var<uniform> vsUniforms: VSUniforms;
+        `;
+        const defs = makeShaderDataDefinitions(shader);
+        const {views, arrayBuffer} = makeStructuredView(defs.structs.VSUniforms);
+        assertEqual(arrayBuffer.byteLength, (
+            3 + // vec3f
+            1 + // f32
+            4 + // array<vec3f, 1>
+            1 + // f32
+            3 + // pad
+            0) * 4);
+
+        assertEqual(views.v3f.length, 3);
+        assertEqual(views.v3f.byteOffset, 0);
+
+        assertEqual(views.f1.length, 1);
+        assertEqual(views.f1.byteOffset, 12);
+
+        assertEqual(views.v3fArr.length, 4);
+        assertEqual(views.v3fArr.byteOffset, 16);
+
+        assertEqual(views.f2.length, 1);
+        assertEqual(views.f2.byteOffset, 32);
+    });
+
 });
