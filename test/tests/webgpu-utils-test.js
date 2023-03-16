@@ -40,6 +40,80 @@ describe('webgpu-utils-tests', () => {
         assertEqual(defs.uni4.group, 1);
     });
 
+    it('generates handles build in type aliases', () => {
+        const shader = `
+    struct VertexDesc {
+        offset: u32,
+        stride: u32,
+        size: u32,
+        padding: u32,
+    };
+
+    struct LineInfo {
+        triDiv: u32,
+        triMul: u32,
+        midMod: u32,
+        midDiv: u32,
+        oddMod: u32,
+        triMod: u32,
+        pad0: u32,
+        pad1: u32,
+    };
+
+    struct VSUniforms {
+        worldViewProjection: mat4x4f,
+        position: VertexDesc,
+        lineInfo: LineInfo,
+        color: vec4f,
+        lightDirection: vec3f,
+    };
+
+    @group(0) @binding(0) var<uniform> vsUniforms: VSUniforms;
+    @group(0) @binding(1) var<storage> vertData: array<f32>;
+
+    fn getVert(desc: VertexDesc, index: u32) -> vec4f {
+        var v = vec4<f32>(0, 0, 0, 1);
+        let offset = desc.offset + index * desc.stride;
+        for (var i: u32 = 0u; i < desc.size; i += 1u) {
+            v[i] = vertData[offset + i];
+        }
+        return v;
+    }
+
+    struct MyVSOutput {
+        @builtin(position) position: vec4f,
+    };
+
+    @vertex
+    fn myVSMain(@builtin(vertex_index) vertex_index: u32) -> MyVSOutput {
+        var vsOut: MyVSOutput;
+        var i = (vertex_index / vsUniforms.lineInfo.triDiv) * vsUniforms.lineInfo.triMul +
+                ((vertex_index % vsUniforms.lineInfo.midMod) / vsUniforms.lineInfo.midDiv +
+                (vertex_index % vsUniforms.lineInfo.oddMod)) % vsUniforms.lineInfo.triMod;
+        let position = getVert(vsUniforms.position, i);
+        vsOut.position = vsUniforms.worldViewProjection * position;
+        return vsOut;
+    }
+
+    @fragment
+    fn myFSMain(v: MyVSOutput) -> @location(0) vec4f {
+        return vsUniforms.color + vec4(vsUniforms.lightDirection, 0) * 0.0;
+    }
+        `;
+        const defs = makeShaderDataDefinitions(shader);
+        const {views, arrayBuffer} = makeStructuredView(defs.structs.VSUniforms);
+        assertEqual(arrayBuffer.byteLength, (16 + 4 + 8 + 4 + (3 + 1)) * 4);
+
+        assertTruthy(views.worldViewProjection instanceof Float32Array);
+        assertEqual(views.worldViewProjection.length, 16);
+        assertEqual(views.worldViewProjection.byteOffset, 0);
+
+        assertTruthy(views.lightDirection instanceof Float32Array);
+        assertEqual(views.lightDirection.length, 3);
+        assertEqual(views.lightDirection.byteOffset, (16 + 4 + 8 + 4) * 4);
+
+    });
+
     it('generates views from shader source', () => {
         const shader = `
     struct VertexDesc {
@@ -113,6 +187,7 @@ describe('webgpu-utils-tests', () => {
         assertEqual(views.lightDirection.byteOffset, (16 + 4 + 8 + 4) * 4);
 
     });
+
 
     it('generates views from structure source', () => {
         const shader = `
