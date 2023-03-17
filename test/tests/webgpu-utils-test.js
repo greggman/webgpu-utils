@@ -588,6 +588,24 @@ describe('webgpu-utils-tests', () => {
         */
     });
 
+   it('generates handles size and align attributes', () => {
+        const shader = `
+    struct VSUniforms {
+        f1: f32,
+        @align(32) f2: f32,
+    };
+    @group(0) @binding(0) var<uniform> s: VSUniforms;
+        `;
+        const defs = makeShaderDataDefinitions(shader);
+        const {views, arrayBuffer} = makeStructuredView(defs.uniforms.s);
 
+        // because Max(align(member))
+        assertEqual(arrayBuffer.byteLength, 64);
+
+        assertEqual(views.f1.length, 1);
+        assertEqual(views.f1.byteOffset, 0);
+        assertEqual(views.f2.length, 1);
+        assertEqual(views.f2.byteOffset, 32);
+   });
 });
 
