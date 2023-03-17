@@ -1,6 +1,5 @@
 # To Do
 
-- [ ] handle @align @size attributes
 - [ ] handle that alignment on storage is different than uniform
 - [ ] handle without views via index
 - [ ] make defs smaller (don't expand arrays)
@@ -11,6 +10,7 @@
 
 ## Done
 
+- [X] handle @align @size attributes
 - [X] handle sub setting `set('foo.bar', value);
 
   This already works. you can do `set({foo: {bar: value}})`;
