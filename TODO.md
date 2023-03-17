@@ -1,5 +1,7 @@
 # To Do
 
+- [ ] handle @align @size attributes
+- [ ] handle that alignment on storage is different than uniform
 - [ ] handle without views via index
 - [ ] make defs smaller (don't expand arrays)
 - [ ] add group/binding map

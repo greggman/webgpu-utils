@@ -497,17 +497,75 @@ describe('webgpu-utils-tests', () => {
 
    it('generates correct offsets for vec3 arrays vs vec3 fields', () => {
         const shader = `
-    struct VSUniforms {
-        v3f: vec3f,
-        f1: f32,  // this should be at offset 12
-        v3fArr: array<vec3f, 1>,
-        f2: f32,  // this should be at offset 32
-    };
+      struct Ex4a {
+        velocity: vec3f,
+      };
 
-    @group(0) @binding(0) var<uniform> vsUniforms: VSUniforms;
+      struct Ex4 {
+        orientation: vec3f,
+        size: f32,
+        direction: array<vec3f, 1>,
+        scale: f32,
+        info: Ex4a,
+        friction: f32,
+      };
+    @group(0) @binding(0) var<uniform> vsUniforms: Ex4;
         `;
         const defs = makeShaderDataDefinitions(shader);
-        const {views, arrayBuffer} = makeStructuredView(defs.structs.VSUniforms);
+        const {views, arrayBuffer} = makeStructuredView(defs.uniforms.vsUniforms);
+        assertEqual(arrayBuffer.byteLength, (
+            3 + // vec3f
+            1 + // f32
+            4 + // array<vec3f, 1>
+            1 + // f32
+            3 + // pad
+            3 + // vec3
+            1 + // pad
+            1 + // f32
+            3 + // pad
+            0) * 4);
+
+        assertEqual(views.orientation.length, 3);
+        assertEqual(views.orientation.byteOffset, 0);
+
+        assertEqual(views.size.length, 1);
+        assertEqual(views.size.byteOffset, 12);
+
+        assertEqual(views.direction.length, 4);
+        assertEqual(views.direction.byteOffset, 16);
+
+        assertEqual(views.scale.length, 1);
+        assertEqual(views.scale.byteOffset, 32);
+
+        assertEqual(views.info.velocity.length, 3);
+        assertEqual(views.info.velocity.byteOffset, 48);
+
+        assertEqual(views.friction.length, 1);
+        assertEqual(views.friction.byteOffset, 64);
+    });
+
+   it('generates has different sizes for arrays/structs/base', () => {
+        const shader = `
+    struct VSUniforms {
+        f1: f32,
+    };
+    struct VSUniforms2 {
+        a1: array<vec3f, 1>,
+        f1: f32,
+    };
+    @group(0) @binding(0) var<uniform> s: VSUniforms;
+    @group(0) @binding(0) var<uniform> a: array<f32, 1>;
+    @group(0) @binding(0) var<uniform> b: f32;
+    @group(0) @binding(0) var<uniform> s2: VSUniforms2;
+        `;
+        const defs = makeShaderDataDefinitions(shader);
+        for (const [name, uniform] of Object.entries(defs.uniforms)) {
+            const {views, arrayBuffer} = makeStructuredView(uniform);
+            console.log(name);
+            console.log(views);
+            console.log(arrayBuffer);
+        }
+        /*
         assertEqual(arrayBuffer.byteLength, (
             3 + // vec3f
             1 + // f32
@@ -527,6 +585,9 @@ describe('webgpu-utils-tests', () => {
 
         assertEqual(views.f2.length, 1);
         assertEqual(views.f2.byteOffset, 32);
+        */
     });
 
+
 });
+
