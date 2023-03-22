@@ -1,4 +1,4 @@
-/* webgpu-utils@0.2.3, license MIT */
+/* webgpu-utils@0.2.4, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -2876,6 +2876,15 @@
         'mat4x4<f32>': b.mat4x4f,
         'mat4x4<f16>': b.mat4x4h,
     };
+    // This needs to be fixed! 😱
+    function getSizeOfStructDef(fieldDef) {
+        if (Array.isArray(fieldDef)) {
+            return fieldDef.length * getSizeOfStructDef(fieldDef[0]);
+        }
+        else {
+            return fieldDef.size;
+        }
+    }
     /**
      * Creates a set of named TypedArray views on an ArrayBuffer
      * @param structDef Definition of the various types of views.
@@ -2885,7 +2894,7 @@
      */
     function makeTypedArrayViews(structDef, arrayBuffer, offset) {
         const baseOffset = offset || 0;
-        const buffer = arrayBuffer || new ArrayBuffer(structDef.size);
+        const buffer = arrayBuffer || new ArrayBuffer(getSizeOfStructDef(structDef));
         const makeViews = (structDef) => {
             if (Array.isArray(structDef)) {
                 return structDef.map(elemDef => makeViews(elemDef));
