@@ -165,6 +165,15 @@ export type ArrayBufferViews = {
     arrayBuffer: ArrayBuffer;
 }
 
+// This needs to be fixed! 😱
+function getSizeOfStructDef(fieldDef: FieldDefinition): number {
+  if (Array.isArray(fieldDef)) {
+    return fieldDef.length * getSizeOfStructDef(fieldDef[0]);
+  } else {
+    return fieldDef.size;
+  }
+}
+
 /**
  * Creates a set of named TypedArray views on an ArrayBuffer
  * @param structDef Definition of the various types of views.
@@ -174,7 +183,7 @@ export type ArrayBufferViews = {
  */
 export function makeTypedArrayViews(structDef: StructDefinition, arrayBuffer?: ArrayBuffer, offset?: number): ArrayBufferViews {
     const baseOffset = offset || 0;
-    const buffer = arrayBuffer || new ArrayBuffer(structDef.size);
+    const buffer = arrayBuffer || new ArrayBuffer(getSizeOfStructDef(structDef));
 
     const makeViews = (structDef: FieldDefinition): TypedArrayOrViews => {
         if (Array.isArray(structDef)) {

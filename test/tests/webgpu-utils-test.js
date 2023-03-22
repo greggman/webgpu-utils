@@ -607,5 +607,45 @@ describe('webgpu-utils-tests', () => {
         assertEqual(views.f2.length, 1);
         assertEqual(views.f2.byteOffset, 32);
    });
+
+   it('generates uniform array of vec2f', () => {
+        const shader = `
+    struct Vert {
+        position: vec2f,
+    };
+    @group(0) @binding(0) var<uniform> verts: array<Vert, 3>;
+        `;
+        const defs = makeShaderDataDefinitions(shader);
+        const {views, arrayBuffer} = makeStructuredView(defs.uniforms.verts);
+
+        assertEqual(arrayBuffer.byteLength, 6 * 4);
+
+        assertEqual(views[0].position.length, 2);
+        assertEqual(views[0].position.byteOffset, 0);
+        assertEqual(views[1].position.length, 2);
+        assertEqual(views[1].position.byteOffset, 8);
+        assertEqual(views[2].position.length, 2);
+        assertEqual(views[2].position.byteOffset, 16);
+   });
+
+   it('generates storage array of vec2f', () => {
+        const shader = `
+    struct Vert {
+        position: vec2f,
+    };
+    @group(0) @binding(0) var<storage, read> verts: array<Vert, 3>;
+        `;
+        const defs = makeShaderDataDefinitions(shader);
+        const {views, arrayBuffer} = makeStructuredView(defs.storages.verts);
+
+        assertEqual(arrayBuffer.byteLength, 6 * 4);
+
+        assertEqual(views[0].position.length, 2);
+        assertEqual(views[0].position.byteOffset, 0);
+        assertEqual(views[1].position.length, 2);
+        assertEqual(views[1].position.byteOffset, 8);
+        assertEqual(views[2].position.length, 2);
+        assertEqual(views[2].position.byteOffset, 16);
+   });
 });
 
