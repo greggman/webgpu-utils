@@ -547,15 +547,15 @@ describe('webgpu-utils-tests', () => {
     it('generates has different sizes for arrays/structs/base', () => {
         const shader = `
     struct VSUniforms {
-        f1: f32,
+        f1: vec3f,
     };
     struct VSUniforms2 {
         a1: array<vec3f, 1>,
-        f1: f32,
+        f1: vec3f,
     };
     @group(0) @binding(0) var<uniform> s: VSUniforms;
-    @group(0) @binding(0) var<uniform> a: array<f32, 1>;
-    @group(0) @binding(0) var<uniform> b: f32;
+    @group(0) @binding(0) var<uniform> a: array<vec3f, 1>;
+    @group(0) @binding(0) var<uniform> b: vec3f;
     @group(0) @binding(0) var<uniform> s2: VSUniforms2;
         `;
         const defs = makeShaderDataDefinitions(shader);
@@ -563,9 +563,9 @@ describe('webgpu-utils-tests', () => {
         for (const [name, uniform] of Object.entries(defs.uniforms)) {
             views[name] = makeStructuredView(uniform);
         }
-        assertEqual(views.a.arrayBuffer.byteLength, 4);
-        assertEqual(views.b.arrayBuffer.byteLength, 4);
-        assertEqual(views.s.arrayBuffer.byteLength, 4);
+        assertEqual(views.a.arrayBuffer.byteLength, 16);
+        assertEqual(views.b.arrayBuffer.byteLength, 12);
+        assertEqual(views.s.arrayBuffer.byteLength, 16);
         assertEqual(views.s2.arrayBuffer.byteLength, 32);
     });
 
