@@ -559,30 +559,14 @@ describe('webgpu-utils-tests', () => {
     @group(0) @binding(0) var<uniform> s2: VSUniforms2;
         `;
         const defs = makeShaderDataDefinitions(shader);
-        /*
+        const views = {};
         for (const [name, uniform] of Object.entries(defs.uniforms)) {
-            const {views, arrayBuffer} = makeStructuredView(uniform);
+            views[name] = makeStructuredView(uniform);
         }
-        assertEqual(arrayBuffer.byteLength, (
-            3 + // vec3f
-            1 + // f32
-            4 + // array<vec3f, 1>
-            1 + // f32
-            3 + // pad
-            0) * 4);
-
-        assertEqual(views.v3f.length, 3);
-        assertEqual(views.v3f.byteOffset, 0);
-
-        assertEqual(views.f1.length, 1);
-        assertEqual(views.f1.byteOffset, 12);
-
-        assertEqual(views.v3fArr.length, 4);
-        assertEqual(views.v3fArr.byteOffset, 16);
-
-        assertEqual(views.f2.length, 1);
-        assertEqual(views.f2.byteOffset, 32);
-        */
+        assertEqual(views.a.arrayBuffer.byteLength, 4);
+        assertEqual(views.b.arrayBuffer.byteLength, 4);
+        assertEqual(views.s.arrayBuffer.byteLength, 4);
+        assertEqual(views.s2.arrayBuffer.byteLength, 32);
     });
 
     it('generates handles size and align attributes', () => {
