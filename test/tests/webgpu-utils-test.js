@@ -495,7 +495,7 @@ describe('webgpu-utils-tests', () => {
         }
     });
 
-   it('generates correct offsets for vec3 arrays vs vec3 fields', () => {
+    it('generates correct offsets for vec3 arrays vs vec3 fields', () => {
         const shader = `
       struct Ex4a {
         velocity: vec3f,
@@ -544,7 +544,7 @@ describe('webgpu-utils-tests', () => {
         assertEqual(views.friction.byteOffset, 64);
     });
 
-   it('generates has different sizes for arrays/structs/base', () => {
+    it('generates has different sizes for arrays/structs/base', () => {
         const shader = `
     struct VSUniforms {
         f1: f32,
@@ -559,13 +559,10 @@ describe('webgpu-utils-tests', () => {
     @group(0) @binding(0) var<uniform> s2: VSUniforms2;
         `;
         const defs = makeShaderDataDefinitions(shader);
+        /*
         for (const [name, uniform] of Object.entries(defs.uniforms)) {
             const {views, arrayBuffer} = makeStructuredView(uniform);
-            console.log(name);
-            console.log(views);
-            console.log(arrayBuffer);
         }
-        /*
         assertEqual(arrayBuffer.byteLength, (
             3 + // vec3f
             1 + // f32
@@ -588,7 +585,7 @@ describe('webgpu-utils-tests', () => {
         */
     });
 
-   it('generates handles size and align attributes', () => {
+    it('generates handles size and align attributes', () => {
         const shader = `
     struct VSUniforms {
         f1: f32,
@@ -606,9 +603,9 @@ describe('webgpu-utils-tests', () => {
         assertEqual(views.f1.byteOffset, 0);
         assertEqual(views.f2.length, 1);
         assertEqual(views.f2.byteOffset, 32);
-   });
+    });
 
-   it('generates uniform array of vec2f', () => {
+    it('generates uniform array of vec2f', () => {
         const shader = `
     struct Vert {
         position: vec2f,
@@ -626,7 +623,7 @@ describe('webgpu-utils-tests', () => {
         assertEqual(views[1].position.byteOffset, 8);
         assertEqual(views[2].position.length, 2);
         assertEqual(views[2].position.byteOffset, 16);
-   });
+    });
 
    it('generates storage array of vec2f', () => {
         const shader = `
@@ -646,6 +643,49 @@ describe('webgpu-utils-tests', () => {
         assertEqual(views[1].position.byteOffset, 8);
         assertEqual(views[2].position.length, 2);
         assertEqual(views[2].position.byteOffset, 16);
-   });
+    });
+
+    /*
+    it('works with alias', () => {
+      const code = `
+        alias material_index = u32;
+        alias color = vec3f;
+
+        struct Material {
+            index: material_type,
+            diffuse: color,
+        };
+
+        @group(0) @binding(1) var<storage> material: Material;
+      `;
+      const d = makeShaderDataDefinitions(code);
+      const defs = d.storages;
+      assertTruthy(defs);
+      assertTruthy(defs.materials);
+      assertEqual(defs.material.size, 32);
+      assertEqual(defs.material.fields.index.offset, 0);
+      assertEqual(defs.material.fields.index.size, 4);
+      assertEqual(defs.material.fields.diffuse.offset, 16);
+      assertEqual(defs.material.fields.diffuse.size, 12);
+    });
+
+    it('works with const', () => {
+      const code = `
+        const MAX_LIGHTS = u32(sin(radians(90) * 3.0));
+
+        struct light {
+            color: vec4f,
+            direction: vec3f,
+        };
+
+        @group(0) @binding(1) var<storage> lights: array<light, MAX_LIGHTS>;
+      `;
+      const d = makeShaderDataDefinitions(code);
+      const defs = d.storages;
+      assertTruthy(defs);
+      assertTruthy(defs.lights);
+      assertEqual(defs.lights.length, 3);
+    });
+    */
 });
 
