@@ -40,7 +40,7 @@ describe('webgpu-utils-tests', () => {
         assertEqual(defs.uni4.group, 1);
     });
 
-    it('generates handles build in type aliases', () => {
+    it('generates handles built-in type aliases', () => {
         const shader = `
     struct VertexDesc {
         offset: u32,
@@ -629,7 +629,6 @@ describe('webgpu-utils-tests', () => {
         assertEqual(views[2].position.byteOffset, 16);
     });
 
-    /*
     it('works with alias', () => {
       const code = `
         alias material_index = u32;
@@ -670,6 +669,32 @@ describe('webgpu-utils-tests', () => {
       assertTruthy(defs.lights);
       assertEqual(defs.lights.length, 3);
     });
-    */
+
+    it('works with complex alias and const expressions', () => {
+        const code = `
+            alias foo = u32;
+            alias bar = foo;
+
+            struct Vehicle {
+              num_wheels: bar,
+              mass_kg: f32,
+            }
+
+            alias Car = Vehicle;
+
+            struct Ship {
+                cars: array<Car, 4>,
+            };
+
+            const a_bicycle = Car(2, 10.5);
+            const bike_num_wheels = a_bicycle.num_wheels;
+
+            struct Ocean {
+                things: array<Ship, a_bicycle.num_wheels>,
+            };
+        `;
+        const d = makeShaderDataDefinitions(code);
+        assertTruthy(d);
+    });
 });
 
