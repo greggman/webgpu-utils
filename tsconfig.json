@@ -5,8 +5,13 @@
     "module": "esnext",
     "outDir": "dist/1.x",
     "declaration": true,
+    "typeRoots": [
+      "./node_modules/@webgpu/types",
+      "./node_modules/@types",
+    ],
   },
-  "files": [
-    "src/webgpu-utils.ts",
+  "include": [
+    "src/**/*.ts",
+    ".eslintrc.cjs",
   ],
 }

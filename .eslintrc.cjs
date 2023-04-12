@@ -1,4 +1,4 @@
-/* global module */
+/* global module, __dirname */
 module.exports = {
     parser: '@typescript-eslint/parser',
     env: {
@@ -8,22 +8,24 @@ module.exports = {
     parserOptions: {
         sourceType: 'module',
         ecmaVersion: 2022,
-        ecmaFeatures: {
-            jsx: true,
-        },
+        tsconfigRootDir: __dirname,
+        project: ['./tsconfig.json'],
     },
     settings: {
         react: {
             version: 'detect', // Tells eslint-plugin-react to automatically detect the version of React to use
         },
     },
+    root: true,
     plugins: [
+        '@typescript-eslint',
         'eslint-plugin-html',
         'eslint-plugin-optional-comma-spacing',
         'eslint-plugin-one-variable-per-var',
         'eslint-plugin-require-trailing-comma',
     ],
     extends: [
+        'eslint:recommends',
         'plugin:@typescript-eslint/recommended', // Uses the recommended rules from the @typescript-eslint/eslint-plugin
     ],
     rules: {
@@ -78,7 +80,7 @@ module.exports = {
         'no-spaced-func': 2,
         'no-trailing-spaces': 2,
         'no-undef-init': 2,
-        'no-undef': 2,
+        //'no-undef': 2, // ts recommends this be off: https://typescript-eslint.io/linting/troubleshooting
         'no-underscore-dangle': 2,
         'no-unreachable': 2,
         'no-unused-expressions': 2,

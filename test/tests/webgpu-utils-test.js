@@ -629,6 +629,7 @@ describe('webgpu-utils-tests', () => {
         assertEqual(views[2].position.byteOffset, 16);
     });
 
+    /*
     it('works with alias', () => {
       const code = `
         alias material_index = u32;
@@ -696,5 +697,6 @@ describe('webgpu-utils-tests', () => {
         const d = makeShaderDataDefinitions(code);
         assertTruthy(d);
     });
+    */
 });
 

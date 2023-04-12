@@ -11,6 +11,9 @@ class Node {
     get astNodeType() {
         return "";
     }
+    evaluate() {
+        throw new Error("Cannot evaluate node");
+    }
 }
 /**
  * @class Statement
@@ -137,6 +140,9 @@ class Const extends Statement {
     }
     get astNodeType() {
         return "const";
+    }
+    evaluate() {
+        return this.value.evaluate();
     }
 }
 var IncrementOperator;
@@ -498,6 +504,28 @@ class CallExpr extends Expression {
     get astNodeType() {
         return "callExpr";
     }
+    evaluate() {
+        switch (this.name) {
+            case "sin":
+                return Math.sin(this.args[0].evaluate());
+            case "cos":
+                return Math.cos(this.args[0].evaluate());
+            case "tan":
+                return Math.tan(this.args[0].evaluate());
+            case "asin":
+                return Math.asin(this.args[0].evaluate());
+            case "acos":
+                return Math.acos(this.args[0].evaluate());
+            case "atan":
+                return Math.atan(this.args[0].evaluate());
+            case "radians":
+                return (this.args[0].evaluate() * Math.PI) / 180;
+            case "degrees":
+                return (this.args[0].evaluate() * 180) / Math.PI;
+            default:
+                throw new Error("Non const function: " + this.name);
+        }
+    }
 }
 /**
  * @class VariableExpr
@@ -514,6 +542,24 @@ class VariableExpr extends Expression {
     }
 }
 /**
+ * @class ConstExpr
+ * @extends Expression
+ * @category AST
+ */
+class ConstExpr extends Expression {
+    constructor(name, value) {
+        super();
+        this.name = name;
+        this.value = value;
+    }
+    get astNodeType() {
+        return "constExpr";
+    }
+    evaluate() {
+        return this.value;
+    }
+}
+/**
  * @class LiteralExpr
  * @extends Expression
  * @category AST
@@ -525,6 +571,9 @@ class LiteralExpr extends Expression {
     }
     get astNodeType() {
         return "literalExpr";
+    }
+    evaluate() {
+        return this.value;
     }
 }
 /**
@@ -556,6 +605,9 @@ class TypecastExpr extends Expression {
     get astNodeType() {
         return "typecastExpr";
     }
+    evaluate() {
+        return this.args[0].evaluate();
+    }
 }
 /**
  * @class GroupingExpr
@@ -569,6 +621,9 @@ class GroupingExpr extends Expression {
     }
     get astNodeType() {
         return "groupExpr";
+    }
+    evaluate() {
+        return this.contents[0].evaluate();
     }
 }
 /**
@@ -585,6 +640,7 @@ class Operator extends Expression {
  * @class UnaryOperator
  * @extends Operator
  * @category AST
+ * @property {string} operator +, -, !, ~
  */
 class UnaryOperator extends Operator {
     constructor(operator, right) {
@@ -595,11 +651,26 @@ class UnaryOperator extends Operator {
     get astNodeType() {
         return "unaryOp";
     }
+    evaluate() {
+        switch (this.operator) {
+            case "+":
+                return this.right.evaluate();
+            case "-":
+                return -this.right.evaluate();
+            case "!":
+                return this.right.evaluate() ? 0 : 1;
+            case "~":
+                return ~this.right.evaluate();
+            default:
+                throw new Error("Unknown unary operator: " + this.operator);
+        }
+    }
 }
 /**
  * @class BinaryOperator
  * @extends Operator
  * @category AST
+ * @property {string} operator +, -, *, /, %, ==, !=, <, >, <=, >=, &&, ||
  */
 class BinaryOperator extends Operator {
     constructor(operator, left, right) {
@@ -610,6 +681,38 @@ class BinaryOperator extends Operator {
     }
     get astNodeType() {
         return "binaryOp";
+    }
+    evaluate() {
+        switch (this.operator) {
+            case "+":
+                return this.left.evaluate() + this.right.evaluate();
+            case "-":
+                return this.left.evaluate() - this.right.evaluate();
+            case "*":
+                return this.left.evaluate() * this.right.evaluate();
+            case "/":
+                return this.left.evaluate() / this.right.evaluate();
+            case "%":
+                return this.left.evaluate() % this.right.evaluate();
+            case "==":
+                return this.left.evaluate() == this.right.evaluate() ? 1 : 0;
+            case "!=":
+                return this.left.evaluate() != this.right.evaluate() ? 1 : 0;
+            case "<":
+                return this.left.evaluate() < this.right.evaluate() ? 1 : 0;
+            case ">":
+                return this.left.evaluate() > this.right.evaluate() ? 1 : 0;
+            case "<=":
+                return this.left.evaluate() <= this.right.evaluate() ? 1 : 0;
+            case ">=":
+                return this.left.evaluate() >= this.right.evaluate() ? 1 : 0;
+            case "&&":
+                return this.left.evaluate() && this.right.evaluate() ? 1 : 0;
+            case "||":
+                return this.left.evaluate() || this.right.evaluate() ? 1 : 0;
+            default:
+                throw new Error(`Unknown operator ${this.operator}`);
+        }
     }
 }
 /**
@@ -827,6 +930,7 @@ TokenTypes.keywords = {
     storage: new TokenType("storage", TokenClass.keyword, "storage"),
     switch: new TokenType("switch", TokenClass.keyword, "switch"),
     true: new TokenType("true", TokenClass.keyword, "true"),
+    alias: new TokenType("alias", TokenClass.keyword, "alias"),
     type: new TokenType("type", TokenClass.keyword, "type"),
     uniform: new TokenType("uniform", TokenClass.keyword, "uniform"),
     var: new TokenType("var", TokenClass.keyword, "var"),
@@ -1290,6 +1394,7 @@ class WgslParser {
     constructor() {
         this._tokens = [];
         this._current = 0;
+        this._constants = new Map();
     }
     parse(tokensOrCode) {
         this._initialize(tokensOrCode);
@@ -1386,7 +1491,7 @@ class WgslParser {
         // Ignore any stand-alone semicolons
         while (this._match(TokenTypes.tokens.semicolon) && !this._isAtEnd())
             ;
-        if (this._match(TokenTypes.keywords.type)) {
+        if (this._match(TokenTypes.keywords.alias)) {
             const type = this._type_alias();
             this._consume(TokenTypes.tokens.semicolon, "Expected ';'");
             return type;
@@ -1406,11 +1511,18 @@ class WgslParser {
             return _var;
         }
         if (this._check(TokenTypes.keywords.let)) {
-            const _let = this._global_constant_decl();
+            const _let = this._global_let_decl();
             if (_let != null)
                 _let.attributes = attrs;
             this._consume(TokenTypes.tokens.semicolon, "Expected ';'.");
             return _let;
+        }
+        if (this._check(TokenTypes.keywords.const)) {
+            const _const = this._global_const_decl();
+            if (_const != null)
+                _const.attributes = attrs;
+            this._consume(TokenTypes.tokens.semicolon, "Expected ';'.");
+            return _const;
         }
         if (this._check(TokenTypes.keywords.struct)) {
             const _struct = this._struct_decl();
@@ -1943,11 +2055,16 @@ class WgslParser {
                 const args = this._argument_expression_list();
                 return new CallExpr(name, args);
             }
+            if (this._constants.has(name)) {
+                const c = this._constants.get(name);
+                const v = c.evaluate();
+                return new ConstExpr(name, v);
+            }
             return new VariableExpr(name);
         }
         // const_literal
         if (this._match(TokenTypes.const_literal)) {
-            return new LiteralExpr(this._previous().toString());
+            return new LiteralExpr(parseFloat(this._previous().toString()));
         }
         // paren_expression
         if (this._check(TokenTypes.tokens.paren_left)) {
@@ -2027,7 +2144,29 @@ class WgslParser {
             _var.value = this._const_expression();
         return _var;
     }
-    _global_constant_decl() {
+    _global_const_decl() {
+        // attribute* const (ident variable_ident_decl) global_const_initializer?
+        if (!this._match(TokenTypes.keywords.const))
+            return null;
+        const name = this._consume(TokenTypes.tokens.ident, "Expected variable name");
+        let type = null;
+        if (this._match(TokenTypes.tokens.colon)) {
+            const attrs = this._attribute();
+            type = this._type_decl();
+            if (type != null)
+                type.attributes = attrs;
+        }
+        let value = null;
+        if (this._match(TokenTypes.tokens.equal)) {
+            let valueExpr = this._short_circuit_or_expression();
+            let constValue = valueExpr.evaluate();
+            value = new LiteralExpr(constValue);
+        }
+        const c = new Const(name.toString(), type, "", "", value);
+        this._constants.set(c.name, c);
+        return c;
+    }
+    _global_let_decl() {
         // attribute* let (ident variable_ident_decl) global_const_initializer?
         if (!this._match(TokenTypes.keywords.let))
             return null;
@@ -2171,8 +2310,10 @@ class WgslParser {
             this._consume(TokenTypes.tokens.less_than, "Expected '<' for array type.");
             const format = this._type_decl();
             let count = "";
-            if (this._match(TokenTypes.tokens.comma))
-                count = this._consume(TokenTypes.element_count_expression, "Expected element_count for array.").toString();
+            if (this._match(TokenTypes.tokens.comma)) {
+                let c = this._shift_expression();
+                count = c.evaluate().toString();
+            }
             this._consume(TokenTypes.tokens.greater_than, "Expected '>' for array.");
             let countInt = count ? parseInt(count) : 0;
             return new ArrayType(array.toString(), attrs, format, countInt);
@@ -2779,4 +2920,4 @@ WgslReflect.samplerTypes = TokenTypes.sampler_type.map((t) => {
     return t.name;
 });
 
-export { Alias, Argument, ArrayType, Assign, AssignOperator, Attribute, BinaryOperator, BindGropEntry, BitcastExpr, Break, BufferInfo, Call, CallExpr, Case, Const, Continue, CreateExpr, Default, Discard, ElseIf, Enable, EntryFunctions, Expression, For, Function, FunctionInfo, GroupingExpr, If, Increment, IncrementOperator, InputInfo, Let, LiteralExpr, Loop, Member, MemberInfo, Node, Operator, PointerType, Return, SamplerType, Statement, StaticAssert, StringExpr, Struct, StructInfo, Switch, SwitchCase, TemplateType, Token, TokenClass, TokenType, TokenTypes, Type, TypeInfo, TypecastExpr, UnaryOperator, Var, VariableExpr, VariableInfo, WgslParser, WgslReflect, WgslScanner, While };
+export { Alias, Argument, ArrayType, Assign, AssignOperator, Attribute, BinaryOperator, BindGropEntry, BitcastExpr, Break, BufferInfo, Call, CallExpr, Case, Const, ConstExpr, Continue, CreateExpr, Default, Discard, ElseIf, Enable, EntryFunctions, Expression, For, Function, FunctionInfo, GroupingExpr, If, Increment, IncrementOperator, InputInfo, Let, LiteralExpr, Loop, Member, MemberInfo, Node, Operator, PointerType, Return, SamplerType, Statement, StaticAssert, StringExpr, Struct, StructInfo, Switch, SwitchCase, TemplateType, Token, TokenClass, TokenType, TokenTypes, Type, TypeInfo, TypecastExpr, UnaryOperator, Var, VariableExpr, VariableInfo, WgslParser, WgslReflect, WgslScanner, While };
