@@ -29,7 +29,7 @@ type CreateTextureOptions = CopyTextureOptions & {
   format?: GPUTextureFormat,
 };
 
-function getSizeFromSource(source: GPUImageCopyExternalImage['source']) {
+export function getSizeFromSource(source: GPUImageCopyExternalImage['source']) {
   if (source instanceof HTMLVideoElement) {
     return [source.videoWidth, source.videoHeight];
   } else {

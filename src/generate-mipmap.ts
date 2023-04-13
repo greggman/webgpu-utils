@@ -39,7 +39,7 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
 
    if (!module) {
       module = device.createShaderModule({
-         label: 'textured quad shaders for mip level generation',
+         label: 'mip level generation',
          code: `
             struct VSOutput {
                @builtin(position) position: vec4f,
@@ -118,7 +118,7 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
       ++baseMipLevel;
 
       const renderPassDescriptor: GPURenderPassDescriptor = {
-         label: 'our basic canvas renderPass',
+         label: 'mip gen renderPass',
          colorAttachments: [
             {
                view: texture.createView({baseMipLevel, mipLevelCount: 1}),
