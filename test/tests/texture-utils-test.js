@@ -50,6 +50,7 @@ describe('texture-utils tests', () => {
       await buffer.mapAsync(GPUMapMode.READ);
       const result = new Uint8Array(buffer.getMappedRange());
       assertArrayEqualApproximately(result, [128, 0, 128, 255], 1);
+      buffer.unmap();
 
       texture.destroy();
       buffer.destroy();
