@@ -207,7 +207,18 @@ export function setStructuredView(data: any, views: TypedArrayOrViews): void {
         if (view.length === 1 && typeof data === 'number') {
             view[0] = data;
         } else {
-            view.set(data as number[]);
+            if (Array.isArray(data[0]) || isTypedArray(data[0])) {
+                // complete hack!
+                // there's no type data here so let's guess based on the user's data
+                const dataLen = data[0].length;
+                const stride = dataLen == 3 ? 4 : dataLen;
+                for (let i = 0; i < data.length; ++i) {
+                    const offset = i * stride;
+                    view.set(data[i], offset);
+                }
+            } else {
+                view.set(data as number[]);
+            }
         }
     } else if (Array.isArray(views)) {
         const asArray = views as Views[];
