@@ -643,14 +643,13 @@ describe('buffer-views-tests', () => {
         assertEqual(views[2].position.byteOffset, 16);
     });
 
-    /*
     it('works with alias', () => {
       const code = `
         alias material_index = u32;
         alias color = vec3f;
 
         struct Material {
-            index: material_type,
+            index: material_index,
             diffuse: color,
         };
 
@@ -659,7 +658,7 @@ describe('buffer-views-tests', () => {
       const d = makeShaderDataDefinitions(code);
       const defs = d.storages;
       assertTruthy(defs);
-      assertTruthy(defs.materials);
+      assertTruthy(defs.material    );
       assertEqual(defs.material.size, 32);
       assertEqual(defs.material.fields.index.offset, 0);
       assertEqual(defs.material.fields.index.size, 4);
@@ -667,6 +666,7 @@ describe('buffer-views-tests', () => {
       assertEqual(defs.material.fields.diffuse.size, 12);
     });
 
+    /*
     it('works with const', () => {
       const code = `
         const MAX_LIGHTS = u32(sin(radians(90) * 3.0));
@@ -683,6 +683,59 @@ describe('buffer-views-tests', () => {
       assertTruthy(defs);
       assertTruthy(defs.lights);
       assertEqual(defs.lights.length, 3);
+    });
+    */
+
+    it('works with nested aliases', () => {
+        const code = `
+            alias foo3 = u32;
+            alias foo2 = foo3;
+            alias foo1 = foo2;
+            @group(0) @binding(0) var<uniform> f: foo1;
+        `;
+        const defs = makeShaderDataDefinitions(code).uniforms;
+        const {views, set, arrayBuffer} = makeStructuredView(defs.f);
+        assertEqual(arrayBuffer.byteLength, 4);
+        assertTruthy(views instanceof Uint32Array);
+        assertEqual(views.length, 1);
+    });
+
+    it('works with nested aliases of structs', () => {
+        const code = `
+            struct Foo4 {
+                a: u32,
+                b: f32,
+            };
+            alias foo3 = Foo4;
+            alias foo2 = foo3;
+            alias foo1 = foo2;
+            @group(0) @binding(0) var<uniform> f: foo1;
+        `;
+        const defs = makeShaderDataDefinitions(code).uniforms;
+        const {views, set, arrayBuffer} = makeStructuredView(defs.f);
+        assertEqual(views.a.length, 1);
+        assertEqual(views.a.byteOffset, 0);
+        assertEqual(views.b.length, 1);
+        assertEqual(views.b.byteOffset, 4);
+    });
+
+    it('works with nested aliases of structs2', () => {
+        const code = `
+            struct Foo4 {
+                a: u32,
+                b: f32,
+            };
+            alias foo3 = Foo4;
+            alias foo2 = foo3;
+            alias foo1 = foo2;
+            @group(0) @binding(0) var<uniform> f: Foo4;
+        `;
+        const defs = makeShaderDataDefinitions(code).uniforms;
+        const {views, set, arrayBuffer} = makeStructuredView(defs.f);
+        assertEqual(views.a.length, 1);
+        assertEqual(views.a.byteOffset, 0);
+        assertEqual(views.b.length, 1);
+        assertEqual(views.b.byteOffset, 4);
     });
 
     it('works with complex alias and const expressions', () => {
@@ -708,10 +761,32 @@ describe('buffer-views-tests', () => {
                 things: array<Ship, a_bicycle.num_wheels>,
             };
         `;
-        const d = makeShaderDataDefinitions(code);
-        assertTruthy(d);
-    });
-    */
+        const defs = makeShaderDataDefinitions(code).structs;
+        const {views, set, arrayBuffer} = makeStructuredView(defs.Ocean);
+        assertEqual(arrayBuffer.byteLength, 64);
+        assertEqual(views.things.length, 2);
+        set({
+            things: [
+                {
+                    cars: [
+                        { num_wheels: 2, mass_kg: 5 },
+                    ],
+                },
+                {
+                    cars: [
+                        ,
+                        ,
+                        ,
+                        { num_wheels: 22, mass_kg: 55 },
+                    ],
+                },
+            ],
+        });
+        const f32 = new Float32Array(arrayBuffer);
+        const u32 = new Uint32Array(arrayBuffer);
+        assertEqual(f32[f32.length - 1], 55);
+        assertEqual(u32[u32.length - 2], 22);
 
+    });
 
 });
