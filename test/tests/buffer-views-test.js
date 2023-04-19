@@ -358,6 +358,13 @@ describe('buffer-views-tests', () => {
         assertArrayEqual(struct.views.data, [0, 1, 2, 3]);
     });
 
+    it('lets you set arrays of vec3s from array of arrays', () => {
+        const structDef = makeShaderDataDefinitions(`struct S { data: array<vec3u, 2> }`);
+        const struct = makeStructuredView(structDef.structs.S);
+        struct.set({ data: [[1, 2, 3], [4, 5, 6]] });
+        assertArrayEqual(struct.views.data, [1, 2, 3, 0, 4, 5, 6, 0]);
+    });
+
     it('makes arrays of base types the same for uniforms and structures', () => {
         const shader = `
         struct Test {
