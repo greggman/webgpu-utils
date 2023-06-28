@@ -6,12 +6,30 @@ function normalizeGPUExtent3Dict(size: GPUExtent3DDict) {
    return [size.width, size.height || 1, size.depthOrArrayLayers || 1];
 }
 
+/**
+ * Converts a `GPUExtent3D` into an array of numbers
+ * 
+ * `GPUExtent3D` has two forms `[width, height?, depth?]` or
+ * `{width: number, height?: number, depthOrArrayLayers?: number}`
+ * 
+ * You pass one of those in here and it returns an array of 3 numbers
+ * so that your code doesn't have to deal with multiple forms.
+ * 
+ * @param size 
+ * @returns an array of 3 numbers, [width, height, depthOrArrayLayers]
+ */
 export function normalizeGPUExtent3D(size: GPUExtent3D): number[] {
    return (Array.isArray(size) || isTypedArray(size))
-      ? Array.from(size as Iterable<number>)
+      ? [...(size as Iterable<number>), 1, 1].slice(0, 3)
       : normalizeGPUExtent3Dict(size as GPUExtent3DDict);
 }
 
+/**
+ * Given a GPUExtent3D returns the number of mip levels needed
+ * 
+ * @param size 
+ * @returns number of mip levels needed for the given size
+ */
 export function numMipLevels(size: GPUExtent3D) {
     const sizes = normalizeGPUExtent3D(size);
     const maxSize = Math.max(...sizes);
@@ -21,6 +39,15 @@ export function numMipLevels(size: GPUExtent3D) {
 // Use a WeakMap so the device can be destroyed and/or lost
 const byDevice = new WeakMap();
 
+/**
+ * Generates mip levels from level 0 to the last mip for an existing texture
+ * 
+ * The texture must have been created with TEXTURE_BINDING and
+ * RENDER_ATTACHMENT and been created with mip levels
+ * 
+ * @param device 
+ * @param texture 
+ */
 export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
    let perDeviceInfo = byDevice.get(device);
    if (!perDeviceInfo) {
@@ -102,8 +129,8 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
 
    let width = texture.width;
    let height = texture.height;
-   let baseMipLevel = 0;
-   while (width > 1 || height > 1) {
+   let nextMipLevel = 1;
+   while (nextMipLevel < texture.mipLevelCount) {
       width = Math.max(1, width / 2 | 0);
       height = Math.max(1, height / 2 | 0);
 
@@ -111,17 +138,15 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
          layout: pipeline.getBindGroupLayout(0),
          entries: [
             { binding: 0, resource: sampler },
-            { binding: 1, resource: texture.createView({baseMipLevel, mipLevelCount: 1}) },
+            { binding: 1, resource: texture.createView({baseMipLevel: nextMipLevel - 1, mipLevelCount: 1}) },
          ],
       });
-
-      ++baseMipLevel;
 
       const renderPassDescriptor: GPURenderPassDescriptor = {
          label: 'mip gen renderPass',
          colorAttachments: [
             {
-               view: texture.createView({baseMipLevel, mipLevelCount: 1}),
+               view: texture.createView({baseMipLevel: nextMipLevel, mipLevelCount: 1}),
                loadOp: 'clear',
                storeOp: 'store',
             },
@@ -133,6 +158,8 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
       pass.setBindGroup(0, bindGroup);
       pass.draw(3);
       pass.end();
+
+      ++nextMipLevel;
    }
 
    const commandBuffer = encoder.finish();

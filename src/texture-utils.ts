@@ -3,15 +3,25 @@ import {
   numMipLevels,
 } from './generate-mipmap.js';
 
-type CopyTextureOptions = {
+export type CopyTextureOptions = {
   flipY?: boolean,
 };
 
+/**
+ * Copies a "source" (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * To a texture and then optional generates mip levels
+ * 
+ * @param device 
+ * @param texture The texture to copy to
+ * @param source The source to copy from
+ * @param options use `{flipY: true}` if you want the source flipped
+ */
 export function copySourceToTexture(
     device: GPUDevice,
     texture: GPUTexture,
     source: GPUImageCopyExternalImage['source'],
-    {flipY}: CopyTextureOptions = {}) {
+    options: CopyTextureOptions = {}) {
+  const {flipY} = options;
   device.queue.copyExternalImageToTexture(
     { source, flipY, },
     { texture },
@@ -23,10 +33,17 @@ export function copySourceToTexture(
   }
 }
 
-type CreateTextureOptions = CopyTextureOptions & {
-  mips?: boolean;
+/**
+ * @property mips if true and mipLevelCount is not set then wll automatically generate
+ *    the correct number of mip levels.
+ * @property format Defaults to "rgba8unorm"
+ * @property mipLeveLCount Defaults to 1 or the number of mips needed for a full mipmap if `mips` is true
+ */
+export type CreateTextureOptions = CopyTextureOptions & {
+  mips?: boolean,
   usage?: GPUTextureUsageFlags,
   format?: GPUTextureFormat,
+  mipLevelCount?: number,
 };
 
 export function getSizeFromSource(source: GPUImageCopyExternalImage['source']) {
@@ -37,6 +54,16 @@ export function getSizeFromSource(source: GPUImageCopyExternalImage['source']) {
   }
 }
 
+/**
+ * Create a texture from a source (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * and optionally create mip levels. If you set `mips: true` and don't set a mipLevelCount
+ * then it will automatically make the correct number of mip levels.
+ * 
+ * @param device 
+ * @param source 
+ * @param options 
+ * @returns the created Texture
+ */
 export function createTextureFromSource(
     device: GPUDevice,
     source: GPUImageCopyExternalImage['source'],
@@ -44,7 +71,9 @@ export function createTextureFromSource(
   const size = getSizeFromSource(source);
   const texture = device.createTexture({
     format: options.format || 'rgba8unorm',
-    mipLevelCount: options.mips ? numMipLevels(size) : 1,
+    mipLevelCount: options.mipLevelCount
+        ? options.mipLevelCount
+        : options.mips ? numMipLevels(size) : 1,
     size,
     usage: (options.usage ?? 0) |
            GPUTextureUsage.TEXTURE_BINDING |
@@ -55,8 +84,14 @@ export function createTextureFromSource(
   return texture;
 }
 
-type CreateTextureFromBitmapOptions = CreateTextureOptions & ImageBitmapOptions;
+export type CreateTextureFromBitmapOptions = CreateTextureOptions & ImageBitmapOptions;
 
+/**
+ * Load an ImageBitmap
+ * @param url 
+ * @param options 
+ * @returns the loaded ImageBitmap
+ */
 export async function loadImageBitmap(url: string, options: ImageBitmapOptions = {}) {
   const res = await fetch(url);
   const blob = await res.blob();
@@ -67,6 +102,13 @@ export async function loadImageBitmap(url: string, options: ImageBitmapOptions =
   return await createImageBitmap(blob, opt);
 }
 
+/**
+ * Load an image and create a texture from it, optionally generating mip levels
+ * @param device 
+ * @param url 
+ * @param options 
+ * @returns the texture created from the loaded image.
+ */
 export async function createTextureFromImage(device: GPUDevice, url: string, options: CreateTextureFromBitmapOptions = {}) {
   const imgBitmap = await loadImageBitmap(url);
   return createTextureFromSource(device, imgBitmap, options);
