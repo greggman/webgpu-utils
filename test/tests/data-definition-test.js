@@ -17,6 +17,18 @@ describe('data-definition-tests', () => {
     @group(3) @binding(2) var<uniform> uni2: array<f32, 5>;
     @group(2) @binding(3) var<uniform> uni3: VSUniforms;
     @group(1) @binding(4) var<uniform> uni4: array<VSUniforms, 6>;
+
+      @vertex fn vs(
+        @builtin(vertex_index) vertexIndex : u32
+      ) -> @builtin(position) vec4f {
+        let pos = array(
+          vec2f( 0.0,  0.5),  // top center
+          vec2f(-0.5, -0.5),  // bottom left
+          vec2f( 0.5, -0.5)   // bottom right
+        );
+
+        return vec4f(pos[vertexIndex], 0.0, 1.0);
+      }
         `;
         const d = makeShaderDataDefinitions(shader);
         const defs = d.uniforms;
