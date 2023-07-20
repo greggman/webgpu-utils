@@ -1,4 +1,4 @@
-/* webgpu-utils@0.4.1, license MIT */
+/* webgpu-utils@0.4.2, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -3607,7 +3607,7 @@
 
     /**
      * Copies a "source" (Video, Canvas, OffscreenCanvas, ImageBitmap)
-     * To a texture and then optional generates mip levels
+     * to a texture and then optionally generates mip levels
      *
      * @param device
      * @param texture The texture to copy to
@@ -3634,10 +3634,20 @@
      * and optionally create mip levels. If you set `mips: true` and don't set a mipLevelCount
      * then it will automatically make the correct number of mip levels.
      *
-     * @param device
-     * @param source
-     * @param options
-     * @returns the created Texture
+     * Example:
+     *
+     * ```js
+     * const texture = createTextureFromSource(
+     *     device,
+     *     someCanvasOrVideoOrImageImageBitmap,
+     *     {
+     *       usage: GPUTextureUsage.TEXTURE_BINDING |
+     *              GPUTextureUsage.RENDER_ATTACHMENT |
+     *              GPUTextureUsage.COPY_DST,
+     *       mips: true,
+     *     }
+     * );
+     * ```
      */
     function createTextureFromSource(device, source, options = {}) {
         const size = getSizeFromSource(source);
@@ -3672,10 +3682,15 @@
     }
     /**
      * Load an image and create a texture from it, optionally generating mip levels
-     * @param device
-     * @param url
-     * @param options
-     * @returns the texture created from the loaded image.
+     *
+     * Example:
+     *
+     * ```js
+     * const texture = await createTextureFromImage(device, 'https://someimage.url', {
+     *   mips: true,
+     *   flipY: true,
+     * });
+     * ```
      */
     async function createTextureFromImage(device, url, options = {}) {
         const imgBitmap = await loadImageBitmap(url);
