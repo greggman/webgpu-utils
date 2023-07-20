@@ -58,6 +58,43 @@ mat4.perspective(
 device.queue.writeBuffer(uniformBuffer, 0, myUniformValues.arrayBuffer);
 ```
 
+## Load an image URL as a texture (with mips)
+
+```js
+import { createTextureFromImage } from 'webgpu-utils';
+
+const texture = await createTextureFromImage(device, 'https://someimage.url', {
+  mips: true,
+  flipY: true,
+});
+```
+
+## Load a canvas as a texture (with mips)
+
+```js
+import { createTextureFromSource } from 'webgpu-utils';
+
+const texture = createTextureFromSource(device, someCanvas, {
+  mips: true,
+  flipY: true,
+});
+```
+
+## Generate mips on an existing texture
+
+```js
+import { numMipLevels, generateMipmap } from 'webgpu-utils';
+
+const size = [8, 8, 1];
+const texture = device.createTexture({
+  size,
+  mipLevelCount: numMipLevels(size);
+  format: 'rgba8unorm',
+  usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT
+});
+generateMipmap(device, texture);
+```
+
 ## Development
 
 ```
