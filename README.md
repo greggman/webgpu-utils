@@ -92,6 +92,9 @@ const texture = device.createTexture({
   format: 'rgba8unorm',
   usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT
 });
+
+... do whatever you do to fill out the mip level 0 ...
+
 generateMipmap(device, texture);
 ```
 
