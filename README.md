@@ -12,7 +12,7 @@ less tedious. These are the result. I expect I'll add more over time.
 Note: At the moment, minified and gzipped this is only 9k! It's also
 possible to tree shake so you'll only get what you use.
 
-## Create easy to set uniform and storage `ArrayBuffer` views.
+### Create easy to set uniform and storage `ArrayBuffer` views.
 
 Example:
 
@@ -58,7 +58,7 @@ mat4.perspective(
 device.queue.writeBuffer(uniformBuffer, 0, myUniformValues.arrayBuffer);
 ```
 
-## Load an image URL as a texture (with mips)
+### Load an image URL as a texture (with mips)
 
 ```js
 import { createTextureFromImage } from 'webgpu-utils';
@@ -69,7 +69,7 @@ const texture = await createTextureFromImage(device, 'https://someimage.url', {
 });
 ```
 
-## Load a canvas as a texture (with mips)
+### Load a canvas as a texture (with mips)
 
 ```js
 import { createTextureFromSource } from 'webgpu-utils';
@@ -80,7 +80,7 @@ const texture = createTextureFromSource(device, someCanvas, {
 });
 ```
 
-## Generate mips on an existing texture
+### Generate mips on an existing texture
 
 ```js
 import { numMipLevels, generateMipmap } from 'webgpu-utils';
@@ -96,6 +96,14 @@ const texture = device.createTexture({
 ... do whatever you do to fill out the mip level 0 ...
 
 generateMipmap(device, texture);
+```
+
+## Using from here
+
+```
+import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/0.x/webgpu-utils.module.js'
+
+...
 ```
 
 ## Development
