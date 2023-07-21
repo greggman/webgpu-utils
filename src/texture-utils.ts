@@ -1,10 +1,14 @@
+import { TypedArray, TypedArrayConstructor } from './buffer-views.js';
 import {
   generateMipmap,
   numMipLevels,
 } from './generate-mipmap.js';
+import { isTypedArray } from './utils.js';
 
 export type CopyTextureOptions = {
   flipY?: boolean,
+  premultipliedAlpha?: boolean,
+  colorSpace?: PredefinedColorSpace;
 };
 
 /**
@@ -21,10 +25,11 @@ export function copySourceToTexture(
     texture: GPUTexture,
     source: GPUImageCopyExternalImage['source'],
     options: CopyTextureOptions = {}) {
-  const {flipY} = options;
+  const {flipY, premultipliedAlpha, colorSpace} = options;
+  
   device.queue.copyExternalImageToTexture(
     { source, flipY, },
-    { texture },
+    { texture, premultipliedAlpha, colorSpace },
     { width: source.width, height: source.height },
   );
 
