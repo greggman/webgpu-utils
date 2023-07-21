@@ -2,7 +2,9 @@
 
 ![](https://img.shields.io/npm/v/webgpu-utils)
 
-## [Docs](https://greggman.github.io/webgpu-utils/docs)
+## Docs
+
+See [here](https://greggman.github.io/webgpu-utils/docs)
 
 ## Random useful things for WebGPU
 
@@ -12,7 +14,7 @@ less tedious. These are the result. I expect I'll add more over time.
 Note: At the moment, minified and gzipped this is only 9k! It's also
 possible to tree shake so you'll only get what you use.
 
-### Create easy to set uniform and storage `ArrayBuffer` views.
+### Easily set Uniforms (based on your WGSL structs/types)
 
 Example:
 
@@ -34,6 +36,12 @@ struct MyUniforms {
 
 const defs = makeShaderDataDefinitions(code);
 const myUniformValues = makeStructuredView(defs.uniforms.myUniforms);
+
+// create the correct sized buffer
+const uniformBuffer = device.createBuffer({
+  size: myUniformBuffer.arrayBuffer.byteLength,
+  usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+});
 
 // Set some values via set
 myUniformValues.set({
@@ -57,6 +65,8 @@ mat4.perspective(
 // Upload the data to the GPU
 device.queue.writeBuffer(uniformBuffer, 0, myUniformValues.arrayBuffer);
 ```
+
+[Live Example]
 
 ### Load an image URL as a texture (with mips)
 
@@ -98,10 +108,24 @@ const texture = device.createTexture({
 generateMipmap(device, texture);
 ```
 
-## Using from here
+## Usage
 
-```
+* include from the net
+
+```js
 import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/0.x/webgpu-utils.module.js'
+
+...
+```
+
+* npm
+
+```sh
+npm install webgpu-utils
+```
+
+```js
+import { createTextureFromImage } from 'webgpu-utils';
 
 ...
 ```
