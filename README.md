@@ -116,6 +116,8 @@ import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/
 ...
 ```
 
+* [Live Example 1](https://jsgist.org/?src=30dfc8cb81777219dd9e91d9471452d0)
+
 * npm
 
 ```sh
