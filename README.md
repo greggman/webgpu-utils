@@ -66,8 +66,6 @@ mat4.perspective(
 device.queue.writeBuffer(uniformBuffer, 0, myUniformValues.arrayBuffer);
 ```
 
-[Live Example]
-
 ### Load an image URL as a texture (with mips)
 
 ```js
