@@ -14,7 +14,7 @@ export interface Views {
     [x: string]: TypedArrayOrViews;
 }
 export type ArrayBufferViews = {
-    views: TypedArrayOrViews;
+    views: any; // because otherwise this is too much of a PITA to use in typescript
     arrayBuffer: ArrayBuffer;
 };
 /**
