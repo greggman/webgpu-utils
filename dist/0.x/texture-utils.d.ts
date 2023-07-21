@@ -1,6 +1,8 @@
 /// <reference types="dist" />
 export type CopyTextureOptions = {
     flipY?: boolean;
+    premultipliedAlpha?: boolean;
+    colorSpace?: PredefinedColorSpace;
 };
 /**
  * Copies a "source" (Video, Canvas, OffscreenCanvas, ImageBitmap)

@@ -1,4 +1,4 @@
-/* webgpu-utils@0.4.3, license MIT */
+/* webgpu-utils@0.5.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -3615,8 +3615,8 @@
      * @param options use `{flipY: true}` if you want the source flipped
      */
     function copySourceToTexture(device, texture, source, options = {}) {
-        const { flipY } = options;
-        device.queue.copyExternalImageToTexture({ source, flipY, }, { texture }, { width: source.width, height: source.height });
+        const { flipY, premultipliedAlpha, colorSpace } = options;
+        device.queue.copyExternalImageToTexture({ source, flipY, }, { texture, premultipliedAlpha, colorSpace }, { width: source.width, height: source.height });
         if (texture.mipLevelCount > 1) {
             generateMipmap(device, texture);
         }

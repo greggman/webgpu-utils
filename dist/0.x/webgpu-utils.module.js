@@ -1,4 +1,4 @@
-/* webgpu-utils@0.4.3, license MIT */
+/* webgpu-utils@0.5.0, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 // TODO: fix better?
 const isTypedArray = (arr) => arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';
@@ -3609,8 +3609,8 @@ function generateMipmap(device, texture) {
  * @param options use `{flipY: true}` if you want the source flipped
  */
 function copySourceToTexture(device, texture, source, options = {}) {
-    const { flipY } = options;
-    device.queue.copyExternalImageToTexture({ source, flipY, }, { texture }, { width: source.width, height: source.height });
+    const { flipY, premultipliedAlpha, colorSpace } = options;
+    device.queue.copyExternalImageToTexture({ source, flipY, }, { texture, premultipliedAlpha, colorSpace }, { width: source.width, height: source.height });
     if (texture.mipLevelCount > 1) {
         generateMipmap(device, texture);
     }
