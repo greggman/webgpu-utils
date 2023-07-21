@@ -10,7 +10,7 @@
     "test": "test"
   },
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c && node tools/fixup.d.ts.js",
     "check": "npm run lint",
     "check-ci": "npm run pre-push",
     "docs": "typedoc --disableSources src/webgpu-utils.ts",
