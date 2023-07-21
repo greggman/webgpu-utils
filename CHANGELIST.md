@@ -1,5 +1,10 @@
 # Change List
 
+### 0.5.0
+
+* Add 'premultipliedAlpha' and 'colorSpace' texture options
+  to `copySourceToTexture`
+
 ### 0.4.3
 
 * try changing type of `ArrayBufferViews.views` to `any` because
