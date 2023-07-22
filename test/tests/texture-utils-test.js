@@ -4,6 +4,7 @@ import {
   createTextureFromImage,
 } from '../../dist/0.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertArrayEqualApproximately } from '../assert.js';
+import { testWithDeviceAndDocument } from '../webgpu.js';
 
 const roundUp = (v, r) => Math.ceil(v / r) * r;
 const mipSize = (size, mipLevel) => size.map(v => Math.floor(v / 2 ** mipLevel));
@@ -34,14 +35,7 @@ async function readTexture(device, texture, mipLevel = 0) {
 
 describe('texture-utils tests', () => {
 
-    it('creates texture from canvas with mips', async function() {
-      const adapter = await globalThis?.navigator?.gpu?.requestAdapter();
-      const device = await adapter?.requestDevice();
-      if (!device || typeof document === 'undefined') {
-        this.skip();
-        return;
-      }
-
+    it('creates texture from canvas with mips', () => testWithDeviceAndDocument(async device => {
       const canvas = document.createElement('canvas');
       canvas.width = 4;
       canvas.height = 4;
@@ -66,19 +60,9 @@ describe('texture-utils tests', () => {
 
       const result = await readTexture(device, texture, 2);
       assertArrayEqualApproximately(result.subarray(0, 4), [128, 0, 128, 255], 1);
+    }));
 
-      texture.destroy();
-      device.destroy();
-    });
-
-    it('respects flipY', async function() {
-      const adapter = await globalThis?.navigator?.gpu?.requestAdapter();
-      const device = await adapter?.requestDevice();
-      if (!device || typeof document === 'undefined') {
-        this.skip();
-        return;
-      }
-
+    it('respects flipY', () => testWithDeviceAndDocument(async device => {
       const canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 2;
@@ -110,20 +94,10 @@ describe('texture-utils tests', () => {
         const bottom = expected[1 - i];
         assertArrayEqual(result.subarray(0, 4), top, `flipY: ${flipY}, top`);
         assertArrayEqual(result.subarray(256, 256 + 4), bottom, `flipY: ${flipY}, bottom`);
-        texture.destroy();
       }
+    }));
 
-      device.destroy();
-    });
-
-    it('respects premultipliedAlpha', async function() {
-      const adapter = await globalThis?.navigator?.gpu?.requestAdapter();
-      const device = await adapter?.requestDevice();
-      if (!device || typeof document === 'undefined') {
-        this.skip();
-        return;
-      }
-
+    it('respects premultipliedAlpha', () => testWithDeviceAndDocument(async device => {
       const canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 1;
@@ -147,20 +121,10 @@ describe('texture-utils tests', () => {
         const result = await readTexture(device, texture);
         const expected = premultipliedAlpha ? [0x80, 0, 0, 0x80] : [0xFF, 0, 0, 0x80];
         assertArrayEqualApproximately(result.subarray(0, 4), expected, 1, `premultipliedAlpha: ${premultipliedAlpha}`);
-        texture.destroy();
       }
+    }));
 
-      device.destroy();
-    });
-
-    it('creates texture from image url with mips', async function() {
-      const adapter = await globalThis?.navigator?.gpu?.requestAdapter();
-      const device = await adapter?.requestDevice();
-      if (!device || typeof document === 'undefined') {
-        this.skip();
-        return;
-      }
-
+    it('creates texture from image url with mips', () => testWithDeviceAndDocument(async device => {
       const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAACJJREFUGFddibENAAAMgvD/o2l07AIJBBRAUpUv2LkzkR8OvcEL/bJgfmEAAAAASUVORK5CYII=';
       const texture = await createTextureFromImage(
           device,
@@ -175,10 +139,7 @@ describe('texture-utils tests', () => {
       );
       const result = await readTexture(device, texture, 2);
       assertArrayEqualApproximately(result.subarray(0, 4), [128, 0, 128, 255], 1);
-
-      texture.destroy();
-      device.destroy();
-    });
+    }));
 
  });
 

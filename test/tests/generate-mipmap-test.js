@@ -4,6 +4,7 @@ import {
   numMipLevels,
 } from '../../dist/0.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertArrayEqualApproximately, assertEqual, assertFalsy, assertTruthy } from '../assert.js';
+import { testWithDevice } from '../webgpu.js';
 
 describe('generate-mipmap tests', () => {
 
@@ -46,13 +47,7 @@ describe('generate-mipmap tests', () => {
 
     });
 
-    it('generates mipmaps', async() => {
-      const adapter = await globalThis?.navigator?.gpu?.requestAdapter();
-      const device = await adapter?.requestDevice();
-      if (!device) {
-        return;
-      }
-
+    it('generates mipmaps', () => testWithDevice(async device => {
       const kTextureWidth = 4;
       const kTextureHeight = 4;
       const r = [255, 0, 0, 255];
@@ -98,10 +93,6 @@ describe('generate-mipmap tests', () => {
       await buffer.mapAsync(GPUMapMode.READ);
       const result = new Uint8Array(buffer.getMappedRange());
       assertArrayEqualApproximately(result, [128, 0, 128, 255], 1);
-
-      texture.destroy();
-      buffer.destroy();
-      device.destroy();
-    });
+    }));
  });
 
