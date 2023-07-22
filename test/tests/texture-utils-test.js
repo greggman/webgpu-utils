@@ -3,39 +3,16 @@ import {
   createTextureFromSource,
   createTextureFromImage,
 } from '../../dist/0.x/webgpu-utils.module.js';
-import { assertArrayEqual, assertArrayEqualApproximately } from '../assert.js';
-import { testWithDeviceAndDocument } from '../webgpu.js';
+import { assertArrayEqual, assertArrayEqualApproximately, assertEqual } from '../assert.js';
+import { readTextureUnpadded, testWithDevice, testWithDeviceAndDocument } from '../webgpu.js';
 
-const roundUp = (v, r) => Math.ceil(v / r) * r;
-const mipSize = (size, mipLevel) => size.map(v => Math.floor(v / 2 ** mipLevel));
-
-// assumes rgba8unorm
-async function readTexture(device, texture, mipLevel = 0) {
-  const size = mipSize([texture.width, texture.height], mipLevel)
-  const bytesPerRow = roundUp(size[0] * 4, 256);
-  const buffer = device.createBuffer({
-    size: bytesPerRow * size[1],
-    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-  });
-  const encoder = device.createCommandEncoder();
-  encoder.copyTextureToBuffer(
-    { texture, mipLevel },
-    { buffer, bytesPerRow },
-    size,
-  );
-  device.queue.submit([encoder.finish()]);
-
-  await buffer.mapAsync(GPUMapMode.READ);
-  // Get a copy of the result because on unmap the view dies.
-  const result = new Uint8Array(buffer.getMappedRange()).slice();
-  buffer.unmap();
-  buffer.destroy();
-  return result;
-}
+// prevent global document
+const document = undefined;
 
 describe('texture-utils tests', () => {
 
-    it('creates texture from canvas with mips', () => testWithDeviceAndDocument(async device => {
+    it('creates texture from canvas with mips',
+        () => testWithDeviceAndDocument(async (device, document) => {
       const canvas = document.createElement('canvas');
       canvas.width = 4;
       canvas.height = 4;
@@ -58,11 +35,12 @@ describe('texture-utils tests', () => {
           }
       );
 
-      const result = await readTexture(device, texture, 2);
-      assertArrayEqualApproximately(result.subarray(0, 4), [128, 0, 128, 255], 1);
+      const result = await readTextureUnpadded(device, texture, 2);
+      assertArrayEqualApproximately(result, [128, 0, 128, 255], 1);
     }));
 
-    it('respects flipY', () => testWithDeviceAndDocument(async device => {
+    it('respects flipY',
+        () => testWithDeviceAndDocument(async (device, document) => {
       const canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 2;
@@ -85,7 +63,7 @@ describe('texture-utils tests', () => {
               flipY,
             }
         );
-        const result = await readTexture(device, texture);
+        const result = await readTextureUnpadded(device, texture);
         const expected = [
           [255, 0, 0, 255],
           [0, 0, 255, 255],
@@ -93,11 +71,12 @@ describe('texture-utils tests', () => {
         const top = expected[i];
         const bottom = expected[1 - i];
         assertArrayEqual(result.subarray(0, 4), top, `flipY: ${flipY}, top`);
-        assertArrayEqual(result.subarray(256, 256 + 4), bottom, `flipY: ${flipY}, bottom`);
+        assertArrayEqual(result.subarray(4, 8), bottom, `flipY: ${flipY}, bottom`);
       }
     }));
 
-    it('respects premultipliedAlpha', () => testWithDeviceAndDocument(async device => {
+    it('respects premultipliedAlpha',
+        () => testWithDeviceAndDocument(async (device, document) => {
       const canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 1;
@@ -118,13 +97,13 @@ describe('texture-utils tests', () => {
               premultipliedAlpha,
             }
         );
-        const result = await readTexture(device, texture);
+        const result = await readTextureUnpadded(device, texture);
         const expected = premultipliedAlpha ? [0x80, 0, 0, 0x80] : [0xFF, 0, 0, 0x80];
-        assertArrayEqualApproximately(result.subarray(0, 4), expected, 1, `premultipliedAlpha: ${premultipliedAlpha}`);
+        assertArrayEqualApproximately(result, expected, 1, `premultipliedAlpha: ${premultipliedAlpha}`);
       }
     }));
 
-    it('creates texture from image url with mips', () => testWithDeviceAndDocument(async device => {
+    it('creates texture from image url with mips', () => testWithDevice(async device => {
       const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAACJJREFUGFddibENAAAMgvD/o2l07AIJBBRAUpUv2LkzkR8OvcEL/bJgfmEAAAAASUVORK5CYII=';
       const texture = await createTextureFromImage(
           device,
@@ -137,9 +116,176 @@ describe('texture-utils tests', () => {
             mips: true,
           }
       );
-      const result = await readTexture(device, texture, 2);
-      assertArrayEqualApproximately(result.subarray(0, 4), [128, 0, 128, 255], 1);
+      const result = await readTextureUnpadded(device, texture, 2);
+      assertArrayEqualApproximately(result, [128, 0, 128, 255], 1);
     }));
 
+    [
+      {
+        desc: 'typedArray',
+        convertDataFn: ({data, TypedArrayType = Uint8Array}) => {
+          if (Array.isArray(data)) {
+            return new TypedArrayType(data);
+          } else {
+            return {
+              ...data,
+              data: new TypedArrayType(data.data),
+            };
+          }
+        },
+      },
+      {
+        desc: 'native array',
+        convertDataFn: ({data}) => data,
+      }
+    ].forEach(({desc, convertDataFn}) => {
+      describe(`creates texture from ${desc}`, () => {
+        const r = [255, 0, 0, 255];
+        const g = [0, 255, 0, 255];
+        const b = [0, 0, 255, 255];
+        const y = [255, 255, 0, 255];
+        const tests = [
+          {
+            desc: 'square (because sqrt is int and no width or height provided)',
+            data: [
+              r, g,
+              b, y,
+            ].flat(),
+            expected: {
+              width: 2,
+              height: 2,
+              mipLevelCount: 2,
+              format: 'rgba8unorm',
+            },
+          },
+          {
+            desc: 'Nx1 (because sqrt is not a int and no width or height provided)',
+            data: [
+              r, g, b,
+            ].flat(),
+            expected: {
+              width: 3,
+              height: 1,
+              mipLevelCount: 2,
+              format: 'rgba8unorm',
+            },
+          },
+          {
+            desc: '4x2 (because 8 elements and width of 2)',
+            data: {
+              width: 4,
+              data: [
+                r, r, r, r,
+                b, b, b, b,
+              ].flat(),
+            },
+            expected: {
+              width: 4,
+              height: 2,
+              mipLevelCount: 3,
+              format: 'rgba8unorm',
+            },
+          },
+          {
+            desc: '2x4 (because 8 elements and height of 2)',
+            data: {
+              height: 4,
+              data: [
+                r, r, r, r,
+                b, b, b, b,
+              ].flat(),
+            },
+            expected: {
+              width: 2,
+              height: 4,
+              mipLevelCount: 3,
+              format: 'rgba8unorm',
+            },
+          },
+          {
+            desc: '2x2x4 (because 16 elements and width and height of 2)',
+            data: {
+              width: 2,
+              height: 2,
+              data: [
+                r, r, r, r,
+                b, b, b, b,
+                g, g, g, g,
+                y, y, y, y,
+              ].flat(),
+            },
+            options: {
+              mips: false,
+            },
+            expected: {
+              width: 2,
+              height: 2,
+              depthOrArrayLayers: 4,
+              mipLevelCount: 1,
+              format: 'rgba8unorm',
+            },
+          },
+          {
+            desc: 'square rgba16float',
+            data: {
+              data: [
+                r, g,
+                b, y,
+              ].flat(),
+            },
+            TypedArrayType: Uint16Array,
+            options: {
+              format: 'rgba16float'
+            },
+            expected: {
+              width: 2,
+              height: 2,
+              mipLevelCount: 2,
+              format: 'rgba16float',
+            },
+          },
+          {
+            desc: 'square rg16float',
+            data: {
+              data: [
+                r, g,
+                b, y,
+              ].map(v => v.slice(0, 2)).flat(),
+            },
+            TypedArrayType: Uint16Array,
+            options: {
+              format: 'rg16float'
+            },
+            expected: {
+              width: 2,
+              height: 2,
+              mipLevelCount: 2,
+              format: 'rg16float',
+            },
+          },
+          /*
+          {
+            for data, Image {
+              desc: '3d',
+              desc: '2d-array',
+              desc: 'cube-map',
+              desc: 'from image
+          }
+          */
+        ];
+
+        for (const test of tests) {
+          const { desc, expected, options } = test;
+          it(desc, () => testWithDevice(async device => {
+            const texture = createTextureFromSource(device, convertDataFn(test), {mips: true, ...options});
+            assertEqual(texture.width, expected.width);
+            assertEqual(texture.height, expected.height);
+            assertEqual(texture.depthOrArrayLayers, expected.depthOrArrayLayers || 1);
+            assertEqual(texture.mipLevelCount, expected.mipLevelCount);
+            assertEqual(texture.format, expected.format);
+          }));
+        };
+      });
+    });
  });
 

@@ -4,7 +4,10 @@ import {
   numMipLevels,
 } from '../../dist/0.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertArrayEqualApproximately, assertEqual, assertFalsy, assertTruthy } from '../assert.js';
-import { testWithDevice } from '../webgpu.js';
+import { readTextureUnpadded, testWithDevice } from '../webgpu.js';
+
+// prevent global document
+const document = undefined;
 
 describe('generate-mipmap tests', () => {
 
@@ -78,20 +81,7 @@ describe('generate-mipmap tests', () => {
       );
       generateMipmap(device, texture);
 
-      const buffer = device.createBuffer({
-        size: 4,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-      });
-      const encoder = device.createCommandEncoder();
-      encoder.copyTextureToBuffer(
-        { texture, mipLevel: 2 },
-        { buffer, },
-        [1, 1],
-      );
-      device.queue.submit([encoder.finish()]);
-
-      await buffer.mapAsync(GPUMapMode.READ);
-      const result = new Uint8Array(buffer.getMappedRange());
+      const result = await readTextureUnpadded(device, texture, 2);
       assertArrayEqualApproximately(result, [128, 0, 128, 255], 1);
     }));
  });
