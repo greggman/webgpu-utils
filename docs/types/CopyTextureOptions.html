@@ -15,12 +15,18 @@
 <li><a href="../modules.html">webgpu-utils</a></li>
 <li><a href="CopyTextureOptions.html">CopyTextureOptions</a></li></ul>
 <h1>Type alias CopyTextureOptions</h1></div>
-<div class="tsd-signature">Copy<wbr/>Texture<wbr/>Options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span>flipY<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></div>
+<div class="tsd-signature">Copy<wbr/>Texture<wbr/>Options<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span>colorSpace<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">PredefinedColorSpace</span><span class="tsd-signature-symbol">; </span><br/><span>    </span>dimension<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">GPUTextureViewDimension</span><span class="tsd-signature-symbol">; </span><br/><span>    </span>flipY<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span><br/><span>    </span>premultipliedAlpha<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></div>
 <div class="tsd-type-declaration">
 <h4>Type declaration</h4>
 <ul class="tsd-parameters">
 <li class="tsd-parameter">
-<h5><code class="tsd-tag ts-flagOptional">Optional</code> flipY<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5></li></ul></div></div>
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> color<wbr/>Space<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">PredefinedColorSpace</span></h5></li>
+<li class="tsd-parameter">
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> dimension<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">GPUTextureViewDimension</span></h5></li>
+<li class="tsd-parameter">
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> flipY<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5></li>
+<li class="tsd-parameter">
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> premultiplied<wbr/>Alpha<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">boolean</span></h5></li></ul></div></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -53,6 +59,10 @@
 <li><a href="StorageDefinitions.html" class="tsd-kind-type-alias"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-4194304-path"></use><use href="#icon-4194304-text"></use></svg><span>Storage<wbr/>Definitions</span></a></li>
 <li><a href="StructDefinitions.html" class="tsd-kind-type-alias"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-4194304-path"></use><use href="#icon-4194304-text"></use></svg><span>Struct<wbr/>Definitions</span></a></li>
 <li><a href="StructuredView.html" class="tsd-kind-type-alias"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-4194304-path"></use><use href="#icon-4194304-text"></use></svg><span>Structured<wbr/>View</span></a></li>
+<li><a href="TextureCreationData.html" class="tsd-kind-type-alias"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-4194304-path"></use><use href="#icon-4194304-text"></use></svg><span>Texture<wbr/>Creation<wbr/>Data</span></a></li>
+<li><a href="TextureData.html" class="tsd-kind-type-alias"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-4194304-path"></use><use href="#icon-4194304-text"></use></svg><span>Texture<wbr/>Data</span></a></li>
+<li><a href="TextureRawDataSource.html" class="tsd-kind-type-alias"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-4194304-path"></use><use href="#icon-4194304-text"></use></svg><span>Texture<wbr/>Raw<wbr/>Data<wbr/>Source</span></a></li>
+<li><a href="TextureSource.html" class="tsd-kind-type-alias"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-4194304-path"></use><use href="#icon-4194304-text"></use></svg><span>Texture<wbr/>Source</span></a></li>
 <li><a href="TypedArray.html" class="tsd-kind-type-alias"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-4194304-path"></use><use href="#icon-4194304-text"></use></svg><span>Typed<wbr/>Array</span></a></li>
 <li><a href="TypedArrayConstructor.html" class="tsd-kind-type-alias"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-4194304-path"></use><use href="#icon-4194304-text"></use></svg><span>Typed<wbr/>Array<wbr/>Constructor</span></a></li>
 <li><a href="TypedArrayOrViews.html" class="tsd-kind-type-alias"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-4194304-path"></use><use href="#icon-4194304-text"></use></svg><span>Typed<wbr/>Array<wbr/>Or<wbr/>Views</span></a></li>
@@ -60,6 +70,7 @@
 <li><a href="../functions/createTextureFromImage.html" class="tsd-kind-function"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-64-path"></use><use href="#icon-64-text"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Image</span></a></li>
 <li><a href="../functions/createTextureFromSource.html" class="tsd-kind-function"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-64-path"></use><use href="#icon-64-text"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Source</span></a></li>
 <li><a href="../functions/generateMipmap.html" class="tsd-kind-function"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-64-path"></use><use href="#icon-64-text"></use></svg><span>generate<wbr/>Mipmap</span></a></li>
+<li><a href="../functions/getSizeForMipFromTexture.html" class="tsd-kind-function"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-64-path"></use><use href="#icon-64-text"></use></svg><span>get<wbr/>Size<wbr/>For<wbr/>Mip<wbr/>From<wbr/>Texture</span></a></li>
 <li><a href="../functions/getSizeFromSource.html" class="tsd-kind-function"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-64-path"></use><use href="#icon-64-text"></use></svg><span>get<wbr/>Size<wbr/>From<wbr/>Source</span></a></li>
 <li><a href="../functions/loadImageBitmap.html" class="tsd-kind-function"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-64-path"></use><use href="#icon-64-text"></use></svg><span>load<wbr/>Image<wbr/>Bitmap</span></a></li>
 <li><a href="../functions/makeShaderDataDefinitions.html" class="tsd-kind-function"><svg class="tsd-kind-icon" width="24" height="24" viewBox="0 0 24 24"><use href="#icon-64-path"></use><use href="#icon-64-text"></use></svg><span>make<wbr/>Shader<wbr/>Data<wbr/>Definitions</span></a></li>

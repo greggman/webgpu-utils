@@ -1,4 +1,4 @@
-/* webgpu-utils@0.5.0, license MIT */
+/* webgpu-utils@0.6.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -3605,6 +3605,109 @@
         device.queue.submit([commandBuffer]);
     }
 
+    function isTextureData(source) {
+        const src = source;
+        return isTypedArray(src.data) || Array.isArray(src.data);
+    }
+    function isTextureRawDataSource(source) {
+        return isTypedArray(source) || Array.isArray(source) || isTextureData(source);
+    }
+    function toTypedArray(v, format) {
+        if (isTypedArray(v)) {
+            return v;
+        }
+        const { Type } = getTextureFormatInfo(format);
+        return new Type(v);
+    }
+    function guessDimensions(width, height, numElements, dimension = '2d') {
+        if (numElements % 1 !== 0) {
+            throw new Error("can't guess dimensions");
+        }
+        if (!width && !height) {
+            const size = Math.sqrt(numElements / (dimension === 'cube' ? 6 : 1));
+            if (size % 1 === 0) {
+                width = size;
+                height = size;
+            }
+            else {
+                width = numElements;
+                height = 1;
+            }
+        }
+        else if (!height) {
+            height = numElements / width;
+            if (height % 1) {
+                throw new Error("can't guess dimensions");
+            }
+        }
+        else if (!width) {
+            width = numElements / height;
+            if (width % 1) {
+                throw new Error("can't guess dimensions");
+            }
+        }
+        const depth = numElements / width / height;
+        if (depth % 1) {
+            throw new Error("can't guess dimensions");
+        }
+        return [width, height, depth];
+    }
+    function textureViewDimensionToDimension(viewDimension) {
+        switch (viewDimension) {
+            case '1d': return '1d';
+            case '3d': return '3d';
+            default: return '2d';
+        }
+    }
+    const kFormatToTypedArray = {
+        '8snorm': Int8Array,
+        '8unorm': Uint8Array,
+        '8sint': Int8Array,
+        '8uint': Uint8Array,
+        '16snorm': Int16Array,
+        '16unorm': Uint16Array,
+        '16sint': Int16Array,
+        '16uint': Uint16Array,
+        '32snorm': Int32Array,
+        '32unorm': Uint32Array,
+        '32sint': Int32Array,
+        '32uint': Uint32Array,
+        '16float': Uint16Array,
+        '32float': Float32Array,
+    };
+    const kTextureFormatRE = /([a-z]+)(\d+)([a-z]+)/;
+    function getTextureFormatInfo(format) {
+        // this is a hack! It will only work for common formats
+        const [, channels, bits, typeName] = kTextureFormatRE.exec(format);
+        // TODO: if the regex fails, use table for other formats?
+        const numChannels = channels.length;
+        const bytesPerChannel = parseInt(bits) / 8;
+        const bytesPerElement = numChannels * bytesPerChannel;
+        const Type = kFormatToTypedArray[`${bits}${typeName}`];
+        return {
+            channels,
+            numChannels,
+            bytesPerChannel,
+            bytesPerElement,
+            Type,
+        };
+    }
+    /**
+     * Gets the size of a mipLevel. Returns an array of 3 numbers [width, height, depthOrArrayLayers]
+     */
+    function getSizeForMipFromTexture(texture, mipLevel) {
+        return [texture.width, texture.height, texture.depthOrArrayLayers].map(v => Math.max(1, Math.floor(v / 2 ** mipLevel)));
+    }
+    /**
+     * Uploads Data to a texture
+     */
+    function uploadDataToTexture(device, texture, source) {
+        const data = toTypedArray(source.data || source, texture.format);
+        const mipLevel = 0;
+        const size = getSizeForMipFromTexture(texture, mipLevel);
+        const { bytesPerElement } = getTextureFormatInfo(texture.format);
+        device.queue.writeTexture({ texture }, data, { bytesPerRow: bytesPerElement * size[0], rowsPerImage: size[1] }, size);
+    }
     /**
      * Copies a "source" (Video, Canvas, OffscreenCanvas, ImageBitmap)
      * to a texture and then optionally generates mip levels
@@ -3615,18 +3718,38 @@
      * @param options use `{flipY: true}` if you want the source flipped
      */
     function copySourceToTexture(device, texture, source, options = {}) {
+        if (isTextureRawDataSource(source)) {
+            uploadDataToTexture(device, texture, source);
+            return;
+        }
+        const s = source;
         const { flipY, premultipliedAlpha, colorSpace } = options;
-        device.queue.copyExternalImageToTexture({ source, flipY, }, { texture, premultipliedAlpha, colorSpace }, { width: source.width, height: source.height });
+        device.queue.copyExternalImageToTexture({ source: s, flipY, }, { texture, premultipliedAlpha, colorSpace }, { width: s.width, height: s.height });
         if (texture.mipLevelCount > 1) {
             generateMipmap(device, texture);
         }
     }
-    function getSizeFromSource(source) {
+    function getSizeFromSource(source, options) {
         if (source instanceof HTMLVideoElement) {
             return [source.videoWidth, source.videoHeight];
         }
         else {
-            return [source.width, source.height];
+            const maybeHasWidthAndHeight = source;
+            const { width, height } = maybeHasWidthAndHeight;
+            if (width > 0 && height > 0 && !isTextureRawDataSource(source)) {
+                // this should cover Canvas, Image, ImageData, ImageBitmap, TextureCreationData
+                return [width, height, 1];
+            }
+            const format = options.format || 'rgba8unorm';
+            const { bytesPerElement, bytesPerChannel } = getTextureFormatInfo(format);
+            const data = isTypedArray(source) || Array.isArray(source)
+                ? source
+                : source.data;
+            const numBytes = isTypedArray(data)
+                ? data.byteLength
+                : (data.length * bytesPerChannel);
+            const numElements = numBytes / bytesPerElement;
+            return guessDimensions(width, height, numElements);
         }
     }
     /**
@@ -3650,8 +3773,9 @@
      * ```
      */
     function createTextureFromSource(device, source, options = {}) {
-        const size = getSizeFromSource(source);
+        const size = getSizeFromSource(source, options);
         const texture = device.createTexture({
+            dimension: textureViewDimensionToDimension(options.dimension),
             format: options.format || 'rgba8unorm',
             mipLevelCount: options.mipLevelCount
                 ? options.mipLevelCount
@@ -3702,6 +3826,7 @@
     exports.createTextureFromImage = createTextureFromImage;
     exports.createTextureFromSource = createTextureFromSource;
     exports.generateMipmap = generateMipmap;
+    exports.getSizeForMipFromTexture = getSizeForMipFromTexture;
     exports.getSizeFromSource = getSizeFromSource;
     exports.loadImageBitmap = loadImageBitmap;
     exports.makeShaderDataDefinitions = makeShaderDataDefinitions;
