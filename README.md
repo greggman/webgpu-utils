@@ -77,15 +77,64 @@ const texture = await createTextureFromImage(device, 'https://someimage.url', {
 });
 ```
 
-### Load a canvas as a texture (with mips)
+### Load a canvas/video/ImageBitmap as a texture (with mips)
 
 ```js
 import { createTextureFromSource } from 'webgpu-utils';
 
-const texture = createTextureFromSource(device, someCanvas, {
+const texture = createTextureFromSource(device, someCanvasVideoImageBitmap, {
   mips: true,
   flipY: true,
 });
+```
+
+### Load data as a texture
+
+```js
+import { createTextureFromSource } from 'webgpu-utils';
+
+const r = [255,   0,   0, 255];
+const g = [  0, 255,   0, 255];
+const b = [  0,   0, 255, 255];
+const y = [255, 255,   0, 255];
+
+// if no width or height is passed, then assumes data is rgba8unorm
+// if sqrt(numPixels) is in then makes a square. Otherwise Nx1
+const data2x2 = [ r, g, b, y ].flat();
+const texture2x2 = createTextureFromSource(device, data2x2, {
+  mips: true,
+});
+```
+
+```js
+const data4x1 = {
+  data: [ r, g, b, y ].flat();
+  width: 4,
+};
+const texture4x1 = createTextureFromSource(device, data2x2, {
+  mips: true,
+});
+```
+
+```js
+const singlePixelWhiteTexture = createTextureFromSource(
+    device, [255, 255, 255, 255]);
+```
+
+```js
+const rg16sint2x2 = [
+  1,2  3,4,
+  5,6, 7,8,
+];
+const rg16Texture2x2 = createTextureFromSource(
+  device, rg16sint2x2, { format: 'rg16sint' });
+```
+
+All data above can be a typeArray
+
+```js
+const singlePixelRedTexture = createTextureFromSource(
+    device, new Uint8Array[255, 0, 0, 255]);
 ```
 
 ### Generate mips on an existing texture

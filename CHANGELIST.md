@@ -1,5 +1,10 @@
 # Change List
 
+### 0.6.0
+
+ * Support typedArrays and native arrays via `copySourceToTexture`
+   and `createTextureFromSource`
+
 ### 0.5.0
 
 * Add 'premultipliedAlpha' and 'colorSpace' texture options
