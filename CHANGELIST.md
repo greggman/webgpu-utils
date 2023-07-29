@@ -1,5 +1,10 @@
 # Change List
 
+### 0.7.0
+
+ * Support for multiple sources for layers
+ * Generate mips for layers
+
 ### 0.6.0
 
  * Support typedArrays and native arrays via `copySourceToTexture`
