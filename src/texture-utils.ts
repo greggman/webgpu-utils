@@ -10,6 +10,7 @@ export type CopyTextureOptions = {
   premultipliedAlpha?: boolean,
   colorSpace?: PredefinedColorSpace;
   dimension?: GPUTextureViewDimension;
+  baseArrayLayer?: number;
 };
 
 export type TextureData = {
@@ -121,7 +122,11 @@ function getTextureFormatInfo(format: GPUTextureFormat) {
  * Gets the size of a mipLevel. Returns an array of 3 numbers [width, height, depthOrArrayLayers]
  */
 export function getSizeForMipFromTexture(texture: GPUTexture, mipLevel: number) {
-  return [texture.width, texture.height, texture.depthOrArrayLayers].map(v => Math.max(1, Math.floor(v / 2 ** mipLevel)));
+  return [
+    texture.width,
+    texture.height,
+    texture.depthOrArrayLayers,
+  ].map(v => Math.max(1, Math.floor(v / 2 ** mipLevel)));
 }
 
 /**
@@ -131,49 +136,61 @@ function uploadDataToTexture(
   device: GPUDevice,
   texture: GPUTexture,
   source: TextureRawDataSource,
+  options: { origin?: GPUOrigin3D },
 ) {
   const data = toTypedArray((source as TextureData).data || source, texture.format);
   const mipLevel = 0;
   const size = getSizeForMipFromTexture(texture, mipLevel);
   const { bytesPerElement } = getTextureFormatInfo(texture.format);
+  const origin = options.origin || [0, 0, 0];
   device.queue.writeTexture(
-    { texture },
+    { texture, origin },
     data,
     { bytesPerRow: bytesPerElement * size[0], rowsPerImage: size[1] },
     size,
   )
 }
+/**
+ * Copies a an array of "sources" (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * to a texture and then optionally generates mip levels
+ */
+export function copySourcesToTexture(
+    device: GPUDevice,
+    texture: GPUTexture,
+    sources: TextureSource[],
+    options: CopyTextureOptions = {},
+) {
+  sources.forEach((source, layer) => {
+    const origin = [0, 0, layer + (options.baseArrayLayer || 0)];
+    if (isTextureRawDataSource(source)) {
+      uploadDataToTexture(device, texture, source as TextureRawDataSource, { origin });
+    } else {
+      const s = source as GPUImageCopyExternalImage['source'];
+      const {flipY, premultipliedAlpha, colorSpace} = options;
+      device.queue.copyExternalImageToTexture(
+        { source: s, flipY, },
+        { texture, premultipliedAlpha, colorSpace, origin },
+        { width: s.width, height: s.height },
+      );
+    }
+  });
+
+  if (texture.mipLevelCount > 1) {
+    generateMipmap(device, texture);
+  }
+}
+
 
 /**
  * Copies a "source" (Video, Canvas, OffscreenCanvas, ImageBitmap)
  * to a texture and then optionally generates mip levels
- *
- * @param device 
- * @param texture The texture to copy to
- * @param source The source to copy from
- * @param options use `{flipY: true}` if you want the source flipped
  */
 export function copySourceToTexture(
     device: GPUDevice,
     texture: GPUTexture,
     source: TextureSource,
     options: CopyTextureOptions = {}) {
-  if (isTextureRawDataSource(source)) {
-    uploadDataToTexture(device, texture, source as TextureRawDataSource);
-    return;
-  }
-
-  const s = source as GPUImageCopyExternalImage['source'];
-  const {flipY, premultipliedAlpha, colorSpace} = options;
-  device.queue.copyExternalImageToTexture(
-    { source: s, flipY, },
-    { texture, premultipliedAlpha, colorSpace },
-    { width: s.width, height: s.height },
-  );
-
-  if (texture.mipLevelCount > 1) {
-    generateMipmap(device, texture);
-  }
+  copySourcesToTexture(device, texture, [source], options);
 }
 
 /**
@@ -189,9 +206,13 @@ export type CreateTextureOptions = CopyTextureOptions & {
   mipLevelCount?: number,
 };
 
+/**
+ * Gets the size from a source. This is to smooth out the fact that different
+ * sources have a different way to get their size.
+ */
 export function getSizeFromSource(source: TextureSource, options: CreateTextureOptions) {
   if (source instanceof HTMLVideoElement) {
-    return [source.videoWidth, source.videoHeight];
+    return [source.videoWidth, source.videoHeight, 1];
   } else {
     const maybeHasWidthAndHeight = source as { width: number, height: number };
     const { width, height } = maybeHasWidthAndHeight;
@@ -210,6 +231,56 @@ export function getSizeFromSource(source: TextureSource, options: CreateTextureO
     const numElements = numBytes / bytesPerElement;
     return guessDimensions(width, height, numElements);
   }
+}
+
+/**
+ * Create a texture from an array of sources (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * and optionally create mip levels. If you set `mips: true` and don't set a mipLevelCount
+ * then it will automatically make the correct number of mip levels.
+ *
+ * Example:
+ * 
+ * ```js
+ * const texture = createTextureFromSource(
+ *     device,
+ *     [
+ *        someCanvasOrVideoOrImageImageBitmap0,
+ *        someCanvasOrVideoOrImageImageBitmap1,
+ *     ],
+ *     {
+ *       usage: GPUTextureUsage.TEXTURE_BINDING |
+ *              GPUTextureUsage.RENDER_ATTACHMENT |
+ *              GPUTextureUsage.COPY_DST,
+ *       mips: true,
+ *     }
+ * );
+ * ```
+ */
+export function createTextureFromSources(
+    device: GPUDevice,
+    sources: TextureSource[],
+    options: CreateTextureOptions = {}) {
+  // NOTE: We assume all the sizes are the same. If they are not you'll get
+  // an error.
+  const size = getSizeFromSource(sources[0], options);
+  size[2] = size[2] > 1 ? size[2] : sources.length;
+
+  const texture = device.createTexture({
+    dimension: textureViewDimensionToDimension(options.dimension),
+    format: options.format || 'rgba8unorm',
+    mipLevelCount: options.mipLevelCount
+        ? options.mipLevelCount
+        : options.mips ? numMipLevels(size) : 1,
+    size,
+    usage: (options.usage ?? 0) |
+           GPUTextureUsage.TEXTURE_BINDING |
+           GPUTextureUsage.COPY_DST |
+           GPUTextureUsage.RENDER_ATTACHMENT,
+  });
+
+  copySourcesToTexture(device, texture, sources, options);
+
+  return texture;
 }
 
 /**
@@ -236,24 +307,7 @@ export function createTextureFromSource(
     device: GPUDevice,
     source: TextureSource,
     options: CreateTextureOptions = {}) {
-  const size = getSizeFromSource(source, options);
-
-  const texture = device.createTexture({
-    dimension: textureViewDimensionToDimension(options.dimension),
-    format: options.format || 'rgba8unorm',
-    mipLevelCount: options.mipLevelCount
-        ? options.mipLevelCount
-        : options.mips ? numMipLevels(size) : 1,
-    size,
-    usage: (options.usage ?? 0) |
-           GPUTextureUsage.TEXTURE_BINDING |
-           GPUTextureUsage.COPY_DST |
-           GPUTextureUsage.RENDER_ATTACHMENT,
-  });
-
-  copySourceToTexture(device, texture, source, options);
-
-  return texture;
+  return createTextureFromSources(device, [source], options);
 }
 
 export type CreateTextureFromBitmapOptions = CreateTextureOptions & ImageBitmapOptions;
@@ -275,6 +329,34 @@ export async function loadImageBitmap(url: string, options: ImageBitmapOptions =
 }
 
 /**
+ * Load images and create a texture from them, optionally generating mip levels
+ *
+ * Assumes all the urls reference images of the same size.
+ * 
+ * Example:
+ *
+ * ```js
+ * const texture = await createTextureFromImage(
+ *   device, 
+ *   [
+ *     'https://someimage1.url',
+ *     'https://someimage2.url',
+ *   ],
+ *   {
+ *     mips: true,
+ *     flipY: true,
+ *   },
+ * );
+ * ```
+ */
+export async function createTextureFromImages(device: GPUDevice, urls: string[], options: CreateTextureFromBitmapOptions = {}) {
+  // TODO: start once we've loaded one?
+  // We need at least 1 to know the size of the texture to create
+  const imgBitmaps = await Promise.all(urls.map(url => loadImageBitmap(url)));
+  return createTextureFromSources(device, imgBitmaps, options);
+}
+
+/**
  * Load an image and create a texture from it, optionally generating mip levels
  *
  * Example:
@@ -287,6 +369,5 @@ export async function loadImageBitmap(url: string, options: ImageBitmapOptions =
  * ```
  */
 export async function createTextureFromImage(device: GPUDevice, url: string, options: CreateTextureFromBitmapOptions = {}) {
-  const imgBitmap = await loadImageBitmap(url);
-  return createTextureFromSource(device, imgBitmap, options);
+  return createTextureFromImages(device, [url], options);
 }

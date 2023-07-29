@@ -66,11 +66,11 @@ export const mipSize = (texture, mipLevel) => [
   mipValueSize(texture.height, mipLevel),
   texture.dimension === '3d'
       ? mipValueSize(texture.depthOrArrayLayers, mipLevel)
-      : texture.depthOrArrayLayers,
+      : 1,
 ];
 
 // assumes rgba8unorm
-export async function readTexturePadded(device, texture, mipLevel = 0) {
+export async function readTexturePadded(device, texture, mipLevel = 0, layer = 0) {
   const size = mipSize(texture, mipLevel);
   const bytesPerRow = roundUp(size[0] * 4, 256);
   const buffer = device.createBuffer({
@@ -79,7 +79,7 @@ export async function readTexturePadded(device, texture, mipLevel = 0) {
   });
   const encoder = device.createCommandEncoder();
   encoder.copyTextureToBuffer(
-    { texture, mipLevel },
+    { texture, mipLevel, origin: [0, 0, layer] },
     { buffer, bytesPerRow },
     size,
   );
@@ -93,13 +93,13 @@ export async function readTexturePadded(device, texture, mipLevel = 0) {
   return result;
 }
 
-export async function readTextureUnpadded(device, texture, mipLevel = 0) {
+export async function readTextureUnpadded(device, texture, mipLevel = 0, layer = 0) {
   const size = mipSize(texture, mipLevel);
   const bytesPerRow = size[0] * 4;
   const paddedBytesPerRow = roundUp(bytesPerRow, 256);
   const bytesPerImage = bytesPerRow * size[1];
 
-  const padded = await readTexturePadded(device, texture, mipLevel);
+  const padded = await readTexturePadded(device, texture, mipLevel, layer);
   const unpadded = new Uint8Array(bytesPerImage * size[2]);
   let paddedOffset = 0;
   let unpaddedOffset = 0;

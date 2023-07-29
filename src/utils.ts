@@ -2,4 +2,4 @@ export const roundUpToMultipleOf = (v: number, multiple: number) => (((v + multi
 
 // TODO: fix better?
 export const isTypedArray = (arr: any) =>
-    arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';
+  arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';
