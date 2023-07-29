@@ -5,6 +5,7 @@ export type CopyTextureOptions = {
     premultipliedAlpha?: boolean;
     colorSpace?: PredefinedColorSpace;
     dimension?: GPUTextureViewDimension;
+    baseArrayLayer?: number;
 };
 export type TextureData = {
     data: TypedArray | number[];
@@ -20,13 +21,13 @@ export type TextureSource = GPUImageCopyExternalImage['source'] | TextureRawData
  */
 export declare function getSizeForMipFromTexture(texture: GPUTexture, mipLevel: number): number[];
 /**
+ * Copies a an array of "sources" (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * to a texture and then optionally generates mip levels
+ */
+export declare function copySourcesToTexture(device: GPUDevice, texture: GPUTexture, sources: TextureSource[], options?: CopyTextureOptions): void;
+/**
  * Copies a "source" (Video, Canvas, OffscreenCanvas, ImageBitmap)
  * to a texture and then optionally generates mip levels
- *
- * @param device
- * @param texture The texture to copy to
- * @param source The source to copy from
- * @param options use `{flipY: true}` if you want the source flipped
  */
 export declare function copySourceToTexture(device: GPUDevice, texture: GPUTexture, source: TextureSource, options?: CopyTextureOptions): void;
 /**
@@ -41,7 +42,35 @@ export type CreateTextureOptions = CopyTextureOptions & {
     format?: GPUTextureFormat;
     mipLevelCount?: number;
 };
+/**
+ * Gets the size from a source. This is to smooth out the fact that different
+ * sources have a different way to get their size.
+ */
 export declare function getSizeFromSource(source: TextureSource, options: CreateTextureOptions): number[];
+/**
+ * Create a texture from an array of sources (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * and optionally create mip levels. If you set `mips: true` and don't set a mipLevelCount
+ * then it will automatically make the correct number of mip levels.
+ *
+ * Example:
+ *
+ * ```js
+ * const texture = createTextureFromSource(
+ *     device,
+ *     [
+ *        someCanvasOrVideoOrImageImageBitmap0,
+ *        someCanvasOrVideoOrImageImageBitmap1,
+ *     ],
+ *     {
+ *       usage: GPUTextureUsage.TEXTURE_BINDING |
+ *              GPUTextureUsage.RENDER_ATTACHMENT |
+ *              GPUTextureUsage.COPY_DST,
+ *       mips: true,
+ *     }
+ * );
+ * ```
+ */
+export declare function createTextureFromSources(device: GPUDevice, sources: TextureSource[], options?: CreateTextureOptions): GPUTexture;
 /**
  * Create a texture from a source (Video, Canvas, OffscreenCanvas, ImageBitmap)
  * and optionally create mip levels. If you set `mips: true` and don't set a mipLevelCount
@@ -71,6 +100,28 @@ export type CreateTextureFromBitmapOptions = CreateTextureOptions & ImageBitmapO
  * @returns the loaded ImageBitmap
  */
 export declare function loadImageBitmap(url: string, options?: ImageBitmapOptions): Promise<ImageBitmap>;
+/**
+ * Load images and create a texture from them, optionally generating mip levels
+ *
+ * Assumes all the urls reference images of the same size.
+ *
+ * Example:
+ *
+ * ```js
+ * const texture = await createTextureFromImage(
+ *   device,
+ *   [
+ *     'https://someimage1.url',
+ *     'https://someimage2.url',
+ *   ],
+ *   {
+ *     mips: true,
+ *     flipY: true,
+ *   },
+ * );
+ * ```
+ */
+export declare function createTextureFromImages(device: GPUDevice, urls: string[], options?: CreateTextureFromBitmapOptions): Promise<GPUTexture>;
 /**
  * Load an image and create a texture from it, optionally generating mip levels
  *

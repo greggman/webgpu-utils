@@ -1,4 +1,4 @@
-/* webgpu-utils@0.6.0, license MIT */
+/* webgpu-utils@0.7.0, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 // TODO: fix better?
 const isTypedArray = (arr) => arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';
@@ -3457,6 +3457,16 @@ function addMembers(reflect, members, size, offset = 0) {
     };
 }
 
+function getViewDimensionForTexture(texture) {
+    switch (texture.dimension) {
+        case '3d':
+            return '3d';
+        case '2d':
+            return texture.depthOrArrayLayers > 1 ? '2d-array' : '2d';
+        case '1d':
+            return '1d';
+    }
+}
 function normalizeGPUExtent3Dict(size) {
     return [size.width, size.height || 1, size.depthOrArrayLayers || 1];
 }
@@ -3503,54 +3513,66 @@ function generateMipmap(device, texture) {
     let perDeviceInfo = byDevice.get(device);
     if (!perDeviceInfo) {
         perDeviceInfo = {
-            pipelineByFormat: {},
+            pipelineByFormatAndView: {},
+            moduleByView: {},
         };
         byDevice.set(device, perDeviceInfo);
     }
-    let { sampler, module, } = perDeviceInfo;
-    const { pipelineByFormat, } = perDeviceInfo;
+    let { sampler, } = perDeviceInfo;
+    const { pipelineByFormatAndView, moduleByView, } = perDeviceInfo;
+    const view = getViewDimensionForTexture(texture);
+    let module = moduleByView[view];
     if (!module) {
+        const type = view === '2d'
+            ? 'texture_2d<f32>'
+            : 'texture_2d_array<f32>';
+        const extraSampleParamsWGSL = view === '2d'
+            ? ''
+            : ', 0u';
         module = device.createShaderModule({
-            label: 'mip level generation',
+            label: `mip level generation for ${view}`,
             code: `
-            struct VSOutput {
-               @builtin(position) position: vec4f,
-               @location(0) texcoord: vec2f,
-            };
+        struct VSOutput {
+          @builtin(position) position: vec4f,
+          @location(0) texcoord: vec2f,
+        };
 
-            @vertex fn vs(
-               @builtin(vertex_index) vertexIndex : u32
-            ) -> VSOutput {
-               var pos = array<vec2f, 3>(
-                  vec2f(-1.0, -1.0),
-                  vec2f(-1.0,  3.0),
-                  vec2f( 3.0, -1.0),
-               );
+        @vertex fn vs(
+          @builtin(vertex_index) vertexIndex : u32
+        ) -> VSOutput {
+          var pos = array<vec2f, 3>(
+            vec2f(-1.0, -1.0),
+            vec2f(-1.0,  3.0),
+            vec2f( 3.0, -1.0),
+          );
 
-               var vsOutput: VSOutput;
-               let xy = pos[vertexIndex];
-               vsOutput.position = vec4f(xy, 0.0, 1.0);
-               vsOutput.texcoord = xy * vec2f(0.5, -0.5) + vec2f(0.5);
-               return vsOutput;
-            }
+          var vsOutput: VSOutput;
+          let xy = pos[vertexIndex];
+          vsOutput.position = vec4f(xy, 0.0, 1.0);
+          vsOutput.texcoord = xy * vec2f(0.5, -0.5) + vec2f(0.5);
+          return vsOutput;
+        }
 
-            @group(0) @binding(0) var ourSampler: sampler;
-            @group(0) @binding(1) var ourTexture: texture_2d<f32>;
+        @group(0) @binding(0) var ourSampler: sampler;
+        @group(0) @binding(1) var ourTexture: ${type};
 
-            @fragment fn fs(fsInput: VSOutput) -> @location(0) vec4f {
-               return textureSample(ourTexture, ourSampler, fsInput.texcoord);
-            }
-         `,
+        @fragment fn fs(fsInput: VSOutput) -> @location(0) vec4f {
+          return textureSample(ourTexture, ourSampler, fsInput.texcoord${extraSampleParamsWGSL});
+        }
+      `,
         });
+        moduleByView[view] = module;
+    }
+    if (!sampler) {
         sampler = device.createSampler({
             minFilter: 'linear',
         });
-        perDeviceInfo.module = module;
         perDeviceInfo.sampler = sampler;
     }
-    if (!pipelineByFormat[texture.format]) {
-        pipelineByFormat[texture.format] = device.createRenderPipeline({
-            label: 'mip level generator pipeline',
+    const id = `${texture.format}.${view}`;
+    if (!pipelineByFormatAndView[id]) {
+        pipelineByFormatAndView[id] = device.createRenderPipeline({
+            label: `mip level generator pipeline for ${view}`,
             layout: 'auto',
             vertex: {
                 module,
@@ -3563,37 +3585,51 @@ function generateMipmap(device, texture) {
             },
         });
     }
-    const pipeline = pipelineByFormat[texture.format];
+    const pipeline = pipelineByFormatAndView[id];
     const encoder = device.createCommandEncoder({
         label: 'mip gen encoder',
     });
-    texture.width;
-    texture.height;
-    let nextMipLevel = 1;
-    while (nextMipLevel < texture.mipLevelCount) {
-        const bindGroup = device.createBindGroup({
-            layout: pipeline.getBindGroupLayout(0),
-            entries: [
-                { binding: 0, resource: sampler },
-                { binding: 1, resource: texture.createView({ baseMipLevel: nextMipLevel - 1, mipLevelCount: 1 }) },
-            ],
-        });
-        const renderPassDescriptor = {
-            label: 'mip gen renderPass',
-            colorAttachments: [
-                {
-                    view: texture.createView({ baseMipLevel: nextMipLevel, mipLevelCount: 1 }),
-                    loadOp: 'clear',
-                    storeOp: 'store',
-                },
-            ],
-        };
-        const pass = encoder.beginRenderPass(renderPassDescriptor);
-        pass.setPipeline(pipeline);
-        pass.setBindGroup(0, bindGroup);
-        pass.draw(3);
-        pass.end();
-        ++nextMipLevel;
+    const dimension = getViewDimensionForTexture(texture);
+    for (let baseMipLevel = 1; baseMipLevel < texture.mipLevelCount; ++baseMipLevel) {
+        for (let baseArrayLayer = 0; baseArrayLayer < texture.depthOrArrayLayers; ++baseArrayLayer) {
+            const bindGroup = device.createBindGroup({
+                layout: pipeline.getBindGroupLayout(0),
+                entries: [
+                    { binding: 0, resource: sampler },
+                    {
+                        binding: 1,
+                        resource: texture.createView({
+                            dimension,
+                            baseMipLevel: baseMipLevel - 1,
+                            mipLevelCount: 1,
+                            baseArrayLayer,
+                            arrayLayerCount: 1,
+                        }),
+                    },
+                ],
+            });
+            const renderPassDescriptor = {
+                label: 'mip gen renderPass',
+                colorAttachments: [
+                    {
+                        view: texture.createView({
+                            dimension,
+                            baseMipLevel,
+                            mipLevelCount: 1,
+                            baseArrayLayer,
+                            arrayLayerCount: 1,
+                        }),
+                        loadOp: 'clear',
+                        storeOp: 'store',
+                    },
+                ],
+            };
+            const pass = encoder.beginRenderPass(renderPassDescriptor);
+            pass.setPipeline(pipeline);
+            pass.setBindGroup(0, bindGroup);
+            pass.draw(3);
+            pass.end();
+        }
     }
     const commandBuffer = encoder.finish();
     device.queue.submit([commandBuffer]);
@@ -3690,42 +3726,57 @@ function getTextureFormatInfo(format) {
  * Gets the size of a mipLevel. Returns an array of 3 numbers [width, height, depthOrArrayLayers]
  */
 function getSizeForMipFromTexture(texture, mipLevel) {
-    return [texture.width, texture.height, texture.depthOrArrayLayers].map(v => Math.max(1, Math.floor(v / 2 ** mipLevel)));
+    return [
+        texture.width,
+        texture.height,
+        texture.depthOrArrayLayers,
+    ].map(v => Math.max(1, Math.floor(v / 2 ** mipLevel)));
 }
 /**
  * Uploads Data to a texture
  */
-function uploadDataToTexture(device, texture, source) {
+function uploadDataToTexture(device, texture, source, options) {
     const data = toTypedArray(source.data || source, texture.format);
     const mipLevel = 0;
     const size = getSizeForMipFromTexture(texture, mipLevel);
     const { bytesPerElement } = getTextureFormatInfo(texture.format);
-    device.queue.writeTexture({ texture }, data, { bytesPerRow: bytesPerElement * size[0], rowsPerImage: size[1] }, size);
+    const origin = options.origin || [0, 0, 0];
+    device.queue.writeTexture({ texture, origin }, data, { bytesPerRow: bytesPerElement * size[0], rowsPerImage: size[1] }, size);
 }
 /**
- * Copies a "source" (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * Copies a an array of "sources" (Video, Canvas, OffscreenCanvas, ImageBitmap)
  * to a texture and then optionally generates mip levels
- *
- * @param device
- * @param texture The texture to copy to
- * @param source The source to copy from
- * @param options use `{flipY: true}` if you want the source flipped
  */
-function copySourceToTexture(device, texture, source, options = {}) {
-    if (isTextureRawDataSource(source)) {
-        uploadDataToTexture(device, texture, source);
-        return;
-    }
-    const s = source;
-    const { flipY, premultipliedAlpha, colorSpace } = options;
-    device.queue.copyExternalImageToTexture({ source: s, flipY, }, { texture, premultipliedAlpha, colorSpace }, { width: s.width, height: s.height });
+function copySourcesToTexture(device, texture, sources, options = {}) {
+    sources.forEach((source, layer) => {
+        const origin = [0, 0, layer + (options.baseArrayLayer || 0)];
+        if (isTextureRawDataSource(source)) {
+            uploadDataToTexture(device, texture, source, { origin });
+        }
+        else {
+            const s = source;
+            const { flipY, premultipliedAlpha, colorSpace } = options;
+            device.queue.copyExternalImageToTexture({ source: s, flipY, }, { texture, premultipliedAlpha, colorSpace, origin }, { width: s.width, height: s.height });
+        }
+    });
     if (texture.mipLevelCount > 1) {
         generateMipmap(device, texture);
     }
 }
+/**
+ * Copies a "source" (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * to a texture and then optionally generates mip levels
+ */
+function copySourceToTexture(device, texture, source, options = {}) {
+    copySourcesToTexture(device, texture, [source], options);
+}
+/**
+ * Gets the size from a source. This is to smooth out the fact that different
+ * sources have a different way to get their size.
+ */
 function getSizeFromSource(source, options) {
     if (source instanceof HTMLVideoElement) {
-        return [source.videoWidth, source.videoHeight];
+        return [source.videoWidth, source.videoHeight, 1];
     }
     else {
         const maybeHasWidthAndHeight = source;
@@ -3745,6 +3796,49 @@ function getSizeFromSource(source, options) {
         const numElements = numBytes / bytesPerElement;
         return guessDimensions(width, height, numElements);
     }
+}
+/**
+ * Create a texture from an array of sources (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * and optionally create mip levels. If you set `mips: true` and don't set a mipLevelCount
+ * then it will automatically make the correct number of mip levels.
+ *
+ * Example:
+ *
+ * ```js
+ * const texture = createTextureFromSource(
+ *     device,
+ *     [
+ *        someCanvasOrVideoOrImageImageBitmap0,
+ *        someCanvasOrVideoOrImageImageBitmap1,
+ *     ],
+ *     {
+ *       usage: GPUTextureUsage.TEXTURE_BINDING |
+ *              GPUTextureUsage.RENDER_ATTACHMENT |
+ *              GPUTextureUsage.COPY_DST,
+ *       mips: true,
+ *     }
+ * );
+ * ```
+ */
+function createTextureFromSources(device, sources, options = {}) {
+    // NOTE: We assume all the sizes are the same. If they are not you'll get
+    // an error.
+    const size = getSizeFromSource(sources[0], options);
+    size[2] = size[2] > 1 ? size[2] : sources.length;
+    const texture = device.createTexture({
+        dimension: textureViewDimensionToDimension(options.dimension),
+        format: options.format || 'rgba8unorm',
+        mipLevelCount: options.mipLevelCount
+            ? options.mipLevelCount
+            : options.mips ? numMipLevels(size) : 1,
+        size,
+        usage: (options.usage ?? 0) |
+            GPUTextureUsage.TEXTURE_BINDING |
+            GPUTextureUsage.COPY_DST |
+            GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    copySourcesToTexture(device, texture, sources, options);
+    return texture;
 }
 /**
  * Create a texture from a source (Video, Canvas, OffscreenCanvas, ImageBitmap)
@@ -3767,21 +3861,7 @@ function getSizeFromSource(source, options) {
  * ```
  */
 function createTextureFromSource(device, source, options = {}) {
-    const size = getSizeFromSource(source, options);
-    const texture = device.createTexture({
-        dimension: textureViewDimensionToDimension(options.dimension),
-        format: options.format || 'rgba8unorm',
-        mipLevelCount: options.mipLevelCount
-            ? options.mipLevelCount
-            : options.mips ? numMipLevels(size) : 1,
-        size,
-        usage: (options.usage ?? 0) |
-            GPUTextureUsage.TEXTURE_BINDING |
-            GPUTextureUsage.COPY_DST |
-            GPUTextureUsage.RENDER_ATTACHMENT,
-    });
-    copySourceToTexture(device, texture, source, options);
-    return texture;
+    return createTextureFromSources(device, [source], options);
 }
 /**
  * Load an ImageBitmap
@@ -3799,6 +3879,33 @@ async function loadImageBitmap(url, options = {}) {
     return await createImageBitmap(blob, opt);
 }
 /**
+ * Load images and create a texture from them, optionally generating mip levels
+ *
+ * Assumes all the urls reference images of the same size.
+ *
+ * Example:
+ *
+ * ```js
+ * const texture = await createTextureFromImage(
+ *   device,
+ *   [
+ *     'https://someimage1.url',
+ *     'https://someimage2.url',
+ *   ],
+ *   {
+ *     mips: true,
+ *     flipY: true,
+ *   },
+ * );
+ * ```
+ */
+async function createTextureFromImages(device, urls, options = {}) {
+    // TODO: start once we've loaded one?
+    // We need at least 1 to know the size of the texture to create
+    const imgBitmaps = await Promise.all(urls.map(url => loadImageBitmap(url)));
+    return createTextureFromSources(device, imgBitmaps, options);
+}
+/**
  * Load an image and create a texture from it, optionally generating mip levels
  *
  * Example:
@@ -3811,9 +3918,8 @@ async function loadImageBitmap(url, options = {}) {
  * ```
  */
 async function createTextureFromImage(device, url, options = {}) {
-    const imgBitmap = await loadImageBitmap(url);
-    return createTextureFromSource(device, imgBitmap, options);
+    return createTextureFromImages(device, [url], options);
 }
 
-export { TypedArrayViewGenerator, copySourceToTexture, createTextureFromImage, createTextureFromSource, generateMipmap, getSizeForMipFromTexture, getSizeFromSource, loadImageBitmap, makeShaderDataDefinitions, makeStructuredView, makeTypedArrayViews, normalizeGPUExtent3D, numMipLevels, setStructuredValues, setStructuredView };
+export { TypedArrayViewGenerator, copySourceToTexture, copySourcesToTexture, createTextureFromImage, createTextureFromImages, createTextureFromSource, createTextureFromSources, generateMipmap, getSizeForMipFromTexture, getSizeFromSource, loadImageBitmap, makeShaderDataDefinitions, makeStructuredView, makeTypedArrayViews, normalizeGPUExtent3D, numMipLevels, setStructuredValues, setStructuredView };
 //# sourceMappingURL=webgpu-utils.module.js.map
