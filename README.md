@@ -6,6 +6,12 @@
 
 See [here](https://greggman.github.io/webgpu-utils/docs)
 
+## Examples:
+
+* [Cube](examples/cube.html)
+* [2d-array](examples/cube.html)
+* [Cube-map](examples/cube-map.html)
+
 ## Random useful things for WebGPU
 
 As I do more WebGPU I find I need more and more helpers to make things

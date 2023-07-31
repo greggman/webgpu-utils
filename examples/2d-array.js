@@ -31,12 +31,14 @@ async function main() {
       @location(0) position: vec4<f32>,
       @location(1) normal: vec3<f32>,
       @location(2) texcoord: vec2<f32>,
+      @location(3) faceIndex: u32,
   };
 
   struct MyVSOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) normal: vec3<f32>,
     @location(1) texcoord: vec2<f32>,
+    @location(2) @interpolate(flat) faceIndex: u32,
   };
 
   @vertex
@@ -45,22 +47,26 @@ async function main() {
     vsOut.position = vsUniforms.worldViewProjection * v.position;
     vsOut.normal = (vsUniforms.worldInverseTranspose * vec4<f32>(v.normal, 0.0)).xyz;
     vsOut.texcoord = v.texcoord;
+    vsOut.faceIndex = v.faceIndex;
     return vsOut;
   }
 
   struct FSUniforms {
     lightDirection: vec3<f32>,
+    faceImageIndex: array<vec4u, 6>,
   };
 
   @group(0) @binding(1) var<uniform> fsUniforms: FSUniforms;
   @group(0) @binding(2) var diffuseSampler: sampler;
-  @group(0) @binding(3) var diffuseTexture: texture_2d<f32>;
+  @group(0) @binding(3) var diffuseTexture: texture_2d_array<f32>;
 
   @fragment
   fn myFSMain(v: MyVSOutput) -> @location(0) vec4<f32> {
-    let diffuseColor = textureSample(diffuseTexture, diffuseSampler, v.texcoord);
+    let imageNdx = fsUniforms.faceImageIndex[v.faceIndex][0];
+    let diffuseColor = textureSample(diffuseTexture, diffuseSampler, v.texcoord, imageNdx);
     let a_normal = normalize(v.normal);
     let l = dot(a_normal, fsUniforms.lightDirection) * 0.5 + 0.5;
+    
     return vec4<f32>(diffuseColor.rgb * l, diffuseColor.a);
   }
   `;
@@ -74,16 +80,17 @@ async function main() {
     return buffer;
   }
 
-  const positions = new Float32Array([1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1]);
-  const normals   = new Float32Array([1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1]);
+  const positions   = new Float32Array([1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1]);
+  const normals     = new Float32Array([1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1]);
   const texcoords   = new Float32Array([1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1]);
-  const indices   = new Uint16Array([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23]);
+  const faceIndices = new Uint32Array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6]);
+  const indices     = new Uint16Array([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23]);
 
   const positionBuffer = createBuffer(device, positions, GPUBufferUsage.VERTEX);
   const normalBuffer = createBuffer(device, normals, GPUBufferUsage.VERTEX);
   const texcoordBuffer = createBuffer(device, texcoords, GPUBufferUsage.VERTEX);
+  const faceIndexBuffer = createBuffer(device, faceIndices, GPUBufferUsage.VERTEX);
   const indicesBuffer = createBuffer(device, indices, GPUBufferUsage.INDEX);
-
 
   const module = device.createShaderModule({code});
 
@@ -114,6 +121,13 @@ async function main() {
             {shaderLocation: 2, offset: 0, format: 'float32x2'},
           ],
         },
+        // faceIndex
+        {
+          arrayStride: 1 * 4, // 1 u32, 4 bytes each
+          attributes: [
+            {shaderLocation: 3, offset: 0, format: 'uint32'},
+          ],
+        },
       ],
     },
     fragment: {
@@ -140,7 +154,20 @@ async function main() {
     mipmapFilter: 'linear',
   });
 
-  const texture = await wgh.createTextureFromImage(device, 'images/1024px-Mexican_Talavera_texture.png', {
+  const texture = await wgh.createTextureFromImages(device, [
+    "images/array/balloons.jpg",
+    "images/array/biggrub.jpg",
+    "images/array/curtain.jpg",
+    "images/array/hamburger.jpg",
+    "images/array/mascot.jpg",
+    "images/array/meat.jpg",
+    "images/array/orange-fruit.jpg",
+    "images/array/scomp.jpg",
+    "images/array/tif.jpg",
+    "images/array/手拭.jpg",
+    "images/array/竹輪.jpg",
+    "images/array/肉寿司.jpg",
+  ], {
     mips: true,
     flipY: true,
   });
@@ -164,7 +191,7 @@ async function main() {
       { binding: 0, resource: { buffer: vsUniformBuffer } },
       { binding: 1, resource: { buffer: fsUniformBuffer } },
       { binding: 2, resource: sampler },
-      { binding: 3, resource: texture.createView() },
+      { binding: 3, resource: texture.createView({ dimension: '2d-array' }) },
     ],
   });
 
@@ -185,10 +212,34 @@ async function main() {
     },
   };
 
+  fsUniformValues.set({
+    faceImageIndex: [
+      0, 0, 0, 0,
+      1, 0, 0, 0,
+      2, 0, 0, 0,
+      3, 0, 0, 0,
+      4, 0, 0, 0,
+      5, 0, 0, 0,
+    ],
+  })
+
   let depthTexture;
+  let oldTime = 0;
+  const kSwapTime = 0.25;  // every 1/4 second
+
+  const rand = (max) => Math.random() * max;
+  const randInt = (max) => Math.floor(rand(max));
 
   function render(time) {
     time *= 0.001;
+
+    if (Math.floor(time / kSwapTime) !== Math.floor(oldTime / kSwapTime)) {
+      oldTime = time;
+      const faceNdx = randInt(6);
+      const uniformNdx = faceNdx * 4;
+      const imageNdx = (randInt(texture.depthOrArrayLayers - 1) + fsUniformValues.views.faceImageIndex[uniformNdx]) % texture.depthOrArrayLayers;
+      fsUniformValues.views.faceImageIndex[uniformNdx] = imageNdx;
+    }
 
     const projection = mat4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 10);
     const eye = [1, 4, -6];
@@ -199,6 +250,7 @@ async function main() {
     const view = mat4.inverse(camera);
     const viewProjection = mat4.multiply(projection, view);
     const world = mat4.rotationY(time);
+    mat4.rotateZ(world, time, world);
     mat4.transpose(mat4.inverse(world), vsUniformValues.views.worldInverseTranspose);
     mat4.multiply(viewProjection, world, vsUniformValues.views.worldViewProjection);
 
@@ -235,6 +287,7 @@ async function main() {
     passEncoder.setVertexBuffer(0, positionBuffer);
     passEncoder.setVertexBuffer(1, normalBuffer);
     passEncoder.setVertexBuffer(2, texcoordBuffer);
+    passEncoder.setVertexBuffer(3, faceIndexBuffer);
     passEncoder.setIndexBuffer(indicesBuffer, 'uint16');
     passEncoder.drawIndexed(indices.length);
     passEncoder.end();
