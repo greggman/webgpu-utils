@@ -1,6 +1,6 @@
 /* global GPUBufferUsage */
 /* global GPUTextureUsage */
-import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/1.x/wgpu-matrix.module.js';
+import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/2.x/wgpu-matrix.module.js';
 import * as wgh from '../dist/0.x/webgpu-utils.module.js';
 
 async function main() {
@@ -195,8 +195,7 @@ async function main() {
     const target = [0, 0, 0];
     const up = [0, 1, 0];
 
-    const camera = mat4.lookAt(eye, target, up);
-    const view = mat4.inverse(camera);
+    const view = mat4.lookAt(eye, target, up);
     const viewProjection = mat4.multiply(projection, view);
     const world = mat4.rotationY(time);
     mat4.transpose(mat4.inverse(world), vsUniformValues.views.worldInverseTranspose);
