@@ -1,5 +1,9 @@
 # Change List
 
+### 0.8.0
+
+ * Add (alpha version) of `createBufferInfoFromArrays`
+
 ### 0.7.0
 
  * Support for multiple sources for layers
