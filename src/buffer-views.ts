@@ -4,52 +4,10 @@ import {
     StructDefinition,
 } from './data-definitions.js';
 import {
-    roundUpToMultipleOf,
     isTypedArray,
-} from './utils.js';
-
-export type TypedArrayConstructor =
-    | Int8ArrayConstructor
-    | Uint8ArrayConstructor
-    | Int16ArrayConstructor
-    | Uint16ArrayConstructor
-    | Int32ArrayConstructor
-    | Uint32ArrayConstructor
-    | Float32ArrayConstructor
-    | Float64ArrayConstructor;
-
-export type TypedArray =
-    | Int8Array
-    | Uint8Array
-    | Int16Array
-    | Uint16Array
-    | Int32Array
-    | Uint32Array
-    | Float32Array
-    | Float64Array;
-
-export class TypedArrayViewGenerator {
-    arrayBuffer: ArrayBuffer;
-    byteOffset: number;
-
-    constructor(sizeInBytes: number) {
-        this.arrayBuffer = new ArrayBuffer(sizeInBytes);
-        this.byteOffset = 0;
-    }
-    align(alignment: number) {
-        this.byteOffset = roundUpToMultipleOf(this.byteOffset, alignment);
-    }
-    pad(numBytes: number) {
-        this.byteOffset += numBytes;
-    }
-    getView<T extends TypedArray>(Ctor: TypedArrayConstructor, numElements: number): T {
-        const view = new Ctor(this.arrayBuffer, this.byteOffset, numElements);
-        this.byteOffset += view.byteLength;
-        return view as T;
-    }
-}
-
-
+    TypedArrayConstructor,
+    TypedArray,
+} from './typed-arrays.js';
 
 type TypeDef = {
     numElements: number;

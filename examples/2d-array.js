@@ -71,81 +71,32 @@ async function main() {
   }
   `;
 
-  function createBuffer(device, data, usage) {
-    const buffer = device.createBuffer({
-      size: data.byteLength,
-      usage: usage | GPUBufferUsage.COPY_DST,
-    });
-    device.queue.writeBuffer(buffer, 0, data);
-    return buffer;
-  }
 
-  const positions   = new Float32Array([1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1]);
-  const normals     = new Float32Array([1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1]);
-  const texcoords   = new Float32Array([1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1]);
-  const faceIndices = new Uint32Array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6]);
-  const indices     = new Uint16Array([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23]);
-
-  const positionBuffer = createBuffer(device, positions, GPUBufferUsage.VERTEX);
-  const normalBuffer = createBuffer(device, normals, GPUBufferUsage.VERTEX);
-  const texcoordBuffer = createBuffer(device, texcoords, GPUBufferUsage.VERTEX);
-  const faceIndexBuffer = createBuffer(device, faceIndices, GPUBufferUsage.VERTEX);
-  const indicesBuffer = createBuffer(device, indices, GPUBufferUsage.INDEX);
+  const {
+    buffer: vertexBuffer,
+    bufferLayout,
+    indexBuffer,
+    indexFormat,
+    numElements,
+  } = wgh.createBufferInfoFromArrays(device, {
+    position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
+    normal: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
+    texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
+    faceIndices: {
+      data: new Uint32Array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5]),
+      numComponents: 1,
+    },
+    indices: [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23],
+  });
 
   const module = device.createShaderModule({code});
 
   const pipeline = device.createRenderPipeline({
     layout: 'auto',
-    vertex: {
-      module,
-      entryPoint: 'myVSMain',
-      buffers: [
-        // position
-        {
-          arrayStride: 3 * 4, // 3 floats, 4 bytes each
-          attributes: [
-            {shaderLocation: 0, offset: 0, format: 'float32x3'},
-          ],
-        },
-        // normals
-        {
-          arrayStride: 3 * 4, // 3 floats, 4 bytes each
-          attributes: [
-            {shaderLocation: 1, offset: 0, format: 'float32x3'},
-          ],
-        },
-        // texcoord
-        {
-          arrayStride: 2 * 4, // 2 floats, 4 bytes each
-          attributes: [
-            {shaderLocation: 2, offset: 0, format: 'float32x2'},
-          ],
-        },
-        // faceIndex
-        {
-          arrayStride: 1 * 4, // 1 u32, 4 bytes each
-          attributes: [
-            {shaderLocation: 3, offset: 0, format: 'uint32'},
-          ],
-        },
-      ],
-    },
-    fragment: {
-      module,
-      entryPoint: 'myFSMain',
-      targets: [
-        {format: presentationFormat},
-      ],
-    },
-    primitive: {
-      topology: 'triangle-list',
-      cullMode: 'back',
-    },
-    depthStencil: {
-      depthWriteEnabled: true,
-      depthCompare: 'less',
-      format: 'depth24plus',
-    },
+    vertex: { module, entryPoint: 'myVSMain', buffers: [ bufferLayout ], },
+    fragment: { module, entryPoint: 'myFSMain', targets: [ {format: presentationFormat} ], },
+    primitive: { topology: 'triangle-list', cullMode: 'back', },
+    depthStencil: { depthWriteEnabled: true, depthCompare: 'less', format: 'depth24plus', },
   });
 
   const sampler = device.createSampler({
@@ -283,12 +234,9 @@ async function main() {
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
     passEncoder.setPipeline(pipeline);
     passEncoder.setBindGroup(0, bindGroup);
-    passEncoder.setVertexBuffer(0, positionBuffer);
-    passEncoder.setVertexBuffer(1, normalBuffer);
-    passEncoder.setVertexBuffer(2, texcoordBuffer);
-    passEncoder.setVertexBuffer(3, faceIndexBuffer);
-    passEncoder.setIndexBuffer(indicesBuffer, 'uint16');
-    passEncoder.drawIndexed(indices.length);
+    passEncoder.setVertexBuffer(0, vertexBuffer);
+    passEncoder.setIndexBuffer(indexBuffer, indexFormat);
+    passEncoder.drawIndexed(numElements);
     passEncoder.end();
     device.queue.submit([commandEncoder.finish()]);
 

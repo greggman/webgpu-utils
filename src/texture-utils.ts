@@ -1,9 +1,12 @@
-import { TypedArray, TypedArrayConstructor } from './buffer-views.js';
+import {
+  TypedArray,
+  TypedArrayConstructor,
+  isTypedArray,
+} from './typed-arrays.js';
 import {
   generateMipmap,
   numMipLevels,
 } from './generate-mipmap.js';
-import { isTypedArray } from './utils.js';
 
 export type CopyTextureOptions = {
   flipY?: boolean,

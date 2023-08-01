@@ -53,10 +53,28 @@ export function assertIsArray(actual, msg = '') {
 
 export function assertEqual(actual, expected, msg = '') {
   // I'm sure this is not sufficient
-  if (actual.length && expected.length) {
+  if (Array.isArray(actual) || isTypedArray(actual)) {
     assertArrayEqual(actual, expected);
   } else if (actual !== expected) {
     throw new Error(`${formatMsg(msg)}expected: ${expected} to equal actual: ${actual}`);
+  }
+}
+
+const isTypedArray = (arr) =>
+  arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';
+
+export function assertDeepEqual(actual, expected, msg = '') {
+  if (Array.isArray(actual) || isTypedArray(actual)) {
+    assertArrayEqual(actual, expected, msg);
+  } else if (typeof actual === 'object') {
+    const actualKeys = Object.keys(actual).sort();
+    const expectedKeys = Object.keys(expected).sort();
+    assertArrayEqual(actualKeys, expectedKeys, msg);
+    for (const key of actualKeys) {
+      assertDeepEqual(actual[key], expected[key], `${msg} .${key}`);
+    }
+  } else {
+    assertEqual(actual, expected, msg);
   }
 }
 
@@ -78,15 +96,22 @@ export function assertStrictNotEqual(actual, expected, msg = '') {
   }
 }
 
+let depth = 0;
 export function assertArrayEqual(actual, expected, msg = '') {
+  depth++;
+  if (depth > 10) {
+    debugger;
+  }
   assertTruthy(typeof actual.length === 'number');
   if (actual.length !== expected.length) {
     throw new Error(`${formatMsg(msg)}expected: array.length ${expected.length} to equal actual.length: ${actual.length}`);
   }
   const errors = [];
   for (let i = 0; i < actual.length; ++i) {
-    if (actual[i] !== expected[i]) {
-      errors.push(`${formatMsg(msg)}expected: expected[${i}] ${expected[i]} to equal actual[${i}]: ${actual[i]}`);
+    try {
+      assertDeepEqual(actual[i], expected[i]);
+    } catch (err) {
+      errors.push(`${formatMsg(msg)}expected: expected[${i}] ${expected[i]} to equal actual[${i}]: ${actual[i]}, ${err}`);
       if (errors.length === 10) {
         break;
       }
@@ -95,6 +120,7 @@ export function assertArrayEqual(actual, expected, msg = '') {
   if (errors.length > 0) {
     throw new Error(errors.join('\n'));
   }
+  --depth;
 }
 
 export function assertArrayEqualApproximately(actual, expected, range = 0.0000001, msg = '') {

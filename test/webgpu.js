@@ -112,3 +112,19 @@ export async function readTextureUnpadded(device, texture, mipLevel = 0, layer =
   }
   return unpadded;
 }
+
+export async function readBuffer(device, srcBuffer) {
+  const copyBuffer = device.createBuffer({
+    size: srcBuffer.size,
+    usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+  });
+  const encoder = device.createCommandEncoder();
+  encoder.copyBufferToBuffer(srcBuffer, 0, copyBuffer, 0, srcBuffer.size);
+  device.queue.submit([encoder.finish()]);
+  await copyBuffer.mapAsync(GPUMapMode.READ);
+  // Get a copy of the result because on unmap the view dies.
+  const result = new Uint8Array(copyBuffer.getMappedRange()).slice();
+  copyBuffer.unmap();
+  copyBuffer.destroy();
+  return result;
+}

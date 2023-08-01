@@ -1,7 +1,5 @@
 import { describe, it } from '../mocha-support.js';
 import {
-    makeStructuredView,
-    setStructuredValues,
     makeShaderDataDefinitions,
 } from '../../dist/0.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertEqual, assertFalsy, assertTruthy } from '../assert.js';

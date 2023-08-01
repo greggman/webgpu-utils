@@ -1,6 +1,6 @@
 import {
-  isTypedArray
-} from './utils.js';
+  isTypedArray,
+} from './typed-arrays.js';
 
 function getViewDimensionForTexture(texture: GPUTexture): GPUTextureViewDimension {
    switch (texture.dimension) {
