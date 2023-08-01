@@ -1,5 +1,5 @@
 /// <reference types="dist" />
-import { TypedArray } from './buffer-views.js';
+import { TypedArray } from './typed-arrays.js';
 export type CopyTextureOptions = {
     flipY?: boolean;
     premultipliedAlpha?: boolean;
