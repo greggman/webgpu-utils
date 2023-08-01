@@ -6,12 +6,6 @@
 
 See [here](https://greggman.github.io/webgpu-utils/docs)
 
-## Examples:
-
-* [Cube](examples/cube.html)
-* [2d-array](examples/cube.html)
-* [Cube-map](examples/cube-map.html)
-
 ## Random useful things for WebGPU
 
 As I do more WebGPU I find I need more and more helpers to make things
@@ -136,7 +130,7 @@ const rg16Texture2x2 = createTextureFromSource(
   device, rg16sint2x2, { format: 'rg16sint' });
 ```
 
-All data above can be a typeArray
+All data above can be a TypedArray
 
 ```js
 const singlePixelRedTexture = createTextureFromSource(
@@ -160,6 +154,40 @@ const texture = device.createTexture({
 
 generateMipmap(device, texture);
 ```
+
+### Create Buffers and attributes (interleaved)
+
+```js
+import { numMipLevels, generateMipmap } from 'webgpu-utils';
+
+const bi = wgh.createBufferInfoFromArrays(device, {
+  position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
+  normal: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
+  texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
+  indices: [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23],
+});
+
+const pipeline = device.createRenderPipeline({
+  layout: 'auto',
+  vertex: {
+    module,
+    entryPoint: 'myVSMain',
+    buffers: [ bi.bufferLayout ],  // <---
+  },
+  ...
+});
+
+// at render time
+passEncoder.setVertexBuffer(0, bi.vertexBuffer);
+passEncoder.setIndexBuffer(bi.indexBuffer, bi.indexFormat);
+passEncoder.drawIndexed(bi.numElements);
+```
+
+## Examples:
+
+* [Cube](examples/cube.html)
+* [2d-array](examples/cube.html)
+* [Cube-map](examples/cube-map.html)
 
 ## Usage
 
