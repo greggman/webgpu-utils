@@ -45,22 +45,23 @@ function isIndices(name: string) {
   return name === "indices" || name === 'index' || name === 'ndx';
 };
 
-function makeTypedArray(array: any, name: string): TypedArray {
+function makeTypedArrayFromArrayUnion(array: ArrayUnion, name: string): TypedArray {
   if (isTypedArray(array)) {
-    return array;
+    return array as TypedArray;
   }
 
-  if (isTypedArray(array.data)) {
-    return array.data;
+  let asFullSpec = array as FullArraySpec;
+  if (isTypedArray(asFullSpec.data)) {
+    return asFullSpec.data as TypedArray;
   }
 
   if (Array.isArray(array)) {
-    array = {
+    asFullSpec = {
       data: array,
     };
   }
 
-  let Type = array.type;
+  let Type = asFullSpec.type;
   if (!Type) {
     if (isIndices(name)) {
       Type = Uint16Array;
@@ -68,7 +69,7 @@ function makeTypedArray(array: any, name: string): TypedArray {
       Type = Float32Array;
     }
   }
-  return new Type(array.data);
+  return new Type(asFullSpec.data);
 }
 
 function getArray(array: ArrayUnion): number[] | TypedArray {
@@ -76,23 +77,25 @@ function getArray(array: ArrayUnion): number[] | TypedArray {
   return arr as TypedArray;
 }
 
-const texcoordRE = /coord|texture/i;
-const colorRE = /color|colour/i;
+const kNameToNumComponents = [
+  { re: /coord|texture|uv/i, numComponents: 2 },
+  { re: /color|colour/i, numComponents: 4 },
+];
+
+function guessNumComponentsFromNameImpl(name: string) {
+  for (const {re, numComponents} of kNameToNumComponents) {
+    if (re.test(name)) {
+      return numComponents;
+    }
+  }
+  return 3;
+}
 
 function guessNumComponentsFromName(name: string, length: number) {
-  let numComponents;
-  if (texcoordRE.test(name)) {
-    numComponents = 2;
-  } else if (colorRE.test(name)) {
-    numComponents = 4;
-  } else {
-    numComponents = 3;  // position, normals, indices ...
-  }
-
+  const numComponents = guessNumComponentsFromNameImpl(name);
   if (length % numComponents > 0) {
     throw new Error(`Can not guess numComponents for attribute '${name}'. Tried ${numComponents} but ${length} values is not evenly divisible by ${numComponents}. You should specify it.`);
   }
-
   return numComponents;
 }
 
@@ -134,7 +137,7 @@ export function createBufferInfoFromArrays(device: GPUDevice, arrays: Arrays, op
         indices = array;
         return;
       }
-      const data = makeTypedArray(array, arrayName);
+      const data = makeTypedArrayFromArrayUnion(array, arrayName);
       const numComponents = getNumComponents(array, arrayName);
       const offset = currentOffset;
       currentOffset += numComponents * data.BYTES_PER_ELEMENT;
@@ -209,7 +212,7 @@ export function createBufferInfoFromArrays(device: GPUDevice, arrays: Arrays, op
   };
 
   if (indices) {
-    indices = makeTypedArray({data: indices, type: Uint32Array, numComponents: 1}, 'indices');
+    indices = makeTypedArrayFromArrayUnion({data: indices, type: Uint32Array, numComponents: 1}, 'indices');
     const indexBuffer = device.createBuffer({
       size: indices.byteLength,
       usage: GPUBufferUsage.INDEX | usage,
