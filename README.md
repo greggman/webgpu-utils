@@ -160,7 +160,7 @@ generateMipmap(device, texture);
 ```js
 import { numMipLevels, generateMipmap } from 'webgpu-utils';
 
-const bi = wgh.createBufferInfoFromArrays(device, {
+const bi = wgh.createBuffersAndAttributesFromArrays(device, {
   position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
   normal: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
   texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
@@ -172,13 +172,13 @@ const pipeline = device.createRenderPipeline({
   vertex: {
     module,
     entryPoint: 'myVSMain',
-    buffers: [ bi.bufferLayout ],  // <---
+    buffers: bi.bufferLayouts,  // <---
   },
   ...
 });
 
 // at render time
-passEncoder.setVertexBuffer(0, bi.vertexBuffer);
+passEncoder.setVertexBuffer(0, bi.buffers[0]);
 passEncoder.setIndexBuffer(bi.indexBuffer, bi.indexFormat);
 passEncoder.drawIndexed(bi.numElements);
 ```

@@ -8,6 +8,8 @@
 - [ ] check makeStructuredView.set doesn't conflict with field named `'set'`
 - [ ] allow querying offset and range for manual setting
 - [ ] show creating your own spec.
+- [ ] make interleave compute arrayStride (highest offset + size of that attribute)
+- [ ] handle separate buffers?
 
 ## Done
 

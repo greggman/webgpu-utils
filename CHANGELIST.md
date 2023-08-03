@@ -1,5 +1,9 @@
 # Change List
 
+### 0.9.0
+
+ * Change `createBufferInfoFromArrays` to `createBuffersAndAttributesFromArrays`
+
 ### 0.8.0
 
  * Add (alpha version) of `createBufferInfoFromArrays`
