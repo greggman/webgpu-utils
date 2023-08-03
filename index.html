@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- this file is auto-generated from README.md. Do not edited directly -->
 <!--
-@license webgpu-utils 0.8.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
+@license webgpu-utils 0.9.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/webgpu-utils for details
 -->
@@ -171,7 +171,7 @@ generateMipmap(device, texture);
 <h3>Create Buffers and attributes (interleaved)</h3>
 <pre><code class="lang-js">import { numMipLevels, generateMipmap } from 'webgpu-utils';
 
-const bi = wgh.createBufferInfoFromArrays(device, {
+const bi = wgh.createBuffersAndAttributesFromArrays(device, {
   position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
   normal: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
   texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
@@ -183,13 +183,13 @@ const pipeline = device.createRenderPipeline({
   vertex: {
     module,
     entryPoint: 'myVSMain',
-    buffers: [ bi.bufferLayout ],  // &lt;---
+    buffers: bi.bufferLayouts,  // &lt;---
   },
   ...
 });
 
 // at render time
-passEncoder.setVertexBuffer(0, bi.vertexBuffer);
+passEncoder.setVertexBuffer(0, bi.buffers[0]);
 passEncoder.setIndexBuffer(bi.indexBuffer, bi.indexFormat);
 passEncoder.drawIndexed(bi.numElements);
 </code></pre>

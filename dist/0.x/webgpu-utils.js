@@ -1,4 +1,4 @@
-/* webgpu-utils@0.8.0, license MIT */
+/* webgpu-utils@0.9.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -3652,49 +3652,52 @@
         [Float32Array, ['float32', 'float32']],
         // TODO: Add Float16Array
     ]);
+    const kVertexFormatPrefixToType = new Map([...kTypedArrayToAttribFormat.entries()].map(([Type, [s1, s2]]) => [[s1, Type], [s2, Type]]).flat());
     function isIndices(name) {
         return name === "indices" || name === 'index' || name === 'ndx';
     }
-    function makeTypedArray(array, name) {
+    function makeTypedArrayFromArrayUnion(array, name) {
         if (isTypedArray(array)) {
             return array;
         }
-        if (isTypedArray(array.data)) {
-            return array.data;
+        let asFullSpec = array;
+        if (isTypedArray(asFullSpec.data)) {
+            return asFullSpec.data;
         }
         if (Array.isArray(array)) {
-            array = {
+            asFullSpec = {
                 data: array,
             };
         }
-        let Type = array.type;
+        let Type = asFullSpec.type;
         if (!Type) {
             if (isIndices(name)) {
-                Type = Uint16Array;
+                Type = Uint32Array;
             }
             else {
                 Type = Float32Array;
             }
         }
-        return new Type(array.data);
+        return new Type(asFullSpec.data);
     }
     function getArray(array) {
         const arr = array.length ? array : array.data;
         return arr;
     }
-    const texcoordRE = /coord|texture/i;
-    const colorRE = /color|colour/i;
+    const kNameToNumComponents = [
+        { re: /coord|texture|uv/i, numComponents: 2 },
+        { re: /color|colour/i, numComponents: 4 },
+    ];
+    function guessNumComponentsFromNameImpl(name) {
+        for (const { re, numComponents } of kNameToNumComponents) {
+            if (re.test(name)) {
+                return numComponents;
+            }
+        }
+        return 3;
+    }
     function guessNumComponentsFromName(name, length) {
-        let numComponents;
-        if (texcoordRE.test(name)) {
-            numComponents = 2;
-        }
-        else if (colorRE.test(name)) {
-            numComponents = 4;
-        }
-        else {
-            numComponents = 3; // position, normals, indices ...
-        }
+        const numComponents = guessNumComponentsFromNameImpl(name);
         if (length % numComponents > 0) {
             throw new Error(`Can not guess numComponents for attribute '${name}'. Tried ${numComponents} but ${length} values is not evenly divisible by ${numComponents}. You should specify it.`);
         }
@@ -3703,39 +3706,36 @@
     function getNumComponents(array, arrayName) {
         return array.numComponents || guessNumComponentsFromName(arrayName, getArray(array).length);
     }
+    const kVertexFormatRE = /(\w+)(?:x(\d))$/;
+    function numComponentsAndTypeFromVertexFormat(format) {
+        const m = kVertexFormatRE.exec(format);
+        const [prefix, numComponents] = m ? [m[1], parseInt(m[2])] : [format, 1];
+        return {
+            Type: kVertexFormatPrefixToType.get(prefix),
+            numComponents,
+        };
+    }
     function createTypedArrayOfSameType(typedArray, arrayBuffer) {
         const Ctor = Object.getPrototypeOf(typedArray).constructor;
         return new Ctor(arrayBuffer);
     }
-    function normalizeArray(srcMin, srcMax, dstMin, dstMax, array) {
-        const srcRange = srcMax - srcMin;
-        const dstRange = dstMax - dstMin;
-        return array.map(v => (v - srcMin) / srcRange * dstRange + dstMin);
-    }
     /**
-     * Given arrays, create buffers, fill the buffers with data, optionally
-     * interleave the data.
-     * @param arrays
-     * @param options
+     *
      */
-    function createBufferInfoFromArrays(device, arrays, options = {}) {
-        const stepMode = options.stepMode || 'vertex';
-        options.interleave === undefined ? true : options.interleave;
-        const usage = (options.usage || 0);
+    function createVertexAttribsFromArrays(arrays, options = {}) {
+        const interleave = options.interleave === undefined ? true : options.interleave;
         const shaderLocations = options.shaderLocation
             ? (Array.isArray(options.shaderLocation) ? options.shaderLocation : [options.shaderLocation])
             : [0];
         let currentOffset = 0;
-        let indices;
-        const attribs = [];
+        const bufferLayouts = [];
+        const attributes = [];
+        const typedArrays = [];
         Object.keys(arrays)
-            .forEach(function (arrayName) {
+            .filter(arrayName => !isIndices(arrayName))
+            .forEach(arrayName => {
             const array = arrays[arrayName];
-            if (isIndices(arrayName)) {
-                indices = array;
-                return;
-            }
-            const data = makeTypedArray(array, arrayName);
+            const data = makeTypedArrayFromArrayUnion(array, arrayName);
             const numComponents = getNumComponents(array, arrayName);
             const offset = currentOffset;
             currentOffset += numComponents * data.BYTES_PER_ELEMENT;
@@ -3746,25 +3746,35 @@
             if (shaderLocations.length === 0) {
                 shaderLocations.push(shaderLocation + 1);
             }
-            attribs.push({
-                attribute: {
-                    offset,
-                    format,
-                    shaderLocation,
-                },
-                data,
-                numComponents, // should we derive from format?
+            attributes.push({
+                offset,
+                format,
+                shaderLocation,
             });
+            typedArrays.push(data);
+            if (!interleave) {
+                bufferLayouts.push({
+                    stepMode: 'vertex',
+                    arrayStride: currentOffset,
+                    attributes: attributes.slice(),
+                });
+                currentOffset = 0;
+                attributes.length = 0;
+            }
         });
-        const arrayStride = currentOffset;
-        const numElements = attribs[0].data.length / attribs[0].numComponents;
-        const size = arrayStride * numElements;
-        const buffer = device.createBuffer({
-            usage: usage | GPUBufferUsage.VERTEX,
-            size,
-            mappedAtCreation: true,
-        });
-        const arrayBuffer = buffer.getMappedRange();
+        if (attributes.length) {
+            bufferLayouts.push({
+                stepMode: 'vertex',
+                arrayStride: currentOffset,
+                attributes: attributes,
+            });
+        }
+        return {
+            bufferLayouts,
+            typedArrays,
+        };
+    }
+    function interleaveVertexData(attributes, typedArrays, arrayStride, arrayBuffer) {
         const views = new Map();
         const getView = (typedArray) => {
             const ctor = Object.getPrototypeOf(typedArray).constructor;
@@ -3776,8 +3786,10 @@
             views.set(ctor, newView);
             return newView;
         };
-        const attributes = attribs.map(({ attribute, data, numComponents }) => {
-            const { offset } = attribute;
+        attributes.forEach((attribute, ndx) => {
+            const { offset, format } = attribute;
+            const { numComponents } = numComponentsAndTypeFromVertexFormat(format);
+            const data = typedArrays[ndx];
             const view = getView(data);
             for (let i = 0; i < data.length; i += numComponents) {
                 const ndx = i / numComponents;
@@ -3785,21 +3797,53 @@
                 const s = data.subarray(i, i + numComponents);
                 view.set(s, dstOffset);
             }
-            return attribute;
         });
-        buffer.unmap();
-        const bufferLayout = {
-            stepMode,
-            arrayStride,
-            attributes,
-        };
-        const bufferInfo = {
+    }
+    /**
+     * Given arrays, create buffers, fill the buffers with data, optionally
+     * interleave the data.
+     */
+    function createBuffersAndAttributesFromArrays(device, arrays, options = {}) {
+        options.stepMode || 'vertex';
+        const usage = (options.usage || 0);
+        const { bufferLayouts, typedArrays, } = createVertexAttribsFromArrays(arrays, options);
+        const buffers = [];
+        let numElements = -1;
+        let bufferNdx = 0;
+        for (const { attributes, arrayStride } of bufferLayouts) {
+            const attribs = attributes;
+            const attrib0 = attribs[0];
+            const data0 = typedArrays[bufferNdx];
+            const { numComponents } = numComponentsAndTypeFromVertexFormat(attrib0.format);
+            if (numElements < 0) {
+                numElements = data0.length / numComponents;
+            }
+            const size = arrayStride * numElements;
+            const buffer = device.createBuffer({
+                usage: usage | GPUBufferUsage.VERTEX,
+                size,
+                mappedAtCreation: true,
+            });
+            const arrayBuffer = buffer.getMappedRange();
+            if (attribs.length === 1 && arrayStride === data0.BYTES_PER_ELEMENT * numComponents) {
+                const view = createTypedArrayOfSameType(data0, arrayBuffer);
+                view.set(data0);
+            }
+            else {
+                interleaveVertexData(attribs, typedArrays.slice(bufferNdx), arrayStride, arrayBuffer);
+            }
+            buffer.unmap();
+            buffers.push(buffer);
+            bufferNdx += attribs.length;
+        }
+        const buffersAndAttributes = {
             numElements,
-            bufferLayout,
-            buffer,
+            bufferLayouts,
+            buffers,
         };
-        if (indices) {
-            indices = makeTypedArray({ data: indices, type: Uint32Array, numComponents: 1 }, 'indices');
+        const indicesEntry = Object.entries(arrays).find(([arrayName]) => isIndices(arrayName));
+        if (indicesEntry) {
+            const indices = makeTypedArrayFromArrayUnion(indicesEntry[1], 'indices');
             const indexBuffer = device.createBuffer({
                 size: indices.byteLength,
                 usage: GPUBufferUsage.INDEX | usage,
@@ -3808,11 +3852,11 @@
             const dst = createTypedArrayOfSameType(indices, indexBuffer.getMappedRange());
             dst.set(indices);
             indexBuffer.unmap();
-            bufferInfo.indexBuffer = indexBuffer;
-            bufferInfo.indexFormat = indices instanceof Uint16Array ? 'uint16' : 'uint32';
-            bufferInfo.numElements = indices.length;
+            buffersAndAttributes.indexBuffer = indexBuffer;
+            buffersAndAttributes.indexFormat = indices instanceof Uint16Array ? 'uint16' : 'uint32';
+            buffersAndAttributes.numElements = indices.length;
         }
-        return bufferInfo;
+        return buffersAndAttributes;
     }
 
     function isTextureData(source) {
@@ -4104,20 +4148,21 @@
     exports.TypedArrayViewGenerator = TypedArrayViewGenerator;
     exports.copySourceToTexture = copySourceToTexture;
     exports.copySourcesToTexture = copySourcesToTexture;
-    exports.createBufferInfoFromArrays = createBufferInfoFromArrays;
+    exports.createBuffersAndAttributesFromArrays = createBuffersAndAttributesFromArrays;
     exports.createTextureFromImage = createTextureFromImage;
     exports.createTextureFromImages = createTextureFromImages;
     exports.createTextureFromSource = createTextureFromSource;
     exports.createTextureFromSources = createTextureFromSources;
+    exports.createVertexAttribsFromArrays = createVertexAttribsFromArrays;
     exports.generateMipmap = generateMipmap;
     exports.getSizeForMipFromTexture = getSizeForMipFromTexture;
     exports.getSizeFromSource = getSizeFromSource;
+    exports.interleaveVertexData = interleaveVertexData;
     exports.isTypedArray = isTypedArray;
     exports.loadImageBitmap = loadImageBitmap;
     exports.makeShaderDataDefinitions = makeShaderDataDefinitions;
     exports.makeStructuredView = makeStructuredView;
     exports.makeTypedArrayViews = makeTypedArrayViews;
-    exports.normalizeArray = normalizeArray;
     exports.normalizeGPUExtent3D = normalizeGPUExtent3D;
     exports.numMipLevels = numMipLevels;
     exports.setStructuredValues = setStructuredValues;

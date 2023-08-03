@@ -17,10 +17,10 @@ export type ArraysOptions = {
     usage?: GPUBufferUsageFlags;
     shaderLocation?: number;
 };
-export type BufferInfo = {
+export type BuffersAndAttributes = {
     numElements: number;
-    bufferLayout: GPUVertexBufferLayout;
-    buffer: GPUBuffer;
+    bufferLayouts: GPUVertexBufferLayout[];
+    buffers: GPUBuffer[];
     indexBuffer?: GPUBuffer;
     indexFormat?: GPUIndexFormat;
 };
@@ -28,8 +28,7 @@ export type BufferInfo = {
  *
  */
 export declare function createVertexAttribsFromArrays(arrays: Arrays, options?: ArraysOptions): {
-    attributes: GPUVertexAttribute[];
-    arrayStride: number;
+    bufferLayouts: GPUVertexBufferLayout[];
     typedArrays: TypedArray[];
 };
 export declare function interleaveVertexData(attributes: GPUVertexAttribute[], typedArrays: TypedArray[], arrayStride: number, arrayBuffer: ArrayBuffer): void;
@@ -37,4 +36,4 @@ export declare function interleaveVertexData(attributes: GPUVertexAttribute[], t
  * Given arrays, create buffers, fill the buffers with data, optionally
  * interleave the data.
  */
-export declare function createBufferInfoFromArrays(device: GPUDevice, arrays: Arrays, options?: ArraysOptions): BufferInfo;
+export declare function createBuffersAndAttributesFromArrays(device: GPUDevice, arrays: Arrays, options?: ArraysOptions): BuffersAndAttributes;
