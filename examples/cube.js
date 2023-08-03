@@ -66,12 +66,12 @@ async function main() {
   `;
 
   const {
-    buffer: vertexBuffer,
-    bufferLayout,
+    buffers,
+    bufferLayouts,
     indexBuffer,
     indexFormat,
     numElements,
-  } = wgh.createBufferInfoFromArrays(device, {
+  } = wgh.createBuffersAndAttributesFromArrays(device, {
     position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
     normal: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
     texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
@@ -85,7 +85,7 @@ async function main() {
     vertex: {
       module,
       entryPoint: 'myVSMain',
-      buffers: [ bufferLayout ],
+      buffers: bufferLayouts,
     },
     fragment: {
       module,
@@ -202,7 +202,7 @@ async function main() {
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
     passEncoder.setPipeline(pipeline);
     passEncoder.setBindGroup(0, bindGroup);
-    passEncoder.setVertexBuffer(0, vertexBuffer);
+    passEncoder.setVertexBuffer(0, buffers[0]);
     passEncoder.setIndexBuffer(indexBuffer, indexFormat);
     passEncoder.drawIndexed(numElements);
     passEncoder.end();

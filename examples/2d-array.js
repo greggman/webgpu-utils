@@ -73,12 +73,12 @@ async function main() {
 
 
   const {
-    buffer: vertexBuffer,
-    bufferLayout,
+    buffers,
+    bufferLayouts,
     indexBuffer,
     indexFormat,
     numElements,
-  } = wgh.createBufferInfoFromArrays(device, {
+  } = wgh.createBuffersAndAttributesFromArrays(device, {
     position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
     normal: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
     texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
@@ -93,7 +93,7 @@ async function main() {
 
   const pipeline = device.createRenderPipeline({
     layout: 'auto',
-    vertex: { module, entryPoint: 'myVSMain', buffers: [ bufferLayout ], },
+    vertex: { module, entryPoint: 'myVSMain', buffers: bufferLayouts, },
     fragment: { module, entryPoint: 'myFSMain', targets: [ {format: presentationFormat} ], },
     primitive: { topology: 'triangle-list', cullMode: 'back', },
     depthStencil: { depthWriteEnabled: true, depthCompare: 'less', format: 'depth24plus', },
@@ -234,7 +234,7 @@ async function main() {
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
     passEncoder.setPipeline(pipeline);
     passEncoder.setBindGroup(0, bindGroup);
-    passEncoder.setVertexBuffer(0, vertexBuffer);
+    passEncoder.setVertexBuffer(0, buffers[0]);
     passEncoder.setIndexBuffer(indexBuffer, indexFormat);
     passEncoder.drawIndexed(numElements);
     passEncoder.end();
