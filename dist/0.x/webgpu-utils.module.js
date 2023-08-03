@@ -1,4 +1,4 @@
-/* webgpu-utils@0.9.0, license MIT */
+/* webgpu-utils@0.9.1, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 
 class TypedArrayViewGenerator {
@@ -3637,16 +3637,16 @@ function generateMipmap(device, texture) {
 }
 
 const kTypedArrayToAttribFormat = new Map([
-    [Int8Array, ['snorm8', 'sint8']],
-    [Uint8Array, ['unorm8', 'uint8']],
-    [Int16Array, ['snorm16', 'sint16']],
-    [Uint16Array, ['unorm16', 'uint16']],
-    [Int32Array, ['sint32', 'snorm32']],
-    [Uint32Array, ['uint32', 'unorm32']],
-    [Float32Array, ['float32', 'float32']],
+    [Int8Array, { formats: ['sint8', 'snorm8'], defaultForType: 1 }],
+    [Uint8Array, { formats: ['uint8', 'unorm8'], defaultForType: 1 }],
+    [Int16Array, { formats: ['sint16', 'snorm16'], defaultForType: 1 }],
+    [Uint16Array, { formats: ['uint16', 'unorm16'], defaultForType: 1 }],
+    [Int32Array, { formats: ['sint32', 'snorm32'], defaultForType: 0 }],
+    [Uint32Array, { formats: ['uint32', 'unorm32'], defaultForType: 0 }],
+    [Float32Array, { formats: ['float32', 'float32'], defaultForType: 0 }],
     // TODO: Add Float16Array
 ]);
-const kVertexFormatPrefixToType = new Map([...kTypedArrayToAttribFormat.entries()].map(([Type, [s1, s2]]) => [[s1, Type], [s2, Type]]).flat());
+const kVertexFormatPrefixToType = new Map([...kTypedArrayToAttribFormat.entries()].map(([Type, { formats: [s1, s2] }]) => [[s1, Type], [s2, Type]]).flat());
 function isIndices(name) {
     return name === "indices" || name === 'index' || name === 'ndx';
 }
@@ -3714,10 +3714,53 @@ function createTypedArrayOfSameType(typedArray, arrayBuffer) {
     return new Ctor(arrayBuffer);
 }
 /**
+ * Given a set of named arrays, generates an array `GPUBufferLayout`s
  *
+ * Examples:
+ *
+ * ```js
+ *   const arrays = {
+ *     position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
+ *     normal: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
+ *     texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
+ *   };
+ *
+ *   const { bufferLayouts, typedArrays } = createBufferLayoutsFromArrays(arrays);
+ * ```
+ *
+ * results in `bufferLayouts` being
+ *
+ * ```js
+ * [
+ *   {
+ *     stepMode: 'vertex',
+ *     arrayStride: 32,
+ *     attributes: [
+ *       { shaderLocation: 0, offset:  0, format: 'float32x3' },
+ *       { shaderLocation: 1, offset: 12, format: 'float32x3' },
+ *       { shaderLocation: 2, offset: 24, format: 'float32x2' },
+ *     ],
+ *   },
+ * ]
+ * ```
+ *
+ * and `typedArrays` being
+ *
+ * ```
+ * [
+ *   someFloat32Array0,
+ *   someFloat32Array1,
+ *   someFloat32Array2,
+ * ]
+ * ```
+ *
+ * See {@link Arrays} for details on the various types of arrays.
+ *
+ * Note: If typed arrays are passed in the same typed arrays will come out (copies will not be made)
  */
-function createVertexAttribsFromArrays(arrays, options = {}) {
+function createBufferLayoutsFromArrays(arrays, options = {}) {
     const interleave = options.interleave === undefined ? true : options.interleave;
+    const stepMode = options.stepMode || 'vertex';
     const shaderLocations = options.shaderLocation
         ? (Array.isArray(options.shaderLocation) ? options.shaderLocation : [options.shaderLocation])
         : [0];
@@ -3733,8 +3776,10 @@ function createVertexAttribsFromArrays(arrays, options = {}) {
         const numComponents = getNumComponents(array, arrayName);
         const offset = currentOffset;
         currentOffset += numComponents * data.BYTES_PER_ELEMENT;
-        const types = kTypedArrayToAttribFormat.get(Object.getPrototypeOf(data).constructor);
-        const format = `${types[array.normalize ? 1 : 0]}${numComponents > 1 ? `x${numComponents}` : ''}`;
+        const { defaultForType, formats } = kTypedArrayToAttribFormat.get(Object.getPrototypeOf(data).constructor);
+        const normalize = array.normalize;
+        const formatNdx = typeof normalize === 'undefined' ? defaultForType : (normalize ? 1 : 0);
+        const format = `${formats[formatNdx]}${numComponents > 1 ? `x${numComponents}` : ''}`;
         // TODO: cleanup with generator?
         const shaderLocation = shaderLocations.shift();
         if (shaderLocations.length === 0) {
@@ -3748,7 +3793,7 @@ function createVertexAttribsFromArrays(arrays, options = {}) {
         typedArrays.push(data);
         if (!interleave) {
             bufferLayouts.push({
-                stepMode: 'vertex',
+                stepMode,
                 arrayStride: currentOffset,
                 attributes: attributes.slice(),
             });
@@ -3758,7 +3803,7 @@ function createVertexAttribsFromArrays(arrays, options = {}) {
     });
     if (attributes.length) {
         bufferLayouts.push({
-            stepMode: 'vertex',
+            stepMode,
             arrayStride: currentOffset,
             attributes: attributes,
         });
@@ -3768,6 +3813,36 @@ function createVertexAttribsFromArrays(arrays, options = {}) {
         typedArrays,
     };
 }
+/**
+ * Given an array of `GPUVertexAttribute`s and a corresponding array
+ * of TypedArrays, interleaves the contents of the typed arrays
+ * into the given ArrayBuffer
+ *
+ * example:
+ *
+ * ```js
+ * const attributes: GPUVertexAttribute[] = [
+ *   { shaderLocation: 0, offset:  0, format: 'float32x3' },
+ *   { shaderLocation: 1, offset: 12, format: 'float32x3' },
+ *   { shaderLocation: 2, offset: 24, format: 'float32x2' },
+ * ];
+ * const typedArrays = [
+ *   new Float32Array([1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1]),
+ *   new Float32Array([1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1]),
+ *   new Float32Array([1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1]),
+ * ];
+ * const arrayStride = (3 + 3 + 2) * 4;  // pos + nrm + uv
+ * const arrayBuffer = new ArrayBuffer(arrayStride * 24)
+ * interleaveVertexData(attributes, typedArrays, arrayStride, arrayBuffer)
+ * ```
+ *
+ * results in the contents of `arrayBuffer` to be the 3 TypedArrays interleaved
+ *
+ * See {@link Arrays} for details on the various types of arrays.
+ *
+ * Note: You can generate `attributes` and `typedArrays` above by calling
+ * {@link createBufferLayoutsFromArrays}
+ */
 function interleaveVertexData(attributes, typedArrays, arrayStride, arrayBuffer) {
     const views = new Map();
     const getView = (typedArray) => {
@@ -3794,13 +3869,54 @@ function interleaveVertexData(attributes, typedArrays, arrayStride, arrayBuffer)
     });
 }
 /**
- * Given arrays, create buffers, fill the buffers with data, optionally
- * interleave the data.
+ * Given arrays, create buffers, fills the buffers with data if provided, optionally
+ * interleaves the data (the default).
+ *
+ * Example:
+ *
+ * ```js
+ *  const {
+ *    buffers,
+ *    bufferLayouts,
+ *    indexBuffer,
+ *    indexFormat,
+ *    numElements,
+ *  } = createBuffersAndAttributesFromArrays(device, {
+ *    position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
+ *    normal: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
+ *    texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
+ *    indices: [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23],
+ *  });
+ * ```
+ *
+ * Where `bufferLayouts` will be
+ *
+ * ```js
+ * [
+ *   {
+ *     stepMode: 'vertex',
+ *     arrayStride: 32,
+ *     attributes: [
+ *       { shaderLocation: 0, offset:  0, format: 'float32x3' },
+ *       { shaderLocation: 1, offset: 12, format: 'float32x3' },
+ *       { shaderLocation: 2, offset: 24, format: 'float32x2' },
+ *     ],
+ *   },
+ * ]
+ * ```
+ *
+ * * `buffers` will have one `GPUBuffer` of usage `GPUBufferUsage.VERTEX`
+ * * `indexBuffer` will be `GPUBuffer` of usage `GPUBufferUsage.INDEX`
+ * * `indexFormat` will be `uint32` (use a full spec or a typedarray of `Uint16Array` if you want 16bit indices)
+ * * `numElements` will be 36 (this is either the number entries in the array named `indices`, `index` or `ndx` or if no
+ *    indices are provided then it's the length of the first array divided by numComponents. See {@link Arrays})
+ *
+ * See {@link Arrays} for details on the various types of arrays.
+ * Also see the cube and instancing examples.
  */
 function createBuffersAndAttributesFromArrays(device, arrays, options = {}) {
-    options.stepMode || 'vertex';
     const usage = (options.usage || 0);
-    const { bufferLayouts, typedArrays, } = createVertexAttribsFromArrays(arrays, options);
+    const { bufferLayouts, typedArrays, } = createBufferLayoutsFromArrays(arrays, options);
     const buffers = [];
     let numElements = -1;
     let bufferNdx = 0;
@@ -4139,5 +4255,5 @@ async function createTextureFromImage(device, url, options = {}) {
     return createTextureFromImages(device, [url], options);
 }
 
-export { TypedArrayViewGenerator, copySourceToTexture, copySourcesToTexture, createBuffersAndAttributesFromArrays, createTextureFromImage, createTextureFromImages, createTextureFromSource, createTextureFromSources, createVertexAttribsFromArrays, generateMipmap, getSizeForMipFromTexture, getSizeFromSource, interleaveVertexData, isTypedArray, loadImageBitmap, makeShaderDataDefinitions, makeStructuredView, makeTypedArrayViews, normalizeGPUExtent3D, numMipLevels, setStructuredValues, setStructuredView };
+export { TypedArrayViewGenerator, copySourceToTexture, copySourcesToTexture, createBufferLayoutsFromArrays, createBuffersAndAttributesFromArrays, createTextureFromImage, createTextureFromImages, createTextureFromSource, createTextureFromSources, generateMipmap, getSizeForMipFromTexture, getSizeFromSource, interleaveVertexData, isTypedArray, loadImageBitmap, makeShaderDataDefinitions, makeStructuredView, makeTypedArrayViews, normalizeGPUExtent3D, numMipLevels, setStructuredValues, setStructuredView };
 //# sourceMappingURL=webgpu-utils.module.js.map
