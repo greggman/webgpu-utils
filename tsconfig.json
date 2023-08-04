@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "esnext",
-    "outDir": "dist/1.x",
+    "outDir": "dist/0.x",
     "declaration": true,
     "typeRoots": [
       "./node_modules/@webgpu/types",
@@ -14,6 +14,7 @@
     "src/**/*.ts",
     "examples/**/*.js",
     ".eslintrc.cjs",
+    "*.js",
   ],
   "exclude": [
     "examples/3rdparty/**/*.js",
