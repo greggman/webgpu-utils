@@ -1,4 +1,4 @@
-/* webgpu-utils@0.10.0, license MIT */
+/* webgpu-utils@0.10.1, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 
 class TypedArrayViewGenerator {
@@ -166,7 +166,7 @@ function setStructuredView(data, views) {
                 // complete hack!
                 // there's no type data here so let's guess based on the user's data
                 const dataLen = data[0].length;
-                const stride = dataLen == 3 ? 4 : dataLen;
+                const stride = dataLen === 3 ? 4 : dataLen;
                 for (let i = 0; i < data.length; ++i) {
                     const offset = i * stride;
                     view.set(data[i], offset);
@@ -3463,12 +3463,13 @@ function addMembers(reflect, members, size, offset = 0) {
 
 function getViewDimensionForTexture(texture) {
     switch (texture.dimension) {
-        case '3d':
-            return '3d';
-        case '2d':
-            return texture.depthOrArrayLayers > 1 ? '2d-array' : '2d';
         case '1d':
             return '1d';
+        case '3d':
+            return '3d';
+        default: // to shut up TS
+        case '2d':
+            return texture.depthOrArrayLayers > 1 ? '2d-array' : '2d';
     }
 }
 function normalizeGPUExtent3Dict(size) {
@@ -3779,7 +3780,7 @@ function createBufferLayoutsFromArrays(arrays, options = {}) {
         const totalNumComponents = getNumComponents(array, arrayName);
         // if totalNumComponents > 4 then we clearly need to split this into multiple
         // attributes
-        // (a) <= 4 doesn't mean don't split and 
+        // (a) <= 4 doesn't mean don't split and
         // (b) how to split? We could divide by 4 and if it's not even then divide by 3
         //     as a guess?
         //     5 is error? or 1x4 + 1x1?
@@ -3881,13 +3882,13 @@ function getTypedArrayWithOffsetAndStride(ta, numComponents) {
 function interleaveVertexData(attributes, typedArrays, arrayStride, arrayBuffer) {
     const views = new Map();
     const getView = (typedArray) => {
-        const ctor = Object.getPrototypeOf(typedArray).constructor;
-        const view = views.get(ctor);
+        const Ctor = Object.getPrototypeOf(typedArray).constructor;
+        const view = views.get(Ctor);
         if (view) {
             return view;
         }
-        const newView = new ctor(arrayBuffer);
-        views.set(ctor, newView);
+        const newView = new Ctor(arrayBuffer);
+        views.set(Ctor, newView);
         return newView;
     };
     attributes.forEach((attribute, ndx) => {
@@ -4126,7 +4127,7 @@ function copySourcesToTexture(device, texture, sources, options = {}) {
         else {
             const s = source;
             const { flipY, premultipliedAlpha, colorSpace } = options;
-            device.queue.copyExternalImageToTexture({ source: s, flipY, }, { texture, premultipliedAlpha, colorSpace, origin }, { width: s.width, height: s.height });
+            device.queue.copyExternalImageToTexture({ source: s, flipY, }, { texture, premultipliedAlpha, colorSpace, origin }, getSizeFromSource(s, options));
         }
     });
     if (texture.mipLevelCount > 1) {
