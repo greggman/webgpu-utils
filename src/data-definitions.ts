@@ -46,7 +46,7 @@ type ShaderDataDefinitions = {
  * ```js
  * const code = `
  * struct MyStruct {
- *    color: vec4<f32>,
+ *    color: vec4f,
  *    brightness: f32,
  *    kernel: array<f32, 9>,
  * };

@@ -1,6 +1,6 @@
 import { describe, it } from '../mocha-support.js';
 import { createBuffersAndAttributesFromArrays}  from '../../dist/0.x/webgpu-utils.module.js';
-import { assertArrayEqual, assertEqual, assertDeepEqual, assertTruthy } from '../assert.js';
+import { assertArrayEqual, assertEqual, assertDeepEqual, assertTruthy, assertFalsy } from '../assert.js';
 import { testWithDevice, readBuffer } from '../webgpu.js';
 
 function assertInterleaveEquals(actual, expected, offset, numComponents, stride) {
@@ -278,6 +278,55 @@ describe('attribute-utils-tests', () => {
         const view = new (ndx === 4 ? Uint32Array : Float32Array)(bufferContents[ndx].buffer);
         assertArrayEqual(view, array, name);
       });
+    }));
+
+    it('sizes (non-interleaved), stepMode: "instance"', () => testWithDevice(async device => {
+      const numInstances = 100;
+      const buffersAndAttributes = createBuffersAndAttributesFromArrays(device, {
+        matrix: {
+          data: numInstances * 16,
+          type: Float32Array,
+          numComponents: 16,
+        },
+        color: {
+          data: numInstances * 4,
+          type: Uint8Array,
+        },
+      }, { stepMode: 'instance', interleave: false, shaderLocation: 4 });
+
+      const kNumVerts = numInstances;
+      const kNumElements = numInstances;
+
+      assertEqual(buffersAndAttributes.numElements, kNumElements);
+      assertFalsy(buffersAndAttributes.indexBuffer);
+      assertEqual(buffersAndAttributes.buffers.length, 2);
+
+      assertEqual(buffersAndAttributes.buffers[0].size, kNumVerts * 16 * 4);
+      assertEqual(buffersAndAttributes.buffers[1].size, kNumVerts * 4);
+
+      assertEqual(buffersAndAttributes.buffers[0].usage, GPUBufferUsage.VERTEX);
+      assertEqual(buffersAndAttributes.buffers[1].usage, GPUBufferUsage.VERTEX);
+
+      assertDeepEqual(buffersAndAttributes.bufferLayouts, [
+        {
+          stepMode: 'instance',
+          arrayStride: 64,
+          attributes: [
+            { shaderLocation: 4, offset:  0, format: 'float32x4' },
+            { shaderLocation: 5, offset: 16, format: 'float32x4' },
+            { shaderLocation: 6, offset: 32, format: 'float32x4' },
+            { shaderLocation: 7, offset: 48, format: 'float32x4' },
+          ],
+        },
+        {
+          stepMode: 'instance',
+          arrayStride:  4,
+          attributes: [
+            { shaderLocation: 8, offset:  0, format: 'unorm8x4' },
+          ],
+        },
+      ]);
+
     }));
 
   });

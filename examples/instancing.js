@@ -22,8 +22,7 @@ async function main() {
 
   const code = `
   struct VSUniforms {
-    worldViewProjection: mat4x4f,
-    worldInverseTranspose: mat4x4f,
+    viewProjection: mat4x4f,
   };
   @group(0) @binding(0) var<uniform> vsUniforms: VSUniforms;
 
@@ -31,96 +30,117 @@ async function main() {
       @location(0) position: vec4f,
       @location(1) normal: vec3f,
       @location(2) texcoord: vec2f,
-      @location(3) faceIndex: u32,
+      @location(3) matrix0: vec4f,
+      @location(4) matrix1: vec4f,
+      @location(5) matrix2: vec4f,
+      @location(6) matrix3: vec4f,
+      @location(7) color: vec4f,
   };
 
   struct MyVSOutput {
     @builtin(position) position: vec4f,
     @location(0) normal: vec3f,
     @location(1) texcoord: vec2f,
-    @location(2) @interpolate(flat) faceIndex: u32,
+    @location(2) color: vec4f,
   };
 
   @vertex
   fn myVSMain(v: MyVSInput) -> MyVSOutput {
+    let mat = mat4x4f(v.matrix0, v.matrix1, v.matrix2, v.matrix3);
     var vsOut: MyVSOutput;
-    vsOut.position = vsUniforms.worldViewProjection * v.position;
-    vsOut.normal = (vsUniforms.worldInverseTranspose * vec4f(v.normal, 0.0)).xyz;
+    vsOut.position = vsUniforms.viewProjection * mat * v.position;
+    vsOut.normal = (mat * vec4f(v.normal, 0.0)).xyz;
     vsOut.texcoord = v.texcoord;
-    vsOut.faceIndex = v.faceIndex;
+    vsOut.color = v.color;
     return vsOut;
   }
 
   struct FSUniforms {
     lightDirection: vec3f,
-    faceImageIndex: array<vec4u, 6>,
   };
 
   @group(0) @binding(1) var<uniform> fsUniforms: FSUniforms;
-  @group(0) @binding(2) var diffuseSampler: sampler;
-  @group(0) @binding(3) var diffuseTexture: texture_2d_array<f32>;
 
   @fragment
   fn myFSMain(v: MyVSOutput) -> @location(0) vec4f {
-    let imageNdx = fsUniforms.faceImageIndex[v.faceIndex][0];
-    let diffuseColor = textureSample(diffuseTexture, diffuseSampler, v.texcoord, imageNdx);
+    let diffuseColor = v.color;
     let a_normal = normalize(v.normal);
     let l = dot(a_normal, fsUniforms.lightDirection) * 0.5 + 0.5;
-    
     return vec4f(diffuseColor.rgb * l, diffuseColor.a);
   }
   `;
 
-
-  const {
-    buffers,
-    bufferLayouts,
-    indexBuffer,
-    indexFormat,
-    numElements,
-  } = wgh.createBuffersAndAttributesFromArrays(device, {
+  const numInstances = 1000;
+  const nonInstancedVerts = wgh.createBuffersAndAttributesFromArrays(device, {
     position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
     normal: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
     texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
-    faceIndices: {
-      data: new Uint32Array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5]),
-      numComponents: 1,
-    },
     indices: [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23],
   });
+
+  function r(min, max) {
+    if (typeof max === 'undefined') {
+      max = min;
+      min = 0;
+    }
+    return Math.random() * (max - min) + min;
+  }
+
+  const matrices = new Float32Array(numInstances * 16);
+  const colors = new Uint8Array(numInstances * 4);
+  for (let i = 0; i < numInstances; ++i) {
+    const color = wgh.subarray(colors, i * 4, 4);
+    color.set([r(256), r(256), r(256), 1]);
+
+    const matrix = wgh.subarray(matrices, i * 16, 16);
+    const t = vec3.mulScalar(vec3.normalize([r(-1, 1), r(-1, 1), r(-1, 1)]), 10);
+    mat4.translation(t, matrix);
+    mat4.rotateX(matrix, r(Math.PI * 2), matrix);
+    mat4.rotateY(matrix, r(Math.PI), matrix);
+    const s = r(0.25, 1);
+    mat4.scale(matrix, [s, s, s], matrix);
+  }
+
+  const instancedVerts = wgh.createBuffersAndAttributesFromArrays(device, {
+    matrix: {
+      data: matrices, //numInstances * 16,
+      type: Float32Array,
+      numComponents: 16,
+    },
+    color: {
+      data: colors, // numInstances * 4,
+      type: Uint8Array,
+    },
+  }, { stepMode: 'instance', interleave: false, shaderLocation: 3 });
 
   const module = device.createShaderModule({code});
 
   const pipeline = device.createRenderPipeline({
     layout: 'auto',
-    vertex: { module, entryPoint: 'myVSMain', buffers: bufferLayouts, },
-    fragment: { module, entryPoint: 'myFSMain', targets: [ {format: presentationFormat} ], },
-    primitive: { topology: 'triangle-list', cullMode: 'back', },
-    depthStencil: { depthWriteEnabled: true, depthCompare: 'less', format: 'depth24plus', },
-  });
-
-  const sampler = device.createSampler({
-    magFilter: 'linear',
-    minFilter: 'linear',
-    mipmapFilter: 'linear',
-  });
-
-  const texture = await wgh.createTextureFromImages(device, [
-    "images/array/balloons.jpg",
-    "images/array/biggrub.jpg",
-    "images/array/curtain.jpg",
-    "images/array/hamburger.jpg",
-    "images/array/mascot.jpg",
-    "images/array/meat.jpg",
-    "images/array/orange-fruit.jpg",
-    "images/array/scomp.jpg",
-    "images/array/tif.jpg",
-    "images/array/手拭.jpg",
-    "images/array/竹輪.jpg",
-    "images/array/肉寿司.jpg",
-  ], {
-    mips: true,
-    flipY: true,
+    vertex: {
+      module,
+      entryPoint: 'myVSMain',
+      buffers: [
+        ...nonInstancedVerts.bufferLayouts,
+        ...instancedVerts.bufferLayouts,
+      ],
+    },
+    fragment: {
+      module,
+      entryPoint: 'myFSMain',
+      targets: [
+        {format: presentationFormat},
+      ],
+    },
+    primitive: {
+      topology: 'triangle-list',
+      cullMode: 'back',
+    },
+    depthStencil: {
+      depthWriteEnabled: true,
+      depthCompare: 'less',
+      format: 'depth24plus',
+    },
   });
 
   const defs = wgh.makeShaderDataDefinitions(code);
@@ -141,8 +161,6 @@ async function main() {
     entries: [
       { binding: 0, resource: { buffer: vsUniformBuffer } },
       { binding: 1, resource: { buffer: fsUniformBuffer } },
-      { binding: 2, resource: sampler },
-      { binding: 3, resource: texture.createView({ dimension: '2d-array' }) },
     ],
   });
 
@@ -163,46 +181,20 @@ async function main() {
     },
   };
 
-  fsUniformValues.set({
-    faceImageIndex: [
-      0, 0, 0, 0,
-      1, 0, 0, 0,
-      2, 0, 0, 0,
-      3, 0, 0, 0,
-      4, 0, 0, 0,
-      5, 0, 0, 0,
-    ],
-  })
-
   let depthTexture;
-  let oldTime = 0;
-  const kSwapTime = 0.25;  // every 1/4 second
-
-  const rand = (max) => Math.random() * max;
-  const randInt = (max) => Math.floor(rand(max));
 
   function render(time) {
     time *= 0.001;
 
-    if (Math.floor(time / kSwapTime) !== Math.floor(oldTime / kSwapTime)) {
-      oldTime = time;
-      const faceNdx = randInt(6);
-      const uniformNdx = faceNdx * 4;
-      const imageNdx = (randInt(texture.depthOrArrayLayers - 1) + fsUniformValues.views.faceImageIndex[uniformNdx]) % texture.depthOrArrayLayers;
-      fsUniformValues.views.faceImageIndex[uniformNdx] = imageNdx;
-    }
-
-    const projection = mat4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 10);
-    const eye = [1, 4, -6];
+    const projection = mat4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 100);
+    const radius = 35;
+    const t = time * 0.1
+    const eye = [Math.cos(t) * radius, 4, Math.sin(t) * radius];
     const target = [0, 0, 0];
     const up = [0, 1, 0];
 
     const view = mat4.lookAt(eye, target, up);
-    const viewProjection = mat4.multiply(projection, view);
-    const world = mat4.rotationY(time);
-    mat4.rotateZ(world, time, world);
-    mat4.transpose(mat4.inverse(world), vsUniformValues.views.worldInverseTranspose);
-    mat4.multiply(viewProjection, world, vsUniformValues.views.worldViewProjection);
+    mat4.multiply(projection, view, vsUniformValues.views.viewProjection);
 
     fsUniformValues.set({
       lightDirection: vec3.normalize([1, 8, -10]),
@@ -234,9 +226,11 @@ async function main() {
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
     passEncoder.setPipeline(pipeline);
     passEncoder.setBindGroup(0, bindGroup);
-    passEncoder.setVertexBuffer(0, buffers[0]);
-    passEncoder.setIndexBuffer(indexBuffer, indexFormat);
-    passEncoder.drawIndexed(numElements);
+    passEncoder.setVertexBuffer(0, nonInstancedVerts.buffers[0]);
+    passEncoder.setVertexBuffer(1, instancedVerts.buffers[0]);
+    passEncoder.setVertexBuffer(2, instancedVerts.buffers[1]);
+    passEncoder.setIndexBuffer(nonInstancedVerts.indexBuffer, nonInstancedVerts.indexFormat);
+    passEncoder.drawIndexed(nonInstancedVerts.numElements, instancedVerts.numElements);
     passEncoder.end();
     device.queue.submit([commandEncoder.finish()]);
 
