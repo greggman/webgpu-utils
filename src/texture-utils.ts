@@ -33,7 +33,7 @@ function isTextureData(source: TextureSource) {
 }
 
 function isTextureRawDataSource(source: TextureSource) {
-  return isTypedArray(source) || Array.isArray(source) || isTextureData(source)
+  return isTypedArray(source) || Array.isArray(source) || isTextureData(source);
 }
 
 function toTypedArray(v: TypedArray | number[], format: GPUTextureFormat): TypedArray {
@@ -108,7 +108,7 @@ function getTextureFormatInfo(format: GPUTextureFormat) {
   // TODO: if the regex fails, use table for other formats?
   const numChannels = channels.length;
   const bytesPerChannel = parseInt(bits) / 8;
-  const bytesPerElement = numChannels * bytesPerChannel
+  const bytesPerElement = numChannels * bytesPerChannel;
   const Type = kFormatToTypedArray[`${bits}${typeName}`];
 
   return {
@@ -151,7 +151,7 @@ function uploadDataToTexture(
     data,
     { bytesPerRow: bytesPerElement * size[0], rowsPerImage: size[1] },
     size,
-  )
+  );
 }
 /**
  * Copies a an array of "sources" (Video, Canvas, OffscreenCanvas, ImageBitmap)
@@ -242,7 +242,7 @@ export function getSizeFromSource(source: TextureSource, options: CreateTextureO
  * then it will automatically make the correct number of mip levels.
  *
  * Example:
- * 
+ *
  * ```js
  * const texture = createTextureFromSource(
  *     device,
@@ -292,7 +292,7 @@ export function createTextureFromSources(
  * then it will automatically make the correct number of mip levels.
  *
  * Example:
- * 
+ *
  * ```js
  * const texture = createTextureFromSource(
  *     device,
@@ -317,8 +317,8 @@ export type CreateTextureFromBitmapOptions = CreateTextureOptions & ImageBitmapO
 
 /**
  * Load an ImageBitmap
- * @param url 
- * @param options 
+ * @param url
+ * @param options
  * @returns the loaded ImageBitmap
  */
 export async function loadImageBitmap(url: string, options: ImageBitmapOptions = {}) {
@@ -335,12 +335,12 @@ export async function loadImageBitmap(url: string, options: ImageBitmapOptions =
  * Load images and create a texture from them, optionally generating mip levels
  *
  * Assumes all the urls reference images of the same size.
- * 
+ *
  * Example:
  *
  * ```js
  * const texture = await createTextureFromImage(
- *   device, 
+ *   device,
  *   [
  *     'https://someimage1.url',
  *     'https://someimage2.url',

@@ -12,6 +12,10 @@
   },
   "include": [
     "src/**/*.ts",
+    "examples/**/*.js",
     ".eslintrc.cjs",
+  ],
+  "exclude": [
+    "examples/3rdparty/**/*.js",
   ],
 }

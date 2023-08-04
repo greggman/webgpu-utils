@@ -172,7 +172,7 @@ async function main() {
       4, 0, 0, 0,
       5, 0, 0, 0,
     ],
-  })
+  });
 
   let depthTexture;
   let oldTime = 0;

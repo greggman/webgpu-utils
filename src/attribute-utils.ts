@@ -34,23 +34,23 @@ export type ArrayUnion = number | number[] | TypedArray | FullArraySpec;
 
 /**
  * Named Arrays
- * 
+ *
  * A set of named arrays are passed to various functions like
  * {@link createBufferLayoutsFromArrays} and {@link createBuffersAndAttributesFromArrays}
- * 
+ *
  * Each array can be 1 of 4 things. A native JavaScript array, a TypedArray, a number, a {@link FullArraySpec}
- * 
+ *
  * If it's a native array then, if the name of the array is `indices`, `index` or `ndx` the data will be converted
  * to a `Uint32Array`, otherwise a `Float32Array.  Use a TypedArray or a FullArraySpec to choose a different type.
  * The FullArraySpec type is only used if it's not already a TypedArray
- * 
+ *
  * If it's a native array or a TypedArray or if `numComponents` in a {@link FullArraySpec} is not
  * specified it will be guess. If the name contains 'coord', 'texture' or 'uv' then numComponents will be 2.
  * If the name contains 'color' or 'colour' then numComponents will be 4. Otherwise it's 3.
- * 
+ *
  * For attribute formats, guesses are made based on type at number of components. The guess is
  * based on this table where (d) is the default for that type if `normalize` is not specified
- * 
+ *
  * | Type          |     ..      | normalize   |
  * | ------------  | ----------- | ----------- |
  * | Int8Array     | sint8       | snorm8 (d)  |
@@ -60,7 +60,7 @@ export type ArrayUnion = number | number[] | TypedArray | FullArraySpec;
  * | Int32Array    | sint32 (d)  | snorm32     |
  * | Uint32Array   | uint32 (d)  | unorm32     |
  * | Float32Array  | float32 (d) | float32     |
- * 
+ *
  */
 export type Arrays = { [key: string]: ArrayUnion };
 export type ArraysOptions = {
@@ -83,7 +83,7 @@ export type BuffersAndAttributes = {
 
 function isIndices(name: string) {
   return name === "indices" || name === 'index' || name === 'ndx';
-};
+}
 
 function makeTypedArrayFromArrayUnion(array: ArrayUnion, name: string): TypedArray {
   if (isTypedArray(array)) {
@@ -166,21 +166,21 @@ type TypedArrayWithOffsetAndStride = {
 
 /**
  * Given a set of named arrays, generates an array `GPUBufferLayout`s
- * 
+ *
  * Examples:
- * 
+ *
  * ```js
  *   const arrays = {
  *     position: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, -1, 1, 1, -1, 1, -1, -1, -1, -1, -1],
  *     normal: [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1],
  *     texcoord: [1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
  *   };
- * 
+ *
  *   const { bufferLayouts, typedArrays } = createBufferLayoutsFromArrays(arrays);
  * ```
- * 
+ *
  * results in `bufferLayouts` being
- * 
+ *
  * ```js
  * [
  *   {
@@ -194,9 +194,9 @@ type TypedArrayWithOffsetAndStride = {
  *   },
  * ]
  * ```
- * 
+ *
  * and `typedArrays` being
- * 
+ *
  * ```
  * [
  *   someFloat32Array0,
@@ -204,9 +204,9 @@ type TypedArrayWithOffsetAndStride = {
  *   someFloat32Array2,
  * ]
  * ```
- * 
+ *
  * See {@link Arrays} for details on the various types of arrays.
- * 
+ *
  * Note: If typed arrays are passed in the same typed arrays will come out (copies will not be made)
  */
 export function createBufferLayoutsFromArrays(arrays: Arrays, options: ArraysOptions = {}) {
@@ -227,7 +227,7 @@ export function createBufferLayoutsFromArrays(arrays: Arrays, options: ArraysOpt
       const totalNumComponents = getNumComponents(array, arrayName);
       // if totalNumComponents > 4 then we clearly need to split this into multiple
       // attributes
-      // (a) <= 4 doesn't mean don't split and 
+      // (a) <= 4 doesn't mean don't split and
       // (b) how to split? We could divide by 4 and if it's not even then divide by 3
       //     as a guess?
       //     5 is error? or 1x4 + 1x1?
@@ -303,9 +303,9 @@ function getTypedArrayWithOffsetAndStride(ta: TypedArray | TypedArrayWithOffsetA
  * Given an array of `GPUVertexAttribute`s and a corresponding array
  * of TypedArrays, interleaves the contents of the typed arrays
  * into the given ArrayBuffer
- * 
+ *
  * example:
- * 
+ *
  * ```js
  * const attributes: GPUVertexAttribute[] = [
  *   { shaderLocation: 0, offset:  0, format: 'float32x3' },
@@ -321,9 +321,9 @@ function getTypedArrayWithOffsetAndStride(ta: TypedArray | TypedArrayWithOffsetA
  * const arrayBuffer = new ArrayBuffer(arrayStride * 24)
  * interleaveVertexData(attributes, typedArrays, arrayStride, arrayBuffer)
  * ```
- * 
+ *
  * results in the contents of `arrayBuffer` to be the 3 TypedArrays interleaved
- * 
+ *
  * See {@link Arrays} for details on the various types of arrays.
  *
  * Note: You can generate `attributes` and `typedArrays` above by calling
@@ -337,13 +337,13 @@ export function interleaveVertexData(
 ) {
   const views = new Map<TypedArrayConstructor, TypedArray>();
   const getView = (typedArray: TypedArray) => {
-    const ctor = Object.getPrototypeOf(typedArray).constructor;
-    const view = views.get(ctor);
+    const Ctor = Object.getPrototypeOf(typedArray).constructor;
+    const view = views.get(Ctor);
     if (view) {
       return view;
     }
-    const newView = new ctor(arrayBuffer);
-    views.set(ctor, newView);
+    const newView = new Ctor(arrayBuffer);
+    views.set(Ctor, newView);
     return newView;
   };
 
@@ -359,7 +359,7 @@ export function interleaveVertexData(
     const view = getView(data);
     for (let i = 0; i < data.length; i += stride) {
       const ndx = i / stride;
-      const dstOffset = (offset + ndx * arrayStride) / view.BYTES_PER_ELEMENT
+      const dstOffset = (offset + ndx * arrayStride) / view.BYTES_PER_ELEMENT;
       const srcOff = i + srcOffset;
       const s = data.subarray(srcOff, srcOff + numComponents);
       view.set(s, dstOffset);
@@ -372,7 +372,7 @@ export function interleaveVertexData(
  * interleaves the data (the default).
  *
  * Example:
- * 
+ *
  * ```js
  *  const {
  *    buffers,
@@ -387,9 +387,9 @@ export function interleaveVertexData(
  *    indices: [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23],
  *  });
  * ```
- * 
+ *
  * Where `bufferLayouts` will be
- * 
+ *
  * ```js
  * [
  *   {
@@ -409,7 +409,7 @@ export function interleaveVertexData(
  * * `indexFormat` will be `uint32` (use a full spec or a typedarray of `Uint16Array` if you want 16bit indices)
  * * `numElements` will be 36 (this is either the number entries in the array named `indices`, `index` or `ndx` or if no
  *    indices are provided then it's the length of the first array divided by numComponents. See {@link Arrays})
- * 
+ *
  * See {@link Arrays} for details on the various types of arrays.
  * Also see the cube and instancing examples.
  */

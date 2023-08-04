@@ -4,12 +4,13 @@ import {
 
 function getViewDimensionForTexture(texture: GPUTexture): GPUTextureViewDimension {
    switch (texture.dimension) {
-      case '3d':
-         return '3d';
-      case '2d':
-         return texture.depthOrArrayLayers > 1 ? '2d-array' : '2d';
       case '1d':
          return '1d';
+      case '3d':
+         return '3d';
+      default: // to shut up TS
+      case '2d':
+         return texture.depthOrArrayLayers > 1 ? '2d-array' : '2d';
    }
 }
 
@@ -19,14 +20,14 @@ function normalizeGPUExtent3Dict(size: GPUExtent3DDict) {
 
 /**
  * Converts a `GPUExtent3D` into an array of numbers
- * 
+ *
  * `GPUExtent3D` has two forms `[width, height?, depth?]` or
  * `{width: number, height?: number, depthOrArrayLayers?: number}`
- * 
+ *
  * You pass one of those in here and it returns an array of 3 numbers
  * so that your code doesn't have to deal with multiple forms.
- * 
- * @param size 
+ *
+ * @param size
  * @returns an array of 3 numbers, [width, height, depthOrArrayLayers]
  */
 export function normalizeGPUExtent3D(size: GPUExtent3D): number[] {
@@ -37,8 +38,8 @@ export function normalizeGPUExtent3D(size: GPUExtent3D): number[] {
 
 /**
  * Given a GPUExtent3D returns the number of mip levels needed
- * 
- * @param size 
+ *
+ * @param size
  * @returns number of mip levels needed for the given size
  */
 export function numMipLevels(size: GPUExtent3D) {
@@ -52,12 +53,12 @@ const byDevice = new WeakMap();
 
 /**
  * Generates mip levels from level 0 to the last mip for an existing texture
- * 
+ *
  * The texture must have been created with TEXTURE_BINDING and
  * RENDER_ATTACHMENT and been created with mip levels
- * 
- * @param device 
- * @param texture 
+ *
+ * @param device
+ * @param texture
  */
 export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
   let perDeviceInfo = byDevice.get(device);

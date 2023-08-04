@@ -25,7 +25,7 @@ module.exports = {
         'eslint-plugin-require-trailing-comma',
     ],
     extends: [
-        'eslint:recommends',
+        'eslint:recommended',
         'plugin:@typescript-eslint/recommended', // Uses the recommended rules from the @typescript-eslint/eslint-plugin
     ],
     rules: {
