@@ -3,11 +3,14 @@ import {
   generateMipmap,
   numMipLevels,
 } from '../../dist/0.x/webgpu-utils.module.js';
-import { assertArrayEqual, assertArrayEqualApproximately, assertEqual, assertFalsy, assertTruthy } from '../assert.js';
+import { assertArrayEqualApproximately, assertEqual } from '../assert.js';
 import { readTextureUnpadded, testWithDevice } from '../webgpu.js';
 
 // prevent global document
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const document = undefined;
+
+/* global GPUTextureUsage */
 
 describe('generate-mipmap tests', () => {
 
@@ -50,7 +53,7 @@ describe('generate-mipmap tests', () => {
 
     });
 
-    it('generates mipmaps 1 layer', () => testWithDevice(async device => {
+    it('generates mipmaps 1 layer', testWithDevice(async device => {
       const kTextureWidth = 4;
       const kTextureHeight = 4;
       const r = [255, 0, 0, 255];
@@ -85,14 +88,14 @@ describe('generate-mipmap tests', () => {
       assertArrayEqualApproximately(result, [128, 0, 128, 255], 1);
     }));
 
-    it('generates mipmaps 3 layers', () => testWithDevice(async device => {
+    it('generates mipmaps 3 layers', testWithDevice(async device => {
       const kTextureWidth = 4;
       const kTextureHeight = 4;
       const r = [255, 0, 0, 255];
       const g = [0, 255, 0, 255];
       const b = [0, 0, 255, 255];
       const y = [255, 255, 0, 255];
-      const c = [0, 255, 255, 255];
+      // const c = [0, 255, 255, 255];
       const m = [255, 0, 255, 255];
       const textureData = [
         {

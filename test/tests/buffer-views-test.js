@@ -1,10 +1,11 @@
+/* eslint-disable no-sparse-arrays */
 import { describe, it } from '../mocha-support.js';
 import {
     makeStructuredView,
     setStructuredValues,
     makeShaderDataDefinitions,
 } from '../../dist/0.x/webgpu-utils.module.js';
-import { assertArrayEqual, assertEqual, assertFalsy, assertTruthy } from '../assert.js';
+import { assertArrayEqual, assertEqual, assertTruthy } from '../assert.js';
 
 describe('buffer-views-tests', () => {
 
@@ -701,7 +702,7 @@ describe('buffer-views-tests', () => {
             @group(0) @binding(0) var<uniform> f: foo1;
         `;
         const defs = makeShaderDataDefinitions(code).uniforms;
-        const {views, set, arrayBuffer} = makeStructuredView(defs.f);
+        const {views, /*set,*/ arrayBuffer} = makeStructuredView(defs.f);
         assertEqual(arrayBuffer.byteLength, 4);
         assertTruthy(views instanceof Uint32Array);
         assertEqual(views.length, 1);
@@ -719,7 +720,7 @@ describe('buffer-views-tests', () => {
             @group(0) @binding(0) var<uniform> f: foo1;
         `;
         const defs = makeShaderDataDefinitions(code).uniforms;
-        const {views, set, arrayBuffer} = makeStructuredView(defs.f);
+        const {views/*, set, arrayBuffer*/} = makeStructuredView(defs.f);
         assertEqual(views.a.length, 1);
         assertEqual(views.a.byteOffset, 0);
         assertEqual(views.b.length, 1);
@@ -738,7 +739,7 @@ describe('buffer-views-tests', () => {
             @group(0) @binding(0) var<uniform> f: Foo4;
         `;
         const defs = makeShaderDataDefinitions(code).uniforms;
-        const {views, set, arrayBuffer} = makeStructuredView(defs.f);
+        const {views/*, set, arrayBuffer*/} = makeStructuredView(defs.f);
         assertEqual(views.a.length, 1);
         assertEqual(views.a.byteOffset, 0);
         assertEqual(views.b.length, 1);

@@ -31,6 +31,7 @@ async function test(port) {
       '--enable-unsafe-webgpu',
       '--enable-webgpu-developer-features',
       '--use-angle=swiftshader',
+      //'--user-agent=puppeteer',
     ],
   });
   const page = await browser.newPage();
@@ -44,7 +45,7 @@ async function test(port) {
   let waitingPromiseInfo;
 
   // Get the "viewport" of the page, as reported by the page.
-  page.on('domcontentloaded', async() => {
+  page.on('domcontentloaded', async () => {
     const failures = await page.evaluate(() => {
       return window.testsPromiseInfo.promise;
     });

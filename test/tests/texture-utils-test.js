@@ -1,3 +1,4 @@
+/* eslint-disable require-trailing-comma/require-trailing-comma */
 import { describe, it } from '../mocha-support.js';
 import {
   createTextureFromSource,
@@ -7,12 +8,14 @@ import { assertArrayEqual, assertArrayEqualApproximately, assertEqual } from '..
 import { readTextureUnpadded, testWithDevice, testWithDeviceAndDocument } from '../webgpu.js';
 
 // prevent global document
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const document = undefined;
+/* global GPUTextureUsage */
 
 describe('texture-utils tests', () => {
 
     it('creates texture from canvas with mips',
-        () => testWithDeviceAndDocument(async (device, document) => {
+        testWithDeviceAndDocument(async (device, document) => {
       const canvas = document.createElement('canvas');
       canvas.width = 4;
       canvas.height = 4;
@@ -39,11 +42,11 @@ describe('texture-utils tests', () => {
       assertArrayEqualApproximately(result, [128, 0, 128, 255], 1);
     }));
 
-    it('respects flipY', function() {
+    it('respects flipY', async function () {
       // TODO: Fix so this is not needed
-      if (navigator.userAgent.includes('puppeteer')) {
-        return this.skip();
-      }
+      //if (navigator.userAgent.includes('puppeteer')) {
+      //  return this.skip();
+      //}
       testWithDeviceAndDocument(async (device, document) => {
         const canvas = document.createElement('canvas');
         canvas.width = 1;
@@ -55,7 +58,7 @@ describe('texture-utils tests', () => {
         ctx.fillRect(0, 1, 1, 1);
 
         for (let i = 0; i < 2; ++i) {
-          const flipY = i == 1;
+          const flipY = i === 1;
           const texture = createTextureFromSource(
               device,
               canvas,
@@ -81,7 +84,7 @@ describe('texture-utils tests', () => {
     });
 
     it('respects premultipliedAlpha',
-        () => testWithDeviceAndDocument(async (device, document) => {
+        testWithDeviceAndDocument(async (device, document) => {
       const canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 1;
@@ -90,7 +93,7 @@ describe('texture-utils tests', () => {
       ctx.fillRect(0, 0, 1, 1);
 
       for (let i = 0; i < 2; ++i) {
-        const premultipliedAlpha = i == 1;
+        const premultipliedAlpha = i === 1;
         const texture = createTextureFromSource(
             device,
             canvas,
@@ -108,7 +111,7 @@ describe('texture-utils tests', () => {
       }
     }));
 
-    it('creates texture from image url with mips', () => testWithDevice(async device => {
+    it('creates texture from image url with mips', testWithDevice(async device => {
       const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAACJJREFUGFddibENAAAMgvD/o2l07AIJBBRAUpUv2LkzkR8OvcEL/bJgfmEAAAAASUVORK5CYII=';
       const texture = await createTextureFromImage(
           device,
@@ -281,7 +284,7 @@ describe('texture-utils tests', () => {
 
         for (const test of tests) {
           const { desc, expected, options } = test;
-          it(desc, () => testWithDevice(async device => {
+          it(desc, testWithDevice(async device => {
             const texture = createTextureFromSource(device, convertDataFn(test), {mips: true, ...options});
             assertEqual(texture.width, expected.width);
             assertEqual(texture.height, expected.height);
@@ -289,7 +292,7 @@ describe('texture-utils tests', () => {
             assertEqual(texture.mipLevelCount, expected.mipLevelCount);
             assertEqual(texture.format, expected.format);
           }));
-        };
+        }
       });
     });
  });

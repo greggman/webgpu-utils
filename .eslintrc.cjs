@@ -10,6 +10,7 @@ module.exports = {
         ecmaVersion: 2022,
         tsconfigRootDir: __dirname,
         project: ['./tsconfig.json'],
+        extraFileExtensions: ['.html'],
     },
     settings: {
         react: {

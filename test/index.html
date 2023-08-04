@@ -9,6 +9,7 @@
   <body>
     <div id="mocha"></div>
     <script>
+      console.log('userAgent:', navigator.userAgent);
       function makePromise() {
         const info = {};
         const promise = new Promise((resolve, reject) => {

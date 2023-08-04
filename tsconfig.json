@@ -13,10 +13,13 @@
   "include": [
     "src/**/*.ts",
     "examples/**/*.js",
+    "test/**/*.js",
     ".eslintrc.cjs",
     "*.js",
+    "test/tests/**/*.html",
   ],
   "exclude": [
     "examples/3rdparty/**/*.js",
+    "test/mocha.js",
   ],
 }

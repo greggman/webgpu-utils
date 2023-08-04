@@ -1,5 +1,9 @@
 import { assertTruthy } from './assert.js';
 
+/* global GPUDevice */
+/* global GPUBufferUsage */
+/* global GPUMapMode */
+
 const deviceToResources = new Map();
 
 function addDeviceResource(device, resource) {
@@ -14,49 +18,53 @@ function freeDeviceResources(device) {
   resources.forEach(r => r.destroy());
 }
 
-GPUDevice.prototype.createTexture = (function(origFn) {
-  return function(...args) {
+GPUDevice.prototype.createTexture = (function (origFn) {
+  return function (...args) {
     return addDeviceResource(this, origFn.call(this, ...args));
-  }
+  };
 })(GPUDevice.prototype.createTexture);
 
-GPUDevice.prototype.createBuffer = (function(origFn) {
-  return function(...args) {
+GPUDevice.prototype.createBuffer = (function (origFn) {
+  return function (...args) {
     return addDeviceResource(this, origFn.call(this, ...args));
-  }
+  };
 })(GPUDevice.prototype.createBuffer);
 
-export async function testWithDevice(fn, ...args) {
-  const adapter = await globalThis?.navigator?.gpu?.requestAdapter();
-  const device = await adapter?.requestDevice();
-  if (!device) {
-    this.skip();
-    return;
-  }
-  device.pushErrorScope('validation');
+export function testWithDevice(fn, ...args) {
+  return async function () {
+    const adapter = await globalThis?.navigator?.gpu?.requestAdapter();
+    const device = await adapter?.requestDevice();
+    if (!device) {
+      this.skip();
+      return;
+    }
+    device.pushErrorScope('validation');
 
-  let caughtErr;
-  try {
-    await fn(device, ...args);
-  } catch (e) {
-    caughtErr = e;
-  } finally {
-    const error = await device.popErrorScope();
-    freeDeviceResources(device);
-    device.destroy();
-    assertTruthy(!error, error?.message);
+    let caughtErr;
+    try {
+      await fn(device, ...args);
+    } catch (e) {
+      caughtErr = e;
+    } finally {
+      const error = await device.popErrorScope();
+      freeDeviceResources(device);
+      device.destroy();
+      assertTruthy(!error, error?.message);
+    }
     if (caughtErr) {
       throw caughtErr;
-    } 
-  }
+    }
+  };
 }
 
-export async function testWithDeviceAndDocument(fn) {
-  if (typeof document === undefined) {
-    this.skip();
-    return;
-  }
-  return testWithDevice(fn, document);
+export function testWithDeviceAndDocument(fn) {
+  return async function () {
+    if (typeof document === 'undefined') {
+      this.skip();
+      return;
+    }
+    await testWithDevice(fn, document)();
+  };
 }
 
 export const roundUp = (v, r) => Math.ceil(v / r) * r;

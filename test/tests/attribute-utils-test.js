@@ -3,9 +3,12 @@ import { createBuffersAndAttributesFromArrays}  from '../../dist/0.x/webgpu-util
 import { assertArrayEqual, assertEqual, assertDeepEqual, assertTruthy, assertFalsy } from '../assert.js';
 import { testWithDevice, readBuffer } from '../webgpu.js';
 
+/* global GPUBufferUsage */
+/* global GPUBuffer */
+
 function assertInterleaveEquals(actual, expected, offset, numComponents, stride) {
   for (let off = offset; off < actual.length; off += stride) {
-    const expectedOff = Math.floor(off / stride) * numComponents; 
+    const expectedOff = Math.floor(off / stride) * numComponents;
     const a = actual.slice(off, off + numComponents);
     const e = expected.slice(expectedOff, expectedOff + numComponents);
     assertArrayEqual(a, e, `actual at ${off}, expected at ${expectedOff}`);
@@ -16,7 +19,7 @@ describe('attribute-utils-tests', () => {
 
   describe('createBuffersAndAttributesFromArrays', () => {
 
-    it('simple native arrays', () => testWithDevice(async device => {
+    it('simple native arrays', testWithDevice(async device => {
       const r = [1, 0, 0, 1];
       const y = [1, 1, 0, 1];
       const g = [0, 1, 0, 1];
@@ -38,7 +41,7 @@ describe('attribute-utils-tests', () => {
         indices: [0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23],
       };
       const buffersAndAttributes = createBuffersAndAttributesFromArrays(device, arrays, {
-        usage: GPUBufferUsage.COPY_SRC
+        usage: GPUBufferUsage.COPY_SRC,
       });
 
       const f32Stride = 3 + 3 + 2 + 4;
@@ -76,7 +79,7 @@ describe('attribute-utils-tests', () => {
       }
     }));
 
-    it('simple typed arrays', () => testWithDevice(async device => {
+    it('simple typed arrays', testWithDevice(async device => {
       const r = [255,   0,   0, 255];
       const y = [255, 255,   0, 255];
       const g = [  0, 255,   0, 255];
@@ -98,7 +101,7 @@ describe('attribute-utils-tests', () => {
         indices: new Uint16Array([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23]),
       };
       const buffersAndAttributes = createBuffersAndAttributesFromArrays(device, arrays, {
-        usage: GPUBufferUsage.COPY_SRC
+        usage: GPUBufferUsage.COPY_SRC,
       });
 
       const f32Stride = 3 + 3 + 2 + 1;
@@ -136,7 +139,7 @@ describe('attribute-utils-tests', () => {
       }
     }));
 
-    it('full spec arrays', () => testWithDevice(async device => {
+    it('full spec arrays', testWithDevice(async device => {
       const r = [255,   0,   0, 255];
       const y = [255, 255,   0, 255];
       const g = [  0, 255,   0, 255];
@@ -177,7 +180,7 @@ describe('attribute-utils-tests', () => {
         indices: new Uint16Array([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23]),
       };
       const buffersAndAttributes = createBuffersAndAttributesFromArrays(device, arrays, {
-        usage: GPUBufferUsage.COPY_SRC
+        usage: GPUBufferUsage.COPY_SRC,
       });
 
       const f32Stride = 3 + 3 + 2 + 1 + 1;
@@ -218,7 +221,7 @@ describe('attribute-utils-tests', () => {
       }
     }));
 
-    it('simple native arrays (non-interleaved)', () => testWithDevice(async device => {
+    it('simple native arrays (non-interleaved)', testWithDevice(async device => {
       const r = [1, 0, 0, 1];
       const y = [1, 1, 0, 1];
       const g = [0, 1, 0, 1];
@@ -280,7 +283,7 @@ describe('attribute-utils-tests', () => {
       });
     }));
 
-    it('sizes (non-interleaved), stepMode: "instance"', () => testWithDevice(async device => {
+    it('sizes (non-interleaved), stepMode: "instance"', testWithDevice(async device => {
       const numInstances = 100;
       const buffersAndAttributes = createBuffersAndAttributesFromArrays(device, {
         matrix: {
