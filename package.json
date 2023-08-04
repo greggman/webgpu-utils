@@ -17,7 +17,7 @@
     "docs": "typedoc --disableSources src/webgpu-utils.ts",
     "makeindex": "node build/tools/makeindex.js",
     "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
-    "pre-push": "npm run lint && npm run build && npm run test && npm run docs",
+    "pre-push": "npm run lint && npm run build && npm run test",
     "rollup-watch": "rollup -c -w",
     "start": "rollup -c rollup.config.js -w",
     "test": "mocha test/tests"
