@@ -173,7 +173,7 @@ export function copySourcesToTexture(
       device.queue.copyExternalImageToTexture(
         { source: s, flipY, },
         { texture, premultipliedAlpha, colorSpace, origin },
-        { width: s.width, height: s.height },
+        getSizeFromSource(s, options),
       );
     }
   });
