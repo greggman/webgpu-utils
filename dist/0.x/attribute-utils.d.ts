@@ -4,13 +4,13 @@ import { TypedArray, TypedArrayConstructor } from './typed-arrays.js';
  * See {@link Arrays} for details
  */
 export type FullArraySpec = {
-    data: number[] | TypedArray;
+    data: number | number[] | TypedArray;
     type?: TypedArrayConstructor;
     numComponents?: number;
     shaderLocation?: number;
     normalize?: boolean;
 };
-export type ArrayUnion = number[] | TypedArray | FullArraySpec;
+export type ArrayUnion = number | number[] | TypedArray | FullArraySpec;
 /**
  * Named Arrays
  *
@@ -60,6 +60,11 @@ export type BuffersAndAttributes = {
     indexBuffer?: GPUBuffer;
     indexFormat?: GPUIndexFormat;
 };
+type TypedArrayWithOffsetAndStride = {
+    data: TypedArray;
+    offset: number; /** In elements not bytes */
+    stride: number; /** In elements not bytes */
+};
 /**
  * Given a set of named arrays, generates an array `GPUBufferLayout`s
  *
@@ -107,7 +112,7 @@ export type BuffersAndAttributes = {
  */
 export declare function createBufferLayoutsFromArrays(arrays: Arrays, options?: ArraysOptions): {
     bufferLayouts: GPUVertexBufferLayout[];
-    typedArrays: TypedArray[];
+    typedArrays: TypedArrayWithOffsetAndStride[];
 };
 /**
  * Given an array of `GPUVertexAttribute`s and a corresponding array
@@ -139,7 +144,7 @@ export declare function createBufferLayoutsFromArrays(arrays: Arrays, options?: 
  * Note: You can generate `attributes` and `typedArrays` above by calling
  * {@link createBufferLayoutsFromArrays}
  */
-export declare function interleaveVertexData(attributes: GPUVertexAttribute[], typedArrays: TypedArray[], arrayStride: number, arrayBuffer: ArrayBuffer): void;
+export declare function interleaveVertexData(attributes: GPUVertexAttribute[], typedArrays: (TypedArray | TypedArrayWithOffsetAndStride)[], arrayStride: number, arrayBuffer: ArrayBuffer): void;
 /**
  * Given arrays, create buffers, fills the buffers with data if provided, optionally
  * interleaves the data (the default).
@@ -187,3 +192,4 @@ export declare function interleaveVertexData(attributes: GPUVertexAttribute[], t
  * Also see the cube and instancing examples.
  */
 export declare function createBuffersAndAttributesFromArrays(device: GPUDevice, arrays: Arrays, options?: ArraysOptions): BuffersAndAttributes;
+export {};

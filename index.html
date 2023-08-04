@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- this file is auto-generated from README.md. Do not edited directly -->
 <!--
-@license webgpu-utils 0.9.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
+@license webgpu-utils 0.10.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/webgpu-utils for details
 -->
@@ -61,10 +61,10 @@ possible to tree shake so you’ll only get what you use.</p>
 
 const code = `
 struct MyUniforms {
-   color: vec4&lt;f32&gt;,
+   color: vec4f,
    brightness: f32,
    kernel: array&lt;f32, 9&gt;,
-   projectionMatrix: mat4x4&lt;f32&gt;,
+   projectionMatrix: mat4x4f,
 };
 @group(0) @binding(0) var&lt;uniform&gt; myUniforms: MyUniforms;
 `;

@@ -1,4 +1,4 @@
-/* webgpu-utils@0.9.1, license MIT */
+/* webgpu-utils@0.10.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -25,6 +25,9 @@
             this.byteOffset += view.byteLength;
             return view;
         }
+    }
+    function subarray(arr, offset, length) {
+        return arr.subarray(offset, offset + length);
     }
     // TODO: fix better?
     const isTypedArray = (arr) => arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';
@@ -3361,7 +3364,7 @@
      * ```js
      * const code = `
      * struct MyStruct {
-     *    color: vec4<f32>,
+     *    color: vec4f,
      *    brightness: f32,
      *    kernel: array<f32, 9>,
      * };
@@ -3664,7 +3667,7 @@
         if (isTypedArray(asFullSpec.data)) {
             return asFullSpec.data;
         }
-        if (Array.isArray(array)) {
+        if (Array.isArray(array) || typeof array === 'number') {
             asFullSpec = {
                 data: array,
             };
@@ -3678,7 +3681,7 @@
                 Type = Float32Array;
             }
         }
-        return new Type(asFullSpec.data);
+        return new Type(asFullSpec.data); // ugh!
     }
     function getArray(array) {
         const arr = array.length ? array : array.data;
@@ -3779,24 +3782,51 @@
             .forEach(arrayName => {
             const array = arrays[arrayName];
             const data = makeTypedArrayFromArrayUnion(array, arrayName);
-            const numComponents = getNumComponents(array, arrayName);
-            const offset = currentOffset;
-            currentOffset += numComponents * data.BYTES_PER_ELEMENT;
-            const { defaultForType, formats } = kTypedArrayToAttribFormat.get(Object.getPrototypeOf(data).constructor);
-            const normalize = array.normalize;
-            const formatNdx = typeof normalize === 'undefined' ? defaultForType : (normalize ? 1 : 0);
-            const format = `${formats[formatNdx]}${numComponents > 1 ? `x${numComponents}` : ''}`;
-            // TODO: cleanup with generator?
-            const shaderLocation = shaderLocations.shift();
-            if (shaderLocations.length === 0) {
-                shaderLocations.push(shaderLocation + 1);
+            const totalNumComponents = getNumComponents(array, arrayName);
+            // if totalNumComponents > 4 then we clearly need to split this into multiple
+            // attributes
+            // (a) <= 4 doesn't mean don't split and 
+            // (b) how to split? We could divide by 4 and if it's not even then divide by 3
+            //     as a guess?
+            //     5 is error? or 1x4 + 1x1?
+            //     6 is 2x3
+            //     7 is error? or 1x4 + 1x3?
+            //     8 is 2x4
+            //     9 is 3x3
+            //    10 is error? or 2x4 + 1x2?
+            //    11 is error? or 2x4 + 1x3?
+            //    12 is 3x4 or 4x3?
+            //    13 is error? or 3x4 + 1x1 or 4x3 + 1x1?
+            //    14 is error? or 3x4 + 1x2 or 4x3 + 1x2?
+            //    15 is error? or 3x4 + 1x3 or 4x3 + 1x3?
+            //    16 is 4x4
+            const by4 = totalNumComponents / 4;
+            const by3 = totalNumComponents / 3;
+            const step = by4 % 1 === 0 ? 4 : (by3 % 1 === 0 ? 3 : 4);
+            for (let component = 0; component < totalNumComponents; component += step) {
+                const numComponents = Math.min(step, totalNumComponents - component);
+                const offset = currentOffset;
+                currentOffset += numComponents * data.BYTES_PER_ELEMENT;
+                const { defaultForType, formats } = kTypedArrayToAttribFormat.get(Object.getPrototypeOf(data).constructor);
+                const normalize = array.normalize;
+                const formatNdx = typeof normalize === 'undefined' ? defaultForType : (normalize ? 1 : 0);
+                const format = `${formats[formatNdx]}${numComponents > 1 ? `x${numComponents}` : ''}`;
+                // TODO: cleanup with generator?
+                const shaderLocation = shaderLocations.shift();
+                if (shaderLocations.length === 0) {
+                    shaderLocations.push(shaderLocation + 1);
+                }
+                attributes.push({
+                    offset,
+                    format,
+                    shaderLocation,
+                });
+                typedArrays.push({
+                    data,
+                    offset: component,
+                    stride: totalNumComponents,
+                });
             }
-            attributes.push({
-                offset,
-                format,
-                shaderLocation,
-            });
-            typedArrays.push(data);
             if (!interleave) {
                 bufferLayouts.push({
                     stepMode,
@@ -3818,6 +3848,11 @@
             bufferLayouts,
             typedArrays,
         };
+    }
+    function getTypedArrayWithOffsetAndStride(ta, numComponents) {
+        return (isTypedArray(ta)
+            ? { data: ta, offset: 0, stride: numComponents }
+            : ta);
     }
     /**
      * Given an array of `GPUVertexAttribute`s and a corresponding array
@@ -3864,12 +3899,13 @@
         attributes.forEach((attribute, ndx) => {
             const { offset, format } = attribute;
             const { numComponents } = numComponentsAndTypeFromVertexFormat(format);
-            const data = typedArrays[ndx];
+            const { data, offset: srcOffset, stride, } = getTypedArrayWithOffsetAndStride(typedArrays[ndx], numComponents);
             const view = getView(data);
-            for (let i = 0; i < data.length; i += numComponents) {
-                const ndx = i / numComponents;
+            for (let i = 0; i < data.length; i += stride) {
+                const ndx = i / stride;
                 const dstOffset = (offset + ndx * arrayStride) / view.BYTES_PER_ELEMENT;
-                const s = data.subarray(i, i + numComponents);
+                const srcOff = i + srcOffset;
+                const s = data.subarray(srcOff, srcOff + numComponents);
                 view.set(s, dstOffset);
             }
         });
@@ -3929,10 +3965,10 @@
         for (const { attributes, arrayStride } of bufferLayouts) {
             const attribs = attributes;
             const attrib0 = attribs[0];
-            const data0 = typedArrays[bufferNdx];
             const { numComponents } = numComponentsAndTypeFromVertexFormat(attrib0.format);
+            const { data: data0, stride, } = getTypedArrayWithOffsetAndStride(typedArrays[bufferNdx], numComponents);
             if (numElements < 0) {
-                numElements = data0.length / numComponents;
+                numElements = data0.length / stride;
             }
             const size = arrayStride * numElements;
             const buffer = device.createBuffer({
@@ -4283,6 +4319,7 @@
     exports.numMipLevels = numMipLevels;
     exports.setStructuredValues = setStructuredValues;
     exports.setStructuredView = setStructuredView;
+    exports.subarray = subarray;
 
 }));
 //# sourceMappingURL=webgpu-utils.js.map

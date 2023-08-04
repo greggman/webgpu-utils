@@ -8,4 +8,5 @@ export declare class TypedArrayViewGenerator {
     pad(numBytes: number): void;
     getView<T extends TypedArray>(Ctor: TypedArrayConstructor, numElements: number): T;
 }
+export declare function subarray<T extends TypedArray>(arr: TypedArray, offset: number, length: number): T;
 export declare const isTypedArray: (arr: any) => any;
