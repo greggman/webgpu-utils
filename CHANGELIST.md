@@ -1,22 +1,26 @@
 # Change List
 
+### 0.10.0
+
+* Add instancing support
+
 ### 0.9.0
 
- * Change `createBufferInfoFromArrays` to `createBuffersAndAttributesFromArrays`
+* Change `createBufferInfoFromArrays` to `createBuffersAndAttributesFromArrays`
 
 ### 0.8.0
 
- * Add (alpha version) of `createBufferInfoFromArrays`
+* Add (alpha version) of `createBufferInfoFromArrays`
 
 ### 0.7.0
 
- * Support for multiple sources for layers
- * Generate mips for layers
+* Support for multiple sources for layers
+* Generate mips for layers
 
 ### 0.6.0
 
- * Support typedArrays and native arrays via `copySourceToTexture`
-   and `createTextureFromSource`
+* Support typedArrays and native arrays via `copySourceToTexture`
+  and `createTextureFromSource`
 
 ### 0.5.0
 
