@@ -14,8 +14,7 @@ const document = undefined;
 
 describe('texture-utils tests', () => {
 
-    it('creates texture from canvas with mips',
-        testWithDeviceAndDocument(async (device, document) => {
+    it('creates texture from canvas with mips', testWithDeviceAndDocument(async (device, document) => {
       const canvas = document.createElement('canvas');
       canvas.width = 4;
       canvas.height = 4;
@@ -43,11 +42,12 @@ describe('texture-utils tests', () => {
     }));
 
     it('respects flipY', async function () {
-      // TODO: Fix so this is not needed
-      //if (navigator.userAgent.includes('puppeteer')) {
-      //  return this.skip();
-      //}
-      testWithDeviceAndDocument(async (device, document) => {
+      // TODO: Fix so this can be removed
+      if (navigator.userAgent.includes('puppeteer')) {
+        this.skip();
+        return;
+      }
+      await testWithDeviceAndDocument(async (device, document) => {
         const canvas = document.createElement('canvas');
         canvas.width = 1;
         canvas.height = 2;
@@ -80,11 +80,10 @@ describe('texture-utils tests', () => {
           assertArrayEqual(result.subarray(0, 4), top, `flipY: ${flipY}, top`);
           assertArrayEqual(result.subarray(4, 8), bottom, `flipY: ${flipY}, bottom`);
         }
-      });
+      })();
     });
 
-    it('respects premultipliedAlpha',
-        testWithDeviceAndDocument(async (device, document) => {
+    it('respects premultipliedAlpha', testWithDeviceAndDocument(async (device, document) => {
       const canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 1;

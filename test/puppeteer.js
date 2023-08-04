@@ -31,7 +31,7 @@ async function test(port) {
       '--enable-unsafe-webgpu',
       '--enable-webgpu-developer-features',
       '--use-angle=swiftshader',
-      //'--user-agent=puppeteer',
+      '--user-agent=puppeteer',
     ],
   });
   const page = await browser.newPage();
