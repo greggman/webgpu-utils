@@ -14,6 +14,7 @@
     "src/**/*.ts",
     "examples/**/*.js",
     "test/**/*.js",
+    "build/**/*.js",
     ".eslintrc.cjs",
     "*.js",
     "test/tests/**/*.html",

@@ -11,7 +11,8 @@
   },
   "scripts": {
     "build": "npm run make && npm run docs && npm run makeindex",
-    "make": "rollup -c && node tools/fixup.d.ts.js",
+    "build-ci": "npm run build && node build/tools/prep-for-deploy.js",
+    "make": "rollup -c && node build/tools/fixup.d.ts.js",
     "check": "npm run lint",
     "check-ci": "npm run pre-push",
     "docs": "typedoc --disableSources src/webgpu-utils.ts",

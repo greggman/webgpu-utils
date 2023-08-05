@@ -2,8 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import MarkdownIt from 'markdown-it';
 import * as url from 'url';
-const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
+const dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
+// eslint-disable-next-line new-cap
 const md = MarkdownIt({
   html: true,
   langPrefix: 'lang-',
@@ -11,7 +12,7 @@ const md = MarkdownIt({
   quotes: '“”‘’',
 });
 
-const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), {encoding: 'utf8'}));
+const pkg = JSON.parse(fs.readFileSync(path.join(dirname, '..', '..', 'package.json'), {encoding: 'utf8'}));
 
 function getLicense(pkg) {
   return `@license webgpu-utils ${pkg.version} Copyright (c) 2023, Gregg Tavares All Rights Reserved.
@@ -30,15 +31,15 @@ see: http://github.com/greggman/webgpu-utils for details`;
  * @param {Object|Object[]} params one or more objects.
  * @returns {string} string with replaced parts
  */
-const replaceParams = (function() {
+const replaceParams = (function () {
   const replaceParamsRE = /%\(([^)]+)\)s/g;
 
-  return function(str, params) {
+  return function (str, params) {
     if (!params.length) {
       params = [params];
     }
 
-    return str.replace(replaceParamsRE, function(match, key) {
+    return str.replace(replaceParamsRE, function (match, key) {
       const colonNdx = key.indexOf(':');
       if (colonNdx >= 0) {
         /*
@@ -49,7 +50,7 @@ const replaceParams = (function() {
           if (handler) {
             return handler(args[handlerName]);
           }
-          console.error("unknown substition handler: " + handlerName);
+          console.error("unknown substitution handler: " + handlerName);
         } catch (e) {
           console.error(e);
           console.error("bad substitution: %(" + key + ")s");
