@@ -63,7 +63,7 @@ export function testWithDeviceAndDocument(fn) {
       this.skip();
       return;
     }
-    await testWithDevice(fn, document)();
+    await testWithDevice(fn, document).call(this);
   };
 }
 
