@@ -1,0 +1,4 @@
+dist/**/*
+src/3rdParty/**/*
+examples/*.html
+test/mocha*

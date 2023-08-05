@@ -1,0 +1,26 @@
+{
+  "extends": "@tsconfig/recommended/tsconfig.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "esnext",
+    "outDir": "dist/0.x",
+    "declaration": true,
+    "typeRoots": [
+      "./node_modules/@webgpu/types",
+      "./node_modules/@types",
+    ],
+  },
+  "include": [
+    "src/**/*.ts",
+    "examples/**/*.js",
+    "test/**/*.js",
+    "build/**/*.js",
+    ".eslintrc.cjs",
+    "*.js",
+    "test/tests/**/*.html",
+  ],
+  "exclude": [
+    "examples/3rdparty/**/*.js",
+    "test/mocha.js",
+  ],
+}
