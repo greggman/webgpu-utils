@@ -4,6 +4,8 @@ import fs from 'fs';
 
 const pkg = JSON.parse(fs.readFileSync('package.json', {encoding: 'utf8'}));
 const banner = `/* webgpu-utils@${pkg.version}, license MIT */`;
+const major = pkg.version.split('.')[0];
+const dist = `dist/${major}.x`;
 
 const plugins = [
     typescript({ tsconfig: './tsconfig.json' }),
@@ -14,7 +16,7 @@ export default [
         input: 'src/webgpu-utils.ts',
         output: [
             {
-                file: 'dist/0.x/webgpu-utils.module.js',
+                file: `${dist}/webgpu-utils.module.js`,
                 format: 'esm',
                 sourcemap: true,
                 banner,
@@ -27,7 +29,7 @@ export default [
         output: [
             {
                 name: 'webgpuUtils',
-                file: 'dist/0.x/webgpu-utils.js',
+                file: `${dist}/webgpu-utils.js`,
                 format: 'umd',
                 sourcemap: true,
                 banner,
@@ -40,7 +42,7 @@ export default [
         output: [
             {
                 name: 'webgpuUtils',
-                file: 'dist/0.x/webgpu-utils.min.js',
+                file: `${dist}/webgpu-utils.min.js`,
                 format: 'umd',
                 sourcemap: true,
                 banner,
