@@ -19,7 +19,7 @@ export type ArrayUnion = number | number[] | TypedArray | FullArraySpec;
  *
  * Each array can be 1 of 4 things. A native JavaScript array, a TypedArray, a number, a {@link FullArraySpec}
  *
- * If it's a native array then, if the name of the array is `indices`, `index` or `ndx` the data will be converted
+ * If it's a native array then, if the name of the array is `indices` the data will be converted
  * to a `Uint32Array`, otherwise a `Float32Array.  Use a TypedArray or a FullArraySpec to choose a different type.
  * The FullArraySpec type is only used if it's not already a TypedArray
  *
@@ -185,7 +185,7 @@ export declare function interleaveVertexData(attributes: GPUVertexAttribute[], t
  * * `buffers` will have one `GPUBuffer` of usage `GPUBufferUsage.VERTEX`
  * * `indexBuffer` will be `GPUBuffer` of usage `GPUBufferUsage.INDEX`
  * * `indexFormat` will be `uint32` (use a full spec or a typedarray of `Uint16Array` if you want 16bit indices)
- * * `numElements` will be 36 (this is either the number entries in the array named `indices`, `index` or `ndx` or if no
+ * * `numElements` will be 36 (this is either the number entries in the array named `indices` or if no
  *    indices are provided then it's the length of the first array divided by numComponents. See {@link Arrays})
  *
  * See {@link Arrays} for details on the various types of arrays.

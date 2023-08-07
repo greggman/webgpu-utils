@@ -1,5 +1,9 @@
 # Change List
 
+### 0.11.0
+
+* Add primitives
+
 ### 0.10.0
 
 * Add instancing support
