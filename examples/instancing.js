@@ -188,7 +188,7 @@ async function main() {
 
     const projection = mat4.perspective(30 * Math.PI / 180, canvas.clientWidth / canvas.clientHeight, 0.5, 100);
     const radius = 35;
-    const t = time * 0.1
+    const t = time * 0.1;
     const eye = [Math.cos(t) * radius, 4, Math.sin(t) * radius];
     const target = [0, 0, 0];
     const up = [0, 1, 0];
