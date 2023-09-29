@@ -42,9 +42,9 @@ export function normalizeGPUExtent3D(size: GPUExtent3D): number[] {
  * @param size
  * @returns number of mip levels needed for the given size
  */
-export function numMipLevels(size: GPUExtent3D) {
+export function numMipLevels(size: GPUExtent3D, dimension?: GPUTextureDimension) {
    const sizes = normalizeGPUExtent3D(size);
-   const maxSize = Math.max(...sizes);
+   const maxSize = Math.max(...sizes.slice(0, dimension === '3d' ? 3 : 2));
    return 1 + Math.log2(maxSize) | 0;
 }
 
@@ -64,7 +64,7 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
   let perDeviceInfo = byDevice.get(device);
   if (!perDeviceInfo) {
     perDeviceInfo = {
-      pipelineByFormatAndView: {},
+      pipelineByFormat: {},
       moduleByView: {},
     };
     byDevice.set(device, perDeviceInfo);
@@ -73,18 +73,12 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
     sampler,
   } = perDeviceInfo;
   const {
-    pipelineByFormatAndView,
+    pipelineByFormat,
     moduleByView,
   } = perDeviceInfo;
   const view = getViewDimensionForTexture(texture);
   let module = moduleByView[view];
   if (!module) {
-    const type = view === '2d'
-      ? 'texture_2d<f32>'
-      : 'texture_2d_array<f32>';
-    const extraSampleParamsWGSL = view === '2d'
-      ? ''
-      : ', 0u';
     module = device.createShaderModule({
       label: `mip level generation for ${view}`,
       code: `
@@ -110,10 +104,10 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
         }
 
         @group(0) @binding(0) var ourSampler: sampler;
-        @group(0) @binding(1) var ourTexture: ${type};
+        @group(0) @binding(1) var ourTexture: texture_2d<f32>;
 
         @fragment fn fs(fsInput: VSOutput) -> @location(0) vec4f {
-          return textureSample(ourTexture, ourSampler, fsInput.texcoord${extraSampleParamsWGSL});
+          return textureSample(ourTexture, ourSampler, fsInput.texcoord);
         }
       `,
     });
@@ -127,10 +121,10 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
     perDeviceInfo.sampler = sampler;
   }
 
-  const id = `${texture.format}.${view}`;
+  const id = `${texture.format}`;
 
-  if (!pipelineByFormatAndView[id]) {
-    pipelineByFormatAndView[id] = device.createRenderPipeline({
+  if (!pipelineByFormat[id]) {
+    pipelineByFormat[id] = device.createRenderPipeline({
       label: `mip level generator pipeline for ${view}`,
       layout: 'auto',
       vertex: {
@@ -144,13 +138,12 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
       },
     });
   }
-  const pipeline = pipelineByFormatAndView[id];
+  const pipeline = pipelineByFormat[id];
 
   const encoder = device.createCommandEncoder({
     label: 'mip gen encoder',
   });
 
-  const dimension = getViewDimensionForTexture(texture);
   for (let baseMipLevel = 1; baseMipLevel < texture.mipLevelCount; ++baseMipLevel) {
     for (let baseArrayLayer = 0; baseArrayLayer < texture.depthOrArrayLayers; ++baseArrayLayer) {
       const bindGroup = device.createBindGroup({
@@ -160,7 +153,7 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
           {
             binding: 1,
             resource: texture.createView({
-              dimension,
+              dimension: '2d',
               baseMipLevel: baseMipLevel - 1,
               mipLevelCount: 1,
               baseArrayLayer,
@@ -175,7 +168,6 @@ export function generateMipmap(device: GPUDevice, texture: GPUTexture) {
         colorAttachments: [
           {
             view: texture.createView({
-               dimension,
                baseMipLevel,
                mipLevelCount: 1,
                baseArrayLayer,
