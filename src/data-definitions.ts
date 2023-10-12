@@ -1,4 +1,4 @@
-import { WgslReflect, Member } from './3rdParty/wgsl_reflect/wgsl_reflect.module';
+import { WgslReflect, MemberInfo } from 'wgsl_reflect';
 
 export interface StructDefinition {
     fields: FieldDefinitions;
@@ -75,22 +75,22 @@ export function makeShaderDataDefinitions(code: string): ShaderDataDefinitions {
 
     const structs = Object.fromEntries(reflect.structs.map(struct => {
         const info = reflect.getStructInfo(struct);
-        return [struct.name, addMembers(reflect, info.members, info.size)];
+        return [struct.name, addMembers(reflect, info!.members!, info!.size)];
     }));
 
     const uniforms = Object.fromEntries(reflect.uniforms.map(uniform => {
         const info = reflect.getUniformBufferInfo(uniform);
-        const member = addMember(reflect, info, 0)[1] as StorageDefinition;
-        member.binding = info.binding;
-        member.group = info.group;
+        const member = addMember(reflect, info as unknown as MemberInfo, 0)[1] as StorageDefinition;
+        member.binding = info!.binding;
+        member.group = info!.group;
         return [uniform.name, member];
     }));
 
     const storages = Object.fromEntries(reflect.storage.map(uniform => {
         const info = reflect.getStorageBufferInfo(uniform);
-        const member = addMember(reflect, info, 0)[1] as StorageDefinition;
-        member.binding = info.binding;
-        member.group = info.group;
+        const member = addMember(reflect, info as unknown as MemberInfo, 0)[1] as StorageDefinition;
+        member.binding = info!.binding;
+        member.group = info!.group;
         return [uniform.name, member];
     }));
 
@@ -101,7 +101,7 @@ export function makeShaderDataDefinitions(code: string): ShaderDataDefinitions {
     };
 }
 
-function addMember(reflect: WgslReflect, m: Member, offset: number): [string, StructDefinition | IntrinsicDefinition | IntrinsicDefinition[] | StructDefinition[]] {
+function addMember(reflect: WgslReflect, m: MemberInfo, offset: number): [string, StructDefinition | IntrinsicDefinition | IntrinsicDefinition[] | StructDefinition[]] {
     if (m.isArray) {
         if (m.isStruct) {
             return [
@@ -116,9 +116,9 @@ function addMember(reflect: WgslReflect, m: Member, offset: number): [string, St
                 {
                     offset: offset + (m.offset || 0),
                     size: m.size,
-                    type: m.type.format!.format
-                        ? `${m.type.format!.name!}<${m.type.format!.format!.name}>`
-                        : m.type.format!.name!,
+                    type: (m.type as any).format!.format
+                        ? `${(m.type as any).format!.name!}<${(m.type as any).format!.format!.name}>`
+                        : (m.type as any).format!.name!,
                     numElements: m.arrayCount,
                 },
             ];
@@ -134,15 +134,15 @@ function addMember(reflect: WgslReflect, m: Member, offset: number): [string, St
             {
                 offset: offset + (m.offset || 0),
                 size: m.size,
-                type: m.type?.format
-                    ? `${m.type.name}<${m.type.format.name}>`
+                type: (m.type as any)?.format
+                    ? `${m.type.name}<${(m.type as any).format.name}>`
                     : m.type?.name || m.name,
             },
         ];
     }
 }
 
-function addMembers(reflect: WgslReflect, members: Member[], size: number, offset = 0): StructDefinition {
+function addMembers(reflect: WgslReflect, members: MemberInfo[], size: number, offset = 0): StructDefinition {
     const fields: FieldDefinitions = Object.fromEntries(members.map(m => {
         return addMember(reflect, m, offset);
     }));

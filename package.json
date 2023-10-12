@@ -43,6 +43,7 @@
   },
   "homepage": "https://github.com/greggman/webgpu-utils#readme",
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.3",
     "@rollup/plugin-typescript": "^11.1.2",
     "@tsconfig/recommended": "^1.0.2",
@@ -61,6 +62,7 @@
     "rollup": "^3.27.1",
     "tslib": "^2.6.1",
     "typedoc": "^0.24.8",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "wgsl_reflect": "github:brendan-duncan/wgsl_reflect#083d726a36fa495626566b37bfebefb06ad41574"
   }
 }

@@ -2,8 +2,9 @@
   "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
-    "module": "esnext",
+    "module": "NodeNext",
     "outDir": "dist/0.x",
+    "moduleResolution": "NodeNext",
     "declaration": true,
     "typeRoots": [
       "./node_modules/@webgpu/types",
