@@ -807,35 +807,45 @@ describe('buffer-views-tests', () => {
             @group(0) @binding(7) var<uniform> foo7: array<array<array<VSUniforms, 5>, 6>, 7>;
         `;
         const defs = makeShaderDataDefinitions(code).uniforms;
-        const {views, set, arrayBuffer} = makeStructuredView(defs.foo7);
-        // 2 * 4 * 5 * 6 * 7
-        assertEqual(arrayBuffer.byteLength, 2 * 4 * 5 * 6 * 7);  // 1680
-        assertTruthy(views[6][5][4].foo instanceof Uint32Array);
-        assertTruthy(views[6][5][4].moo.bar instanceof Uint32Array);
-        set([
-          , // 0
-          , // 1
-          , // 2
-          , // 3
-          , // 4
-          , // 5
-          [
-            , // 0
-            , // 1
-            , // 2
-            , // 3
-            , // 4
-            [
+        {
+            const {views, set, arrayBuffer} = makeStructuredView(defs.foo0);
+            assertEqual(arrayBuffer.byteLength, 12);
+        }
+        {
+            const {views, set, arrayBuffer} = makeStructuredView(defs.foo1);
+            assertEqual(arrayBuffer.byteLength, 16 * 5);
+        }
+        {
+            const {views, set, arrayBuffer} = makeStructuredView(defs.foo7);
+            // 2 * 4 * 5 * 6 * 7
+            assertEqual(arrayBuffer.byteLength, 2 * 4 * 5 * 6 * 7);  // 1680
+            assertTruthy(views[6][5][4].foo instanceof Uint32Array);
+            assertTruthy(views[6][5][4].moo.bar instanceof Uint32Array);
+            set([
               , // 0
               , // 1
               , // 2
               , // 3
-              { foo: 123, moo: { bar: 456 }},
-            ],
-          ],
-        ]);
-        assertEqual(views[6][5][4].foo[0], 123);
-        assertEqual(views[6][5][4].moo.bar[0], 456);
+              , // 4
+              , // 5
+              [
+                , // 0
+                , // 1
+                , // 2
+                , // 3
+                , // 4
+                [
+                  , // 0
+                  , // 1
+                  , // 2
+                  , // 3
+                  { foo: 123, moo: { bar: 456 }},
+                ],
+              ],
+            ]);
+            assertEqual(views[6][5][4].foo[0], 123);
+            assertEqual(views[6][5][4].moo.bar[0], 456);
+        }
     });
 
 });

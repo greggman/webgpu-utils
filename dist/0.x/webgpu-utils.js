@@ -1,4 +1,4 @@
-/* webgpu-utils@0.12.1, license MIT */
+/* webgpu-utils@0.12.3, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -107,14 +107,16 @@
         const asArrayDef = typeDef;
         const elementType = asArrayDef.elementType;
         if (elementType) {
+            return asArrayDef.size;
+            /*
             if (isIntrinsic(elementType)) {
-                const asIntrinsicDef = elementType;
+                const asIntrinsicDef = elementType as IntrinsicDefinition;
                 const { align } = typeInfo[asIntrinsicDef.type];
                 return roundUpToMultipleOf(typeDef.size, align) * asArrayDef.numElements;
-            }
-            else {
+            } else {
                 return asArrayDef.numElements * getSizeOfTypeDef(elementType);
             }
+            */
         }
         else {
             const asStructDef = typeDef;
@@ -3816,7 +3818,7 @@
             const arrayInfo = typeInfo;
             // ArrayDefinition
             return {
-                size: arrayInfo.size * arrayInfo.count,
+                size: arrayInfo.size,
                 elementType: addType(reflect, arrayInfo.format, offset),
                 numElements: arrayInfo.count,
             };
