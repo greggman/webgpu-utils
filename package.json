@@ -19,7 +19,7 @@
     "makeindex": "node build/tools/makeindex.js",
     "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
     "pre-push": "npm run lint && npm run build && npm run test",
-    "rollup-watch": "rollup -c -w",
+    "watch": "rollup -c -w",
     "start": "rollup -c rollup.config.js -w",
     "test": "node test/puppeteer.js"
   },
@@ -63,6 +63,6 @@
     "tslib": "^2.6.1",
     "typedoc": "^0.24.8",
     "typescript": "^5.1.6",
-    "wgsl_reflect": "github:brendan-duncan/wgsl_reflect#083d726a36fa495626566b37bfebefb06ad41574"
+    "wgsl_reflect": "github:brendan-duncan/wgsl_reflect#ffdb63c"
   }
 }

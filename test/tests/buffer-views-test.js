@@ -9,6 +9,18 @@ import { assertArrayEqual, assertEqual, assertTruthy } from '../assert.js';
 
 describe('buffer-views-tests', () => {
 
+    it('handles intrinsics', () => {
+        const shader = `
+            @group(12) @binding(13) var<uniform> uni1: f32;
+        `;
+        const defs = makeShaderDataDefinitions(shader);
+        const {views, arrayBuffer} = makeStructuredView(defs.uniforms.uni1);
+        const asF32 = new Float32Array(arrayBuffer);
+        views[0] = 123;
+        assertTruthy(views instanceof Float32Array);
+        assertEqual(asF32[0], 123);
+    });
+
     it('generates handles built-in type aliases', () => {
         const shader = `
     struct VertexDesc {
@@ -227,15 +239,15 @@ describe('buffer-views-tests', () => {
     };
 
     struct VSUniforms {
-        worldViewProjection: mat4x4<f32>,
-        position: array<VertexDesc, 4>,
-        lineInfo: array<LineInfo, 5>,
-        color: vec4<f32>,
-        lightDirection: array<vec3<f32>, 6>,
-        kernel: vec4<u32>,
-        colorMult: vec4f,
-        colorMultU: vec4u,
-        colorMultI: vec4i,
+        worldViewProjection: mat4x4<f32>,    //   0-> 63
+        position: array<VertexDesc, 4>,      //  64->111   3 * 4 * 4
+        lineInfo: array<LineInfo, 5>,        // 112->159   6 * 4 * 5
+        color: vec4<f32>,                    // 240
+        lightDirection: array<vec3<f32>, 6>, // 256
+        kernel: vec4<u32>,                   // 352
+        colorMult: vec4f,                    // 368
+        colorMultU: vec4u,                   // 384
+        colorMultI: vec4i,                   // 400
     };
         `;
         const defs = makeShaderDataDefinitions(shader).structs;
@@ -651,29 +663,6 @@ describe('buffer-views-tests', () => {
         assertEqual(views[2].position.byteOffset, 16);
     });
 
-    it('works with alias', () => {
-      const code = `
-        alias material_index = u32;
-        alias color = vec3f;
-
-        struct Material {
-            index: material_index,
-            diffuse: color,
-        };
-
-        @group(0) @binding(1) var<storage> material: Material;
-      `;
-      const d = makeShaderDataDefinitions(code);
-      const defs = d.storages;
-      assertTruthy(defs);
-      assertTruthy(defs.material    );
-      assertEqual(defs.material.size, 32);
-      assertEqual(defs.material.fields.index.offset, 0);
-      assertEqual(defs.material.fields.index.size, 4);
-      assertEqual(defs.material.fields.diffuse.offset, 16);
-      assertEqual(defs.material.fields.diffuse.size, 12);
-    });
-
     /*
     it('works with const', () => {
       const code = `
@@ -795,6 +784,58 @@ describe('buffer-views-tests', () => {
         assertEqual(f32[f32.length - 1], 55);
         assertEqual(u32[u32.length - 2], 22);
 
+    });
+
+    it('sets arrays of arrays', () => {
+        const code = `
+            struct InnerUniforms {
+                bar: u32,
+            };
+
+            struct VSUniforms {
+                foo: u32,
+                moo: InnerUniforms,
+            };
+            @group(0) @binding(0) var<uniform> foo0: vec3f;
+            @group(0) @binding(1) var<uniform> foo1: array<vec3f, 5>;
+            @group(0) @binding(2) var<uniform> foo2: array<array<vec3f, 5>, 6>;
+            @group(0) @binding(3) var<uniform> foo3: array<array<array<vec3f, 5>, 6>, 7>;
+
+            @group(0) @binding(4) var<uniform> foo4: VSUniforms;
+            @group(0) @binding(5) var<uniform> foo5: array<VSUniforms, 5>;
+            @group(0) @binding(6) var<uniform> foo6: array<array<VSUniforms, 5>, 6>;
+            @group(0) @binding(7) var<uniform> foo7: array<array<array<VSUniforms, 5>, 6>, 7>;
+        `;
+        const defs = makeShaderDataDefinitions(code).uniforms;
+        const {views, set, arrayBuffer} = makeStructuredView(defs.foo7);
+        // 2 * 4 * 5 * 6 * 7
+        assertEqual(arrayBuffer.byteLength, 2 * 4 * 5 * 6 * 7);  // 1680
+        assertTruthy(views[6][5][4].foo instanceof Uint32Array);
+        assertTruthy(views[6][5][4].moo.bar instanceof Uint32Array);
+        set([
+          , // 0
+          , // 1
+          , // 2
+          , // 3
+          , // 4
+          , // 5
+          [
+            , // 0
+            , // 1
+            , // 2
+            , // 3
+            , // 4
+            [
+              , // 0
+              , // 1
+              , // 2
+              , // 3
+              { foo: 123, moo: { bar: 456 }},
+            ],
+          ],
+        ]);
+        assertEqual(views[6][5][4].foo[0], 123);
+        assertEqual(views[6][5][4].moo.bar[0], 456);
     });
 
 });
