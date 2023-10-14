@@ -1,4 +1,4 @@
-/* webgpu-utils@0.12.2, license MIT */
+/* webgpu-utils@0.12.1, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 
 class TypedArrayViewGenerator {
@@ -3810,7 +3810,7 @@ function addType(reflect, typeInfo, offset) {
         const arrayInfo = typeInfo;
         // ArrayDefinition
         return {
-            size: arrayInfo.size,
+            size: arrayInfo.size * arrayInfo.count,
             elementType: addType(reflect, arrayInfo.format, offset),
             numElements: arrayInfo.count,
         };

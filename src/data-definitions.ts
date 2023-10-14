@@ -215,7 +215,7 @@ function addType(reflect: WgslReflect, typeInfo: TypeInfo, offset: number):
         const arrayInfo = typeInfo as ArrayInfo;
         // ArrayDefinition
         return {
-            size: arrayInfo.size,
+            size: arrayInfo.size * arrayInfo.count,
             elementType: addType(reflect, arrayInfo.format, offset),
             numElements: arrayInfo.count,
         };

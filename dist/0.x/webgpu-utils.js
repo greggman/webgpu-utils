@@ -1,4 +1,4 @@
-/* webgpu-utils@0.12.2, license MIT */
+/* webgpu-utils@0.12.1, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -3816,7 +3816,7 @@
             const arrayInfo = typeInfo;
             // ArrayDefinition
             return {
-                size: arrayInfo.size,
+                size: arrayInfo.size * arrayInfo.count,
                 elementType: addType(reflect, arrayInfo.format, offset),
                 numElements: arrayInfo.count,
             };
