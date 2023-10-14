@@ -28,10 +28,16 @@ describe('generate-mipmap tests', () => {
       assertEqual(numMipLevels([1, 4]), 3);
 
       assertEqual(numMipLevels([1, 1, 1]), 1);
-      assertEqual(numMipLevels([1, 1, 2]), 2);
-      assertEqual(numMipLevels([1, 1, 3]), 2);
-      assertEqual(numMipLevels([1, 1, 4]), 3);
-      assertEqual(numMipLevels([1, 1, 4]), 3);
+      assertEqual(numMipLevels([1, 1, 2]), 1);
+      assertEqual(numMipLevels([1, 1, 3]), 1);
+      assertEqual(numMipLevels([1, 1, 4]), 1);
+      assertEqual(numMipLevels([1, 1, 4]), 1);
+
+      assertEqual(numMipLevels([1, 1, 1], '3d'), 1);
+      assertEqual(numMipLevels([1, 1, 2], '3d'), 2);
+      assertEqual(numMipLevels([1, 1, 3], '3d'), 2);
+      assertEqual(numMipLevels([1, 1, 4], '3d'), 3);
+      assertEqual(numMipLevels([1, 1, 4], '3d'), 3);
 
       assertEqual(numMipLevels({width: 1}), 1);
       assertEqual(numMipLevels({width: 2}), 2);
@@ -45,11 +51,17 @@ describe('generate-mipmap tests', () => {
       assertEqual(numMipLevels({width: 1, height: 4}), 3);
       assertEqual(numMipLevels({width: 1, height: 4}), 3);
 
+      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 1}, '3d'), 1);
+      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 2}, '3d'), 2);
+      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 3}, '3d'), 2);
+      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 4}, '3d'), 3);
+      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 4}, '3d'), 3);
+
       assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 1}), 1);
-      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 2}), 2);
-      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 3}), 2);
-      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 4}), 3);
-      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 4}), 3);
+      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 2}), 1);
+      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 3}), 1);
+      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 4}), 1);
+      assertEqual(numMipLevels({width: 1, depthOrArrayLayers: 4}), 1);
 
     });
 

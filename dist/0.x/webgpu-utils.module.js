@@ -1,4 +1,4 @@
-/* webgpu-utils@0.11.0, license MIT */
+/* webgpu-utils@0.12.0, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 
 class TypedArrayViewGenerator {
@@ -97,54 +97,107 @@ const typeInfo = {
     'mat4x4<f16>': b.mat4x4h,
 };
 // This needs to be fixed! 😱
-function getSizeOfStructDef(fieldDef) {
-    if (Array.isArray(fieldDef)) {
-        return fieldDef.length * getSizeOfStructDef(fieldDef[0]);
+function getSizeOfTypeDef(typeDef) {
+    const asArrayDef = typeDef;
+    const elementType = asArrayDef.elementType;
+    if (elementType) {
+        if (isIntrinsic(elementType)) {
+            const asIntrinsicDef = elementType;
+            const { align } = typeInfo[asIntrinsicDef.type];
+            return roundUpToMultipleOf(typeDef.size, align) * asArrayDef.numElements;
+        }
+        else {
+            return asArrayDef.numElements * getSizeOfTypeDef(elementType);
+        }
     }
     else {
-        return fieldDef.size;
+        const asStructDef = typeDef;
+        const numElements = asArrayDef.numElements || 1;
+        if (asStructDef.fields) {
+            return typeDef.size * numElements;
+        }
+        else {
+            const asIntrinsicDef = typeDef;
+            const { align } = typeInfo[asIntrinsicDef.type];
+            return numElements > 1
+                ? roundUpToMultipleOf(typeDef.size, align) * numElements
+                : typeDef.size;
+        }
     }
+}
+function range(count, fn) {
+    return new Array(count).fill(0).map((_, i) => fn(i));
+}
+// If numElements is undefined this is NOT an array. If it is defined then it IS an array
+// Sizes for arrays are different than sizes for non-arrays. Example
+// a vec3f non array is Float32Array(3)
+// a vec3f array of 2 is Float32Array(4 * 2)
+// a vec3f array of 1 is Float32Array(4 * 1)
+function makeIntrinsicTypedArrayView(typeDef, buffer, baseOffset, numElements) {
+    const { size, type } = typeDef;
+    try {
+        const { View, align } = typeInfo[type];
+        const isArray = numElements !== undefined;
+        const sizeInBytes = isArray
+            ? roundUpToMultipleOf(size, align)
+            : size;
+        const baseNumElements = sizeInBytes / View.BYTES_PER_ELEMENT;
+        return new View(buffer, baseOffset, baseNumElements * (numElements || 1));
+    }
+    catch {
+        throw new Error(`unknown type: ${type}`);
+    }
+}
+function isIntrinsic(typeDef) {
+    return !typeDef.fields &&
+        !typeDef.elementType;
 }
 /**
  * Creates a set of named TypedArray views on an ArrayBuffer
- * @param structDef Definition of the various types of views.
+ * @param typeDef Definition of the various types of views.
  * @param arrayBuffer Optional ArrayBuffer to use (if one provided one will be created)
  * @param offset Optional offset in existing ArrayBuffer to start the views.
  * @returns A bunch of named TypedArray views and the ArrayBuffer
  */
-function makeTypedArrayViews(structDef, arrayBuffer, offset) {
+function makeTypedArrayViews(typeDef, arrayBuffer, offset) {
     const baseOffset = offset || 0;
-    const buffer = arrayBuffer || new ArrayBuffer(getSizeOfStructDef(structDef));
-    const makeViews = (structDef) => {
-        if (Array.isArray(structDef)) {
-            return structDef.map(elemDef => makeViews(elemDef));
+    const buffer = arrayBuffer || new ArrayBuffer(getSizeOfTypeDef(typeDef));
+    const makeViews = (typeDef, baseOffset) => {
+        const asArrayDef = typeDef;
+        const elementType = asArrayDef.elementType;
+        if (elementType) {
+            // TODO: Should be optional? Per Type? Depth set? Per field?
+            // The issue is, if we have `array<vec4, 1000>` we don't likely
+            // want 1000 `Float32Array(4)` views. We want 1 `Float32Array(1000 * 4)` view.
+            // On the other hand, if we have `array<mat4x4, 10>` the maybe we do want
+            // 10 `Float32Array(16)` views since you might want to do
+            // `mat4.perspective(fov, aspect, near, far, foo.bar.arrayOf10Mat4s[3])`;
+            if (isIntrinsic(elementType)) {
+                return makeIntrinsicTypedArrayView(elementType, buffer, baseOffset, asArrayDef.numElements);
+            }
+            else {
+                const elementSize = getSizeOfTypeDef(elementType);
+                return range(asArrayDef.numElements, i => makeViews(elementType, baseOffset + elementSize * i));
+            }
         }
-        else if (typeof structDef === 'string') {
+        else if (typeof typeDef === 'string') {
             throw Error('unreachable');
         }
         else {
-            const fields = structDef.fields;
+            const fields = typeDef.fields;
             if (fields) {
                 const views = {};
-                for (const [name, def] of Object.entries(fields)) {
-                    views[name] = makeViews(def);
+                for (const [name, { type, offset }] of Object.entries(fields)) {
+                    views[name] = makeViews(type, baseOffset + offset);
                 }
                 return views;
             }
             else {
-                const { size, offset, type } = structDef;
-                try {
-                    const { View } = typeInfo[type];
-                    const numElements = size / View.BYTES_PER_ELEMENT;
-                    return new View(buffer, baseOffset + offset, numElements);
-                }
-                catch {
-                    throw new Error(`unknown type: ${type}`);
-                }
+                return makeIntrinsicTypedArrayView(typeDef, buffer, baseOffset);
             }
         }
     };
-    return { views: makeViews(structDef), arrayBuffer: buffer };
+    return { views: makeViews(typeDef, baseOffset), arrayBuffer: buffer };
 }
 /**
  * Given a set of TypeArrayViews and matching JavaScript data
@@ -194,15 +247,17 @@ function setStructuredView(data, views) {
     }
 }
 /**
- * Given a StructDefinition, create matching TypedArray views
- * @param structDef A StructDefinition as returned from {@link makeShaderDataDefinitions}
+ * Given a VariableDefinition, create matching TypedArray views
+ * @param varDef A VariableDefinition as returned from {@link makeShaderDataDefinitions}
  * @param arrayBuffer Optional ArrayBuffer for the views
  * @param offset Optional offset into the ArrayBuffer for the views
  * @returns TypedArray views for the various named fields of the structure as well
  *    as a `set` function to make them easy to set, and the arrayBuffer
  */
-function makeStructuredView(structDef, arrayBuffer, offset = 0) {
-    const views = makeTypedArrayViews(structDef, arrayBuffer, offset);
+function makeStructuredView(varDef, arrayBuffer, offset = 0) {
+    const asVarDef = varDef;
+    const typeDef = asVarDef.group === undefined ? varDef : asVarDef.typeDefinition;
+    const views = makeTypedArrayViews(typeDef, arrayBuffer, offset);
     return {
         ...views,
         set(data) {
@@ -228,35 +283,57 @@ function getView(arrayBuffer, Ctor) {
     }
     return view;
 }
-function setStructuredValues(fieldDef, data, arrayBuffer, offset = 0) {
-    const asIntrinsicDefinition = fieldDef;
-    if (asIntrinsicDefinition.type) {
-        const type = typeInfo[asIntrinsicDefinition.type];
-        const view = getView(arrayBuffer, type.View);
-        const index = (offset + asIntrinsicDefinition.offset) / view.BYTES_PER_ELEMENT;
-        if (typeof data === 'number') {
-            view[index] = data;
-        }
-        else {
-            view.set(data, index);
-        }
-    }
-    else if (Array.isArray(fieldDef)) {
-        // It's IntrinsicDefinition[] or StructDefinition[]
-        data.forEach((newValue, ndx) => {
-            setStructuredValues(fieldDef[ndx], newValue, arrayBuffer, offset);
-        });
+// Is this something like [1,2,3]?
+function isArrayLikeOfNumber(data) {
+    return isTypedArray(data) || Array.isArray(data) && typeof data[0] === 'number';
+}
+function setIntrinsicFromArrayLikeOfNumber(typeDef, data, arrayBuffer, offset) {
+    const asIntrinsicDefinition = typeDef;
+    const type = typeInfo[asIntrinsicDefinition.type];
+    const view = getView(arrayBuffer, type.View);
+    const index = offset / view.BYTES_PER_ELEMENT;
+    if (typeof data === 'number') {
+        view[index] = data;
     }
     else {
+        view.set(data, index);
+    }
+}
+function setTypedValues(typeDef, data, arrayBuffer, offset = 0) {
+    const asArrayDef = typeDef;
+    const elementType = asArrayDef.elementType;
+    if (elementType) {
+        // It's ArrayDefinition
+        if (isIntrinsic(elementType)) {
+            const asIntrinsicDef = elementType;
+            if (isArrayLikeOfNumber(data)) {
+                setIntrinsicFromArrayLikeOfNumber(asIntrinsicDef, data, arrayBuffer, offset);
+                return;
+            }
+        }
+        data.forEach((newValue, ndx) => {
+            setTypedValues(elementType, newValue, arrayBuffer, offset + elementType.size * ndx);
+        });
+        return;
+    }
+    const asStructDef = typeDef;
+    const fields = asStructDef.fields;
+    if (fields) {
         // It's StructDefinition
-        const asStructDefinition = fieldDef;
         for (const [key, newValue] of Object.entries(data)) {
-            const fieldDef = asStructDefinition.fields[key];
+            const fieldDef = fields[key];
             if (fieldDef) {
-                setStructuredValues(fieldDef, newValue, arrayBuffer, offset);
+                setTypedValues(fieldDef.type, newValue, arrayBuffer, offset + fieldDef.offset);
             }
         }
     }
+    else {
+        // It's IntrinsicDefinition
+        setIntrinsicFromArrayLikeOfNumber(typeDef, data, arrayBuffer, offset);
+    }
+}
+function setStructuredValues(varDef, data, arrayBuffer, offset = 0) {
+    setTypedValues(varDef.typeDefinition, data, arrayBuffer, offset);
 }
 
 class ParseContext {
@@ -343,6 +420,20 @@ class While extends Statement {
     }
 }
 /**
+ * @class Continuing
+ * @extends Statement
+ * @category AST
+ */
+class Continuing extends Statement {
+    constructor(body) {
+        super();
+        this.body = body;
+    }
+    get astNodeType() {
+        return "continuing";
+    }
+}
+/**
  * @class For
  * @extends Statement
  * @category AST
@@ -375,6 +466,22 @@ class Var extends Statement {
     }
     get astNodeType() {
         return "var";
+    }
+}
+/**
+ * @class Override
+ * @extends Statement
+ * @category AST
+ */
+class Override extends Statement {
+    constructor(name, type, value) {
+        super();
+        this.name = name;
+        this.type = type;
+        this.value = value;
+    }
+    get astNodeType() {
+        return "override";
     }
 }
 /**
@@ -561,29 +668,6 @@ class Return extends Statement {
     }
 }
 /**
- * @class Struct
- * @extends Statement
- * @category AST
- */
-class Struct extends Statement {
-    constructor(name, members) {
-        super();
-        this.name = name;
-        this.members = members;
-    }
-    get astNodeType() {
-        return "struct";
-    }
-    /// Return the index of the member with the given name, or -1 if not found.
-    getMemberIndex(name) {
-        for (let i = 0; i < this.members.length; i++) {
-            if (this.members[i].name == name)
-                return i;
-        }
-        return -1;
-    }
-}
-/**
  * @class Enable
  * @extends Statement
  * @category AST
@@ -653,16 +737,47 @@ class Continue extends Statement {
 }
 /**
  * @class Type
- * @extends Node
+ * @extends Statement
  * @category AST
  */
-class Type extends Node {
+class Type extends Statement {
     constructor(name) {
         super();
         this.name = name;
     }
     get astNodeType() {
         return "type";
+    }
+    get isStruct() {
+        return false;
+    }
+    get isArray() {
+        return false;
+    }
+}
+/**
+ * @class StructType
+ * @extends Type
+ * @category AST
+ */
+class Struct extends Type {
+    constructor(name, members) {
+        super(name);
+        this.members = members;
+    }
+    get astNodeType() {
+        return "struct";
+    }
+    get isStruct() {
+        return true;
+    }
+    /// Return the index of the member with the given name, or -1 if not found.
+    getMemberIndex(name) {
+        for (let i = 0; i < this.members.length; i++) {
+            if (this.members[i].name == name)
+                return i;
+        }
+        return -1;
     }
 }
 /**
@@ -710,6 +825,9 @@ class ArrayType extends Type {
     }
     get astNodeType() {
         return "array";
+    }
+    get isArray() {
+        return true;
     }
 }
 /**
@@ -1292,6 +1410,7 @@ TokenTypes.keywords = {
     texture_depth_cube: new TokenType("texture_depth_cube", TokenClass.keyword, "texture_depth_cube"),
     texture_depth_cube_array: new TokenType("texture_depth_cube_array", TokenClass.keyword, "texture_depth_cube_array"),
     texture_depth_multisampled_2d: new TokenType("texture_depth_multisampled_2d", TokenClass.keyword, "texture_depth_multisampled_2d"),
+    texture_external: new TokenType("texture_external", TokenClass.keyword, "texture_external"),
     u32: new TokenType("u32", TokenClass.keyword, "u32"),
     vec2: new TokenType("vec2", TokenClass.keyword, "vec2"),
     vec3: new TokenType("vec3", TokenClass.keyword, "vec3"),
@@ -1305,7 +1424,6 @@ TokenTypes.keywords = {
     default: new TokenType("default", TokenClass.keyword, "default"),
     discard: new TokenType("discard", TokenClass.keyword, "discard"),
     else: new TokenType("else", TokenClass.keyword, "else"),
-    elseif: new TokenType("elseif", TokenClass.keyword, "elseif"),
     enable: new TokenType("enable", TokenClass.keyword, "enable"),
     fallthrough: new TokenType("fallthrough", TokenClass.keyword, "fallthrough"),
     false: new TokenType("false", TokenClass.keyword, "false"),
@@ -1328,6 +1446,7 @@ TokenTypes.keywords = {
     type: new TokenType("type", TokenClass.keyword, "type"),
     uniform: new TokenType("uniform", TokenClass.keyword, "uniform"),
     var: new TokenType("var", TokenClass.keyword, "var"),
+    override: new TokenType("override", TokenClass.keyword, "override"),
     workgroup: new TokenType("workgroup", TokenClass.keyword, "workgroup"),
     write: new TokenType("write", TokenClass.keyword, "write"),
     r8unorm: new TokenType("r8unorm", TokenClass.keyword, "r8unorm"),
@@ -1374,9 +1493,9 @@ TokenTypes.keywords = {
         pointer: new TokenType("ptr", TokenClass.keyword, "ptr"),*/
 };
 TokenTypes.tokens = {
-    decimal_float_literal: new TokenType("decimal_float_literal", TokenClass.token, /((-?[0-9]*\.[0-9]+|-?[0-9]+\.[0-9]*)((e|E)(\+|-)?[0-9]+)?f?)|(-?[0-9]+(e|E)(\+|-)?[0-9]+f?)/),
+    decimal_float_literal: new TokenType("decimal_float_literal", TokenClass.token, /((-?[0-9]*\.[0-9]+|-?[0-9]+\.[0-9]*)((e|E)(\+|-)?[0-9]+)?f?)|(-?[0-9]+(e|E)(\+|-)?[0-9]+f?)|([0-9]+f)/),
     hex_float_literal: new TokenType("hex_float_literal", TokenClass.token, /-?0x((([0-9a-fA-F]*\.[0-9a-fA-F]+|[0-9a-fA-F]+\.[0-9a-fA-F]*)((p|P)(\+|-)?[0-9]+f?)?)|([0-9a-fA-F]+(p|P)(\+|-)?[0-9]+f?))/),
-    int_literal: new TokenType("int_literal", TokenClass.token, /-?0x[0-9a-fA-F]+|0|-?[1-9][0-9]*/),
+    int_literal: new TokenType("int_literal", TokenClass.token, /-?0x[0-9a-fA-F]+|0i?|-?[1-9][0-9]*i?/),
     uint_literal: new TokenType("uint_literal", TokenClass.token, /0x[0-9a-fA-F]+u|0u|[1-9][0-9]*u/),
     ident: new TokenType("ident", TokenClass.token, /[a-zA-Z][0-9a-zA-Z_]*/),
     and: new TokenType("and", TokenClass.token, "&"),
@@ -1468,11 +1587,13 @@ TokenTypes.depth_texture_type = [
     _a.keywords.texture_depth_cube_array,
     _a.keywords.texture_depth_multisampled_2d,
 ];
+TokenTypes.texture_external_type = [_a.keywords.texture_external];
 TokenTypes.any_texture_type = [
     ..._a.sampled_texture_type,
     ..._a.multisampled_texture_type,
     ..._a.storage_texture_type,
     ..._a.depth_texture_type,
+    ..._a.texture_external_type,
 ];
 TokenTypes.texel_format = [
     _a.keywords.r8unorm,
@@ -1904,6 +2025,13 @@ class WgslParser {
             this._consume(TokenTypes.tokens.semicolon, "Expected ';'.");
             return _var;
         }
+        if (this._check(TokenTypes.keywords.override)) {
+            const _override = this._override_variable_decl();
+            if (_override != null)
+                _override.attributes = attrs;
+            this._consume(TokenTypes.tokens.semicolon, "Expected ';'.");
+            return _override;
+        }
         if (this._check(TokenTypes.keywords.let)) {
             const _let = this._global_let_decl();
             if (_let != null)
@@ -1989,6 +2117,7 @@ class WgslParser {
         // variable_statement semicolon
         // break_statement semicolon
         // continue_statement semicolon
+        // continuing_statement compound_statement
         // discard semicolon
         // assignment_statement semicolon
         // compound_statement
@@ -2008,6 +2137,8 @@ class WgslParser {
             return this._for_statement();
         if (this._check(TokenTypes.keywords.while))
             return this._while_statement();
+        if (this._check(TokenTypes.keywords.continuing))
+            return this._continuing_statement();
         if (this._check(TokenTypes.keywords.static_assert))
             return this._static_assert_statement();
         if (this._check(TokenTypes.tokens.brace_left))
@@ -2048,6 +2179,12 @@ class WgslParser {
         let condition = this._optional_paren_expression();
         const block = this._compound_statement();
         return new While(condition, block);
+    }
+    _continuing_statement() {
+        if (!this._match(TokenTypes.keywords.continuing))
+            return null;
+        const block = this._compound_statement();
+        return new Continuing(block);
     }
     _for_statement() {
         // for paren_left for_header paren_right compound_statement
@@ -2174,7 +2311,7 @@ class WgslParser {
         const statements = [];
         let statement = this._statement();
         while (statement !== null) {
-            if (statement instanceof (Array)) {
+            if (Array.isArray(statement)) {
                 for (let s of statement) {
                     statements.push(s);
                 }
@@ -2262,22 +2399,32 @@ class WgslParser {
             return null;
         const condition = this._optional_paren_expression();
         const block = this._compound_statement();
-        let elseif = null;
-        if (this._match(TokenTypes.keywords.elseif))
-            elseif = this._elseif_statement();
+        let elseif = [];
+        if (this._match_elseif()) {
+            elseif = this._elseif_statement(elseif);
+        }
         let _else = null;
         if (this._match(TokenTypes.keywords.else))
             _else = this._compound_statement();
         return new If(condition, block, elseif, _else);
     }
-    _elseif_statement() {
+    _match_elseif() {
+        if (this._tokens[this._current].type === TokenTypes.keywords.else &&
+            this._tokens[this._current + 1].type === TokenTypes.keywords.if) {
+            this._advance();
+            this._advance();
+            return true;
+        }
+        return false;
+    }
+    _elseif_statement(elseif = []) {
         // else_if optional_paren_expression compound_statement elseif_statement?
-        const elseif = [];
         const condition = this._optional_paren_expression();
         const block = this._compound_statement();
         elseif.push(new ElseIf(condition, block));
-        if (this._match(TokenTypes.keywords.elseif))
-            elseif.push(this._elseif_statement()[0]);
+        if (this._match_elseif()) {
+            this._elseif_statement(elseif);
+        }
         return elseif;
     }
     _return_statement() {
@@ -2554,6 +2701,13 @@ class WgslParser {
             _var.value = this._const_expression();
         return _var;
     }
+    _override_variable_decl() {
+        // attribute* override_decl (equal const_expression)?
+        const _override = this._override_decl();
+        if (_override && this._match(TokenTypes.tokens.equal))
+            _override.value = this._const_expression();
+        return _override;
+    }
     _global_const_decl() {
         // attribute* const (ident variable_ident_decl) global_const_initializer?
         if (!this._match(TokenTypes.keywords.const))
@@ -2568,7 +2722,7 @@ class WgslParser {
         }
         let value = null;
         if (this._match(TokenTypes.tokens.equal)) {
-            let valueExpr = this._short_circuit_or_expression();
+            const valueExpr = this._short_circuit_or_expression();
             if (valueExpr instanceof CreateExpr) {
                 value = valueExpr;
             }
@@ -2577,8 +2731,13 @@ class WgslParser {
                 value = valueExpr.initializer;
             }
             else {
-                let constValue = valueExpr.evaluate(this._context);
-                value = new LiteralExpr(constValue);
+                try {
+                    const constValue = valueExpr.evaluate(this._context);
+                    value = new LiteralExpr(constValue);
+                }
+                catch (_a) {
+                    value = valueExpr;
+                }
             }
         }
         const c = new Const(name.toString(), type, "", "", value);
@@ -2643,6 +2802,20 @@ class WgslParser {
         }
         return new Var(name.toString(), type, storage, access, null);
     }
+    _override_decl() {
+        // override (ident variable_ident_decl)
+        if (!this._match(TokenTypes.keywords.override))
+            return null;
+        const name = this._consume(TokenTypes.tokens.ident, "Expected variable name");
+        let type = null;
+        if (this._match(TokenTypes.tokens.colon)) {
+            const attrs = this._attribute();
+            type = this._type_decl();
+            if (type != null)
+                type.attributes = attrs;
+        }
+        return new Override(name.toString(), type, null);
+    }
     _enable_directive() {
         // enable ident semicolon
         const name = this._consume(TokenTypes.tokens.ident, "identity expected.");
@@ -2694,6 +2867,13 @@ class WgslParser {
             TokenTypes.keywords.u32,
         ])) {
             const type = this._advance();
+            const typeName = type.toString();
+            if (this._context.structs.has(typeName)) {
+                return this._context.structs.get(typeName);
+            }
+            if (this._context.aliases.has(typeName)) {
+                return this._context.aliases.get(typeName).type;
+            }
             return new Type(type.toString());
         }
         if (this._check(TokenTypes.template_types)) {
@@ -2840,69 +3020,172 @@ class WgslParser {
 /**
  * @author Brendan Duncan / https://github.com/brendan-duncan
  */
-class VariableInfo {
-    constructor(node, group, binding) {
-        this.group = group;
-        this.binding = binding;
-        this.node = node;
-    }
-    get name() {
-        return this.node.name;
-    }
-    get type() {
-        return this.node.type;
-    }
-    get attributes() {
-        return this.node.attributes;
-    }
-}
-class FunctionInfo {
-    constructor(node) {
-        this.inputs = [];
-        this.node = node;
-    }
-    get name() {
-        return this.node.name;
-    }
-    get returnType() {
-        return this.node.returnType;
-    }
-    get args() {
-        return this.node.args;
-    }
-    get attributes() {
-        return this.node.attributes;
-    }
-}
-class InputInfo {
-    constructor(name, type, input, locationType, location) {
+class TypeInfo {
+    constructor(name, attributes) {
         this.name = name;
-        this.type = type;
-        this.input = input;
-        this.locationType = locationType;
-        this.location = location;
-        this.interpolation = this.interpolation;
+        this.attributes = attributes;
+        this.size = 0;
+    }
+    get isArray() {
+        return false;
+    }
+    get isStruct() {
+        return false;
+    }
+    get isTemplate() {
+        return false;
     }
 }
 class MemberInfo {
+    constructor(name, type, attributes) {
+        this.name = name;
+        this.type = type;
+        this.attributes = attributes;
+        this.offset = 0;
+        this.size = 0;
+    }
+    get isArray() {
+        return this.type.isArray;
+    }
+    get isStruct() {
+        return this.type.isStruct;
+    }
+    get isTemplate() {
+        return this.type.isTemplate;
+    }
+    get align() {
+        return this.type.isStruct ? this.type.align : 0;
+    }
+    get members() {
+        return this.type.isStruct ? this.type.members : null;
+    }
+    get format() {
+        return this.type.isArray
+            ? this.type.format
+            : this.type.isTemplate
+                ? this.type.format
+                : null;
+    }
+    get count() {
+        return this.type.isArray ? this.type.count : 0;
+    }
+    get stride() {
+        return this.type.isArray ? this.type.stride : this.size;
+    }
 }
-class TypeInfo {
+class StructInfo extends TypeInfo {
+    constructor(name, attributes) {
+        super(name, attributes);
+        this.members = [];
+        this.align = 0;
+    }
+    get isStruct() {
+        return true;
+    }
+}
+class ArrayInfo extends TypeInfo {
+    constructor(name, attributes) {
+        super(name, attributes);
+        this.count = 0;
+        this.stride = 0;
+    }
+    get isArray() {
+        return true;
+    }
+}
+class TemplateInfo extends TypeInfo {
+    constructor(name, format, attributes) {
+        super(name, attributes);
+        this.format = format;
+    }
+    get isTemplate() {
+        return true;
+    }
+}
+var ResourceType;
+(function (ResourceType) {
+    ResourceType[ResourceType["Uniform"] = 0] = "Uniform";
+    ResourceType[ResourceType["Storage"] = 1] = "Storage";
+    ResourceType[ResourceType["Texture"] = 2] = "Texture";
+    ResourceType[ResourceType["Sampler"] = 3] = "Sampler";
+})(ResourceType || (ResourceType = {}));
+class VariableInfo {
+    constructor(name, type, group, binding, attributes, resourceType) {
+        this.name = name;
+        this.type = type;
+        this.group = group;
+        this.binding = binding;
+        this.attributes = attributes;
+        this.resourceType = resourceType;
+    }
+    get isArray() {
+        return this.type.isArray;
+    }
+    get isStruct() {
+        return this.type.isStruct;
+    }
+    get isTemplate() {
+        return this.type.isTemplate;
+    }
+    get size() {
+        return this.type.size;
+    }
+    get align() {
+        return this.type.isStruct ? this.type.align : 0;
+    }
+    get members() {
+        return this.type.isStruct ? this.type.members : null;
+    }
+    get format() {
+        return this.type.isArray
+            ? this.type.format
+            : this.type.isTemplate
+                ? this.type.format
+                : null;
+    }
+    get count() {
+        return this.type.isArray ? this.type.count : 0;
+    }
+    get stride() {
+        return this.type.isArray ? this.type.stride : this.size;
+    }
+}
+class AliasInfo {
+    constructor(name, type) {
+        this.name = name;
+        this.type = type;
+    }
+}
+class _TypeSize {
     constructor(align, size) {
         this.align = align;
         this.size = size;
     }
 }
-class BufferInfo extends TypeInfo {
-    constructor(name, type) {
-        super(0, 0);
+class InputInfo {
+    constructor(name, type, locationType, location) {
         this.name = name;
         this.type = type;
+        this.locationType = locationType;
+        this.location = location;
+        this.interpolation = null;
     }
 }
-class BindGropEntry {
-    constructor(type, resource) {
+class OutputInfo {
+    constructor(name, type, locationType, location) {
+        this.name = name;
         this.type = type;
-        this.resource = resource;
+        this.locationType = locationType;
+        this.location = location;
+    }
+}
+class FunctionInfo {
+    constructor(name, stage = null) {
+        this.stage = null;
+        this.inputs = [];
+        this.outputs = [];
+        this.name = name;
+        this.stage = stage;
     }
 }
 class EntryFunctions {
@@ -2912,10 +3195,16 @@ class EntryFunctions {
         this.compute = [];
     }
 }
+class OverrideInfo {
+    constructor(name, type, attributes, id) {
+        this.name = name;
+        this.type = type;
+        this.attributes = attributes;
+        this.id = id;
+    }
+}
 class WgslReflect {
     constructor(code) {
-        /// All top-level structs in the shader.
-        this.structs = [];
         /// All top-level uniform vars in the shader.
         this.uniforms = [];
         /// All top-level storage vars in the shader.
@@ -2924,101 +3213,153 @@ class WgslReflect {
         this.textures = [];
         // All top-level sampler vars in the shader.
         this.samplers = [];
-        /// All top-level functions in the shader.
-        this.functions = [];
         /// All top-level type aliases in the shader.
         this.aliases = [];
-        if (code)
-            this.initialize(code);
-    }
-    initialize(code) {
-        const parser = new WgslParser();
-        this.ast = parser.parse(code);
+        /// All top-level overrides in the shader.
+        this.overrides = [];
+        /// All top-level structs in the shader.
+        this.structs = [];
+        /// All entry functions in the shader: vertex, fragment, and/or compute.
         this.entry = new EntryFunctions();
-        for (const node of this.ast) {
-            if (node.astNodeType == "struct")
-                this.structs.push(node);
-            if (node.astNodeType == "alias")
-                this.aliases.push(node);
-            if (this.isUniformVar(node)) {
-                const v = node;
-                const g = this.getAttributeNum(node, "group", 0);
-                const b = this.getAttributeNum(node, "binding", 0);
-                this.uniforms.push(new VariableInfo(v, g, b));
+        this._types = new Map();
+        if (code) {
+            this.update(code);
+        }
+    }
+    update(code) {
+        const parser = new WgslParser();
+        const ast = parser.parse(code);
+        for (const node of ast) {
+            if (node instanceof Struct) {
+                const info = this._getTypeInfo(node, null);
+                if (info instanceof StructInfo) {
+                    this.structs.push(info);
+                }
             }
-            if (this.isStorageVar(node)) {
-                const v = node;
-                const g = this.getAttributeNum(node, "group", 0);
-                const b = this.getAttributeNum(node, "binding", 0);
-                this.storage.push(new VariableInfo(v, g, b));
+            if (node instanceof Alias) {
+                this.aliases.push(this._getAliasInfo(node));
             }
-            if (this.isTextureVar(node)) {
+            if (node instanceof Override) {
                 const v = node;
-                const g = this.getAttributeNum(node, "group", 0);
-                const b = this.getAttributeNum(node, "binding", 0);
-                this.textures.push(new VariableInfo(v, g, b));
+                const id = this._getAttributeNum(v.attributes, "id", 0);
+                const type = v.type != null ? this._getTypeInfo(v.type, v.attributes) : null;
+                this.overrides.push(new OverrideInfo(v.name, type, v.attributes, id));
             }
-            if (this.isSamplerVar(node)) {
+            if (this._isUniformVar(node)) {
                 const v = node;
-                const g = this.getAttributeNum(node, "group", 0);
-                const b = this.getAttributeNum(node, "binding", 0);
-                this.samplers.push(new VariableInfo(v, g, b));
+                const g = this._getAttributeNum(v.attributes, "group", 0);
+                const b = this._getAttributeNum(v.attributes, "binding", 0);
+                const type = this._getTypeInfo(v.type, v.attributes);
+                const varInfo = new VariableInfo(v.name, type, g, b, v.attributes, ResourceType.Uniform);
+                this.uniforms.push(varInfo);
+            }
+            if (this._isStorageVar(node)) {
+                const v = node;
+                const g = this._getAttributeNum(v.attributes, "group", 0);
+                const b = this._getAttributeNum(v.attributes, "binding", 0);
+                const type = this._getTypeInfo(v.type, v.attributes);
+                const varInfo = new VariableInfo(v.name, type, g, b, v.attributes, ResourceType.Storage);
+                this.storage.push(varInfo);
+            }
+            if (this._isTextureVar(node)) {
+                const v = node;
+                const g = this._getAttributeNum(v.attributes, "group", 0);
+                const b = this._getAttributeNum(v.attributes, "binding", 0);
+                const type = this._getTypeInfo(v.type, v.attributes);
+                const varInfo = new VariableInfo(v.name, type, g, b, v.attributes, ResourceType.Texture);
+                this.textures.push(varInfo);
+            }
+            if (this._isSamplerVar(node)) {
+                const v = node;
+                const g = this._getAttributeNum(v.attributes, "group", 0);
+                const b = this._getAttributeNum(v.attributes, "binding", 0);
+                const type = this._getTypeInfo(v.type, v.attributes);
+                const varInfo = new VariableInfo(v.name, type, g, b, v.attributes, ResourceType.Sampler);
+                this.samplers.push(varInfo);
             }
             if (node instanceof Function) {
-                const fn = new FunctionInfo(node);
-                fn.inputs = this._getInputs(node.args);
-                this.functions.push(fn);
-                const vertexStage = this.getAttribute(node, "vertex");
-                const fragmentStage = this.getAttribute(node, "fragment");
-                const computeStage = this.getAttribute(node, "compute");
+                const vertexStage = this._getAttribute(node, "vertex");
+                const fragmentStage = this._getAttribute(node, "fragment");
+                const computeStage = this._getAttribute(node, "compute");
                 const stage = vertexStage || fragmentStage || computeStage;
                 if (stage) {
+                    const fn = new FunctionInfo(node.name, stage.name);
+                    fn.inputs = this._getInputs(node.args);
+                    fn.outputs = this._getOutputs(node.returnType);
                     this.entry[stage.name].push(fn);
                 }
             }
         }
     }
-    isTextureVar(node) {
-        return (node instanceof Var &&
-            node.type !== null &&
-            WgslReflect.textureTypes.indexOf(node.type.name) != -1);
-    }
-    isSamplerVar(node) {
-        return (node instanceof Var &&
-            node.type !== null &&
-            WgslReflect.samplerTypes.indexOf(node.type.name) != -1);
-    }
-    isUniformVar(node) {
-        return node instanceof Var && node.storage == "uniform";
-    }
-    isStorageVar(node) {
-        return node instanceof Var && node.storage == "storage";
-    }
-    getAttributeNum(node, name, defaultValue) {
-        const a = this.getAttribute(node, name);
-        if (a == null) {
-            return defaultValue;
+    getBindGroups() {
+        const groups = [];
+        function _makeRoom(group, binding) {
+            if (group >= groups.length)
+                groups.length = group + 1;
+            if (groups[group] === undefined)
+                groups[group] = [];
+            if (binding >= groups[group].length)
+                groups[group].length = binding + 1;
         }
-        let v = a !== null && a.value !== null ? a.value : defaultValue;
-        if (v instanceof Array) {
-            v = v[0];
+        for (const u of this.uniforms) {
+            _makeRoom(u.group, u.binding);
+            const group = groups[u.group];
+            group[u.binding] = u;
         }
-        if (typeof v === "number") {
-            return v;
+        for (const u of this.storage) {
+            _makeRoom(u.group, u.binding);
+            const group = groups[u.group];
+            group[u.binding] = u;
         }
-        if (typeof v === "string") {
-            return parseInt(v);
+        for (const t of this.textures) {
+            _makeRoom(t.group, t.binding);
+            const group = groups[t.group];
+            group[t.binding] = t;
         }
-        return defaultValue;
+        for (const t of this.samplers) {
+            _makeRoom(t.group, t.binding);
+            const group = groups[t.group];
+            group[t.binding] = t;
+        }
+        return groups;
     }
-    getAttribute(node, name) {
-        const obj = node;
-        if (!obj || !obj["attributes"])
-            return null;
-        const attrs = obj["attributes"];
-        for (let a of attrs) {
-            if (a.name == name)
-                return a;
+    _getOutputs(type, outputs = undefined) {
+        if (outputs === undefined)
+            outputs = [];
+        if (type instanceof Struct) {
+            this._getStructOutputs(type, outputs);
+        }
+        else {
+            const output = this._getOutputInfo(type);
+            if (output !== null)
+                outputs.push(output);
+        }
+        return outputs;
+    }
+    _getStructOutputs(struct, outputs) {
+        for (const m of struct.members) {
+            if (m.type instanceof Struct) {
+                this._getStructOutputs(m.type, outputs);
+            }
+            else {
+                const location = this._getAttribute(m, "location") || this._getAttribute(m, "builtin");
+                if (location !== null) {
+                    const typeInfo = this._getTypeInfo(m.type, m.type.attributes);
+                    const locationValue = this._parseInt(location.value);
+                    const info = new OutputInfo(m.name, typeInfo, location.name, locationValue);
+                    outputs.push(info);
+                }
+            }
+        }
+    }
+    _getOutputInfo(type) {
+        const location = this._getAttribute(type, "location") ||
+            this._getAttribute(type, "builtin");
+        if (location !== null) {
+            const typeInfo = this._getTypeInfo(type, type.attributes);
+            const locationValue = this._parseInt(location.value);
+            const info = new OutputInfo("", typeInfo, location.name, locationValue);
+            return info;
         }
         return null;
     }
@@ -3026,20 +3367,37 @@ class WgslReflect {
         if (inputs === undefined)
             inputs = [];
         for (const arg of args) {
-            const input = this._getInputInfo(arg);
-            if (input !== null)
-                inputs.push(input);
-            const struct = this.getStruct(arg.type);
-            if (struct)
-                this._getInputs(struct.members, inputs);
+            if (arg.type instanceof Struct) {
+                this._getStructInputs(arg.type, inputs);
+            }
+            else {
+                const input = this._getInputInfo(arg);
+                if (input !== null)
+                    inputs.push(input);
+            }
         }
         return inputs;
     }
+    _getStructInputs(struct, inputs) {
+        for (const m of struct.members) {
+            if (m.type instanceof Struct) {
+                this._getStructInputs(m.type, inputs);
+            }
+            else {
+                const input = this._getInputInfo(m);
+                if (input !== null)
+                    inputs.push(input);
+            }
+        }
+    }
     _getInputInfo(node) {
-        const location = this.getAttribute(node, "location") || this.getAttribute(node, "builtin");
+        const location = this._getAttribute(node, "location") ||
+            this._getAttribute(node, "builtin");
         if (location !== null) {
-            const interpolation = this.getAttribute(node, "interpolation");
-            const info = new InputInfo(node.name, node.type, node, location.name, this._parseInt(location.value));
+            const interpolation = this._getAttribute(node, "interpolation");
+            const type = this._getTypeInfo(node.type, node.attributes);
+            const locationValue = this._parseInt(location.value);
+            const info = new InputInfo(node.name, type, location.name, locationValue);
             if (interpolation !== null) {
                 info.interpolation = this._parseString(interpolation.value);
             }
@@ -3060,205 +3418,122 @@ class WgslReflect {
         const n = parseInt(s);
         return isNaN(n) ? s : n;
     }
-    getStruct(name) {
-        if (name === null)
-            return null;
-        if (name instanceof Struct)
-            return name;
-        name = this.getAlias(name) || name;
-        if (name instanceof Type) {
-            name = name.name;
-        }
-        for (const u of this.structs) {
-            if (u.name == name)
-                return u;
+    _getAlias(name) {
+        for (const a of this.aliases) {
+            if (a.name == name)
+                return a.type;
         }
         return null;
     }
-    getAlias(type) {
-        if (type === null)
-            return null;
-        if (type instanceof Node) {
-            if (!(type instanceof Type)) {
-                return null;
+    _getAliasInfo(node) {
+        return new AliasInfo(node.name, this._getTypeInfo(node.type, null));
+    }
+    _getTypeInfo(type, attributes) {
+        if (this._types.has(type)) {
+            return this._types.get(type);
+        }
+        if (type instanceof ArrayType) {
+            const a = type;
+            const t = this._getTypeInfo(a.format, a.attributes);
+            const info = new ArrayInfo(a.name, attributes);
+            info.format = t;
+            info.count = a.count;
+            this._types.set(type, info);
+            this._updateTypeInfo(info);
+            return info;
+        }
+        if (type instanceof Struct) {
+            const s = type;
+            const info = new StructInfo(s.name, attributes);
+            for (const m of s.members) {
+                const t = this._getTypeInfo(m.type, m.attributes);
+                info.members.push(new MemberInfo(m.name, t, m.attributes));
             }
-            type = type.name;
+            this._types.set(type, info);
+            this._updateTypeInfo(info);
+            return info;
         }
-        for (const u of this.aliases) {
-            if (u.name == type)
-                return this.getAlias(u.type) || u.type;
+        if (type instanceof TemplateType) {
+            const t = type;
+            const format = t.format ? this._getTypeInfo(t.format, null) : null;
+            const info = new TemplateInfo(t.name, format, attributes);
+            this._types.set(type, info);
+            this._updateTypeInfo(info);
+            return info;
         }
-        return null;
-    }
-    getBindGroups() {
-        const groups = [];
-        function _makeRoom(group, binding) {
-            if (group >= groups.length)
-                groups.length = group + 1;
-            if (groups[group] === undefined)
-                groups[group] = [];
-            if (binding >= groups[group].length)
-                groups[group].length = binding + 1;
-        }
-        for (const u of this.uniforms) {
-            _makeRoom(u.group, u.binding);
-            const group = groups[u.group];
-            group[u.binding] = new BindGropEntry("buffer", this.getUniformBufferInfo(u));
-        }
-        for (const u of this.storage) {
-            _makeRoom(u.group, u.binding);
-            const group = groups[u.group];
-            group[u.binding] = new BindGropEntry("storage", this.getStorageBufferInfo(u));
-        }
-        for (const t of this.textures) {
-            _makeRoom(t.group, t.binding);
-            const group = groups[t.group];
-            group[t.binding] = new BindGropEntry("texture", t);
-        }
-        for (const t of this.samplers) {
-            _makeRoom(t.group, t.binding);
-            const group = groups[t.group];
-            group[t.binding] = new BindGropEntry("sampler", t);
-        }
-        return groups;
-    }
-    getStorageBufferInfo(node) {
-        if (node instanceof VariableInfo) {
-            node = node.node;
-        }
-        if (!this.isStorageVar(node))
-            return null;
-        const group = this.getAttributeNum(node, "group", 0);
-        const binding = this.getAttributeNum(node, "binding", 0);
-        const info = this._getUniformInfo(node);
-        info.group = group;
-        info.binding = binding;
+        const info = new TypeInfo(type.name, attributes);
+        this._types.set(type, info);
+        this._updateTypeInfo(info);
         return info;
     }
-    /// Returns information about a struct type, null if the type is not a struct.
-    getStructInfo(node) {
-        var _a, _b, _c, _d, _e;
-        if (node === null)
-            return null;
-        const struct = node instanceof Struct ? node : this.getStruct(node.type);
-        if (!struct)
-            return null;
+    _updateTypeInfo(type) {
+        var _a, _b;
+        const typeSize = this._getTypeSize(type);
+        type.size = (_a = typeSize === null || typeSize === void 0 ? void 0 : typeSize.size) !== null && _a !== void 0 ? _a : 0;
+        if (type instanceof ArrayInfo) {
+            const formatInfo = this._getTypeSize(type["format"]);
+            type.stride = (_b = formatInfo === null || formatInfo === void 0 ? void 0 : formatInfo.size) !== null && _b !== void 0 ? _b : 0;
+            this._updateTypeInfo(type["format"]);
+        }
+        if (type instanceof StructInfo) {
+            this._updateStructInfo(type);
+        }
+    }
+    _updateStructInfo(struct) {
+        var _a;
         let offset = 0;
         let lastSize = 0;
         let lastOffset = 0;
         let structAlign = 0;
-        let buffer = new BufferInfo(node.name, node instanceof Var ? node.type : null);
-        buffer.members = [];
         for (let mi = 0, ml = struct.members.length; mi < ml; ++mi) {
             const member = struct.members[mi];
-            const name = member.name;
-            const info = this.getTypeInfo(member);
-            if (!info)
+            const sizeInfo = this._getTypeSize(member);
+            if (!sizeInfo)
                 continue;
-            const type = this.getAlias(member.type) || member.type;
-            const align = info.align;
-            const size = info.size;
+            (_a = this._getAlias(member.type.name)) !== null && _a !== void 0 ? _a : member.type;
+            const align = sizeInfo.align;
+            const size = sizeInfo.size;
             offset = this._roundUp(align, offset + lastSize);
             lastSize = size;
             lastOffset = offset;
             structAlign = Math.max(structAlign, align);
-            const isArray = member.type.astNodeType === "array";
-            const s = this.getStruct(type) ||
-                (isArray ? this.getStruct((_a = type["format"]) === null || _a === void 0 ? void 0 : _a.name) : null);
-            const isStruct = !!s;
-            const si = isStruct ? this.getStructInfo(s) : undefined;
-            const arrayStride = ((_b = si === null || si === void 0 ? void 0 : si.size) !== null && _b !== void 0 ? _b : isArray)
-                ? (_c = this.getTypeInfo(type["format"])) === null || _c === void 0 ? void 0 : _c.size
-                : (_d = this.getTypeInfo(member.type)) === null || _d === void 0 ? void 0 : _d.size;
-            const arrayCount = (_e = member.type["count"]) !== null && _e !== void 0 ? _e : 0;
-            const members = isStruct ? si === null || si === void 0 ? void 0 : si.members : undefined;
-            const u = new MemberInfo();
-            u.node = member;
-            u.name = name;
-            u.offset = offset;
-            u.size = size;
-            u.type = type;
-            u.isArray = isArray;
-            u.arrayCount = arrayCount;
-            u.arrayStride = arrayStride;
-            u.isStruct = isStruct;
-            u.members = members;
-            buffer.members.push(u);
+            member.offset = offset;
+            member.size = size;
+            this._updateTypeInfo(member.type);
         }
-        buffer.size = this._roundUp(structAlign, lastOffset + lastSize);
-        buffer.align = structAlign;
-        buffer.isArray = false;
-        buffer.isStruct = true;
-        buffer.arrayCount = 0;
-        return buffer;
+        struct.size = this._roundUp(structAlign, lastOffset + lastSize);
+        struct.align = structAlign;
     }
-    _getUniformInfo(node) {
-        var _a, _b, _c, _d, _e;
-        const structInfo = this.getStructInfo(node);
-        if (structInfo !== null)
-            return structInfo;
-        var n = node;
-        const typeInfo = this.getTypeInfo(n.type);
-        if (typeInfo === null)
-            return null;
-        const type = this.getAlias(n.type) || n.type;
-        const info = new BufferInfo(node.name, type);
-        info.align = typeInfo.align;
-        info.size = typeInfo.size;
-        let s = this.getStruct((_a = type["format"]) === null || _a === void 0 ? void 0 : _a.name);
-        let si = s ? this.getStructInfo(s) : undefined;
-        info.isArray = type.astNodeType === "array";
-        info.isStruct = !!s;
-        info.members = info.isStruct ? si === null || si === void 0 ? void 0 : si.members : undefined;
-        info.name = n.name;
-        info.type = type;
-        info.arrayStride =
-            ((_b = si === null || si === void 0 ? void 0 : si.size) !== null && _b !== void 0 ? _b : info.isArray)
-                ? (_c = this.getTypeInfo(type["format"])) === null || _c === void 0 ? void 0 : _c.size
-                : (_d = this.getTypeInfo(type)) === null || _d === void 0 ? void 0 : _d.size;
-        info.arrayCount = parseInt((_e = type["count"]) !== null && _e !== void 0 ? _e : 0);
-        return info;
-    }
-    getUniformBufferInfo(uniform) {
-        if (!this.isUniformVar(uniform.node))
-            return null;
-        const info = this._getUniformInfo(uniform.node);
-        info.group = uniform.group;
-        info.binding = uniform.binding;
-        return info;
-    }
-    getTypeInfo(type) {
+    _getTypeSize(type) {
         var _a;
         if (type === null || type === undefined)
             return null;
-        const explicitSize = this.getAttributeNum(type, "size", 0);
-        const explicitAlign = this.getAttributeNum(type, "align", 0);
-        if (type instanceof Member)
+        const explicitSize = this._getAttributeNum(type.attributes, "size", 0);
+        const explicitAlign = this._getAttributeNum(type.attributes, "align", 0);
+        if (type instanceof MemberInfo)
             type = type.type;
-        if (type instanceof Type) {
-            const alias = this.getAlias(type.name);
+        if (type instanceof TypeInfo) {
+            const alias = this._getAlias(type.name);
             if (alias !== null) {
                 type = alias;
             }
-            const struct = this.getStruct(type.name);
-            if (struct !== null)
-                type = struct;
         }
         {
-            const info = WgslReflect.typeInfo[type.name];
+            const info = WgslReflect._typeInfo[type.name];
             if (info !== undefined) {
                 const divisor = type["format"] === "f16" ? 2 : 1;
-                return new TypeInfo(Math.max(explicitAlign, info.align / divisor), Math.max(explicitSize, info.size / divisor));
+                return new _TypeSize(Math.max(explicitAlign, info.align / divisor), Math.max(explicitSize, info.size / divisor));
             }
         }
         {
-            const info = WgslReflect.typeInfo[type.name.substring(0, type.name.length - 1)];
+            const info = WgslReflect._typeInfo[type.name.substring(0, type.name.length - 1)];
             if (info) {
                 const divisor = type.name[type.name.length - 1] === "h" ? 2 : 1;
-                return new TypeInfo(Math.max(explicitAlign, info.align / divisor), Math.max(explicitSize, info.size / divisor));
+                return new _TypeSize(Math.max(explicitAlign, info.align / divisor), Math.max(explicitSize, info.size / divisor));
             }
         }
-        if (type.name == "array") {
+        if (type instanceof ArrayInfo) {
+            let arrayType = type;
             let align = 8;
             let size = 8;
             // Type                 AlignOf(T)          Sizeof(T)
@@ -3271,19 +3546,19 @@ class WgslReflect {
             // @stride(Q)
             // array<E>             AlignOf(E)          Nruntime * Q
             //const E = type.format.name;
-            const E = this.getTypeInfo(type["format"]);
+            const E = this._getTypeSize(arrayType.format);
             if (E !== null) {
                 size = E.size;
                 align = E.align;
             }
-            const N = parseInt((_a = type["count"]) !== null && _a !== void 0 ? _a : 1);
-            const stride = this.getAttributeNum(type, "stride", this._roundUp(align, size));
+            const N = arrayType.count;
+            const stride = this._getAttributeNum((_a = type === null || type === void 0 ? void 0 : type.attributes) !== null && _a !== void 0 ? _a : null, "stride", this._roundUp(align, size));
             size = N * stride;
             if (explicitSize)
                 size = explicitSize;
-            return new TypeInfo(Math.max(explicitAlign, align), Math.max(explicitSize, size));
+            return new _TypeSize(Math.max(explicitAlign, align), Math.max(explicitSize, size));
         }
-        if (type instanceof Struct) {
+        if (type instanceof StructInfo) {
             let align = 0;
             let size = 0;
             // struct S     AlignOf:    max(AlignOfMember(S, M1), ... , AlignOfMember(S, MN))
@@ -3293,16 +3568,65 @@ class WgslReflect {
             let lastSize = 0;
             let lastOffset = 0;
             for (const m of type.members) {
-                const mi = this.getTypeInfo(m);
-                align = Math.max(mi.align, align);
-                offset = this._roundUp(mi.align, offset + lastSize);
-                lastSize = mi.size;
-                lastOffset = offset;
+                const mi = this._getTypeSize(m.type);
+                if (mi !== null) {
+                    align = Math.max(mi.align, align);
+                    offset = this._roundUp(mi.align, offset + lastSize);
+                    lastSize = mi.size;
+                    lastOffset = offset;
+                }
             }
             size = this._roundUp(align, lastOffset + lastSize);
-            return new TypeInfo(Math.max(explicitAlign, align), Math.max(explicitSize, size));
+            return new _TypeSize(Math.max(explicitAlign, align), Math.max(explicitSize, size));
         }
         return null;
+    }
+    _isUniformVar(node) {
+        return node instanceof Var && node.storage == "uniform";
+    }
+    _isStorageVar(node) {
+        return node instanceof Var && node.storage == "storage";
+    }
+    _isTextureVar(node) {
+        return (node instanceof Var &&
+            node.type !== null &&
+            WgslReflect._textureTypes.indexOf(node.type.name) != -1);
+    }
+    _isSamplerVar(node) {
+        return (node instanceof Var &&
+            node.type !== null &&
+            WgslReflect._samplerTypes.indexOf(node.type.name) != -1);
+    }
+    _getAttribute(node, name) {
+        const obj = node;
+        if (!obj || !obj["attributes"])
+            return null;
+        const attrs = obj["attributes"];
+        for (let a of attrs) {
+            if (a.name == name)
+                return a;
+        }
+        return null;
+    }
+    _getAttributeNum(attributes, name, defaultValue) {
+        if (attributes === null)
+            return defaultValue;
+        for (let a of attributes) {
+            if (a.name == name) {
+                let v = a !== null && a.value !== null ? a.value : defaultValue;
+                if (v instanceof Array) {
+                    v = v[0];
+                }
+                if (typeof v === "number") {
+                    return v;
+                }
+                if (typeof v === "string") {
+                    return parseInt(v);
+                }
+                return defaultValue;
+            }
+        }
+        return defaultValue;
     }
     _roundUp(k, n) {
         return Math.ceil(n / k) * k;
@@ -3323,7 +3647,7 @@ class WgslReflect {
 // mat2x4<f32>          16                  32
 // mat3x4<f32>          16                  48
 // mat4x4<f32>          16                  64
-WgslReflect.typeInfo = {
+WgslReflect._typeInfo = {
     f16: { align: 2, size: 2 },
     i32: { align: 4, size: 4 },
     u32: { align: 4, size: 4 },
@@ -3342,13 +3666,44 @@ WgslReflect.typeInfo = {
     mat3x4: { align: 16, size: 48 },
     mat4x4: { align: 16, size: 64 },
 };
-WgslReflect.textureTypes = TokenTypes.any_texture_type.map((t) => {
+WgslReflect._textureTypes = TokenTypes.any_texture_type.map((t) => {
     return t.name;
 });
-WgslReflect.samplerTypes = TokenTypes.sampler_type.map((t) => {
+WgslReflect._samplerTypes = TokenTypes.sampler_type.map((t) => {
     return t.name;
 });
 
+function getNamedVariables(reflect, variables) {
+    return Object.fromEntries(variables.map(v => {
+        const typeDefinition = addType(reflect, v.type, 0);
+        return [
+            v.name,
+            {
+                typeDefinition,
+                group: v.group,
+                binding: v.binding,
+                size: typeDefinition.size,
+            },
+        ];
+    }));
+}
+function makeStructDefinition(reflect, structInfo, offset) {
+    // StructDefinition
+    const fields = Object.fromEntries(structInfo.members.map(m => {
+        return [
+            m.name,
+            {
+                offset: m.offset,
+                type: addType(reflect, m.type, 0),
+            },
+        ];
+    }));
+    return {
+        fields,
+        size: structInfo.size,
+        offset,
+    };
+}
 /**
  * Given a WGSL shader, returns data definitions for structures,
  * uniforms, and storage buffers
@@ -3384,81 +3739,99 @@ WgslReflect.samplerTypes = TokenTypes.sampler_type.map((t) => {
  */
 function makeShaderDataDefinitions(code) {
     const reflect = new WgslReflect(code);
-    const structs = Object.fromEntries(reflect.structs.map(struct => {
-        const info = reflect.getStructInfo(struct);
-        return [struct.name, addMembers(reflect, info.members, info.size)];
+    const structs = Object.fromEntries(reflect.structs.map(structInfo => {
+        return [structInfo.name, makeStructDefinition(reflect, structInfo, 0)];
     }));
-    const uniforms = Object.fromEntries(reflect.uniforms.map(uniform => {
-        const info = reflect.getUniformBufferInfo(uniform);
-        const member = addMember(reflect, info, 0)[1];
-        member.binding = info.binding;
-        member.group = info.group;
-        return [uniform.name, member];
-    }));
-    const storages = Object.fromEntries(reflect.storage.map(uniform => {
-        const info = reflect.getStorageBufferInfo(uniform);
-        const member = addMember(reflect, info, 0)[1];
-        member.binding = info.binding;
-        member.group = info.group;
-        return [uniform.name, member];
-    }));
+    const uniforms = getNamedVariables(reflect, reflect.uniforms);
+    const storages = getNamedVariables(reflect, reflect.storage);
     return {
         structs,
         storages,
         uniforms,
     };
 }
-function addMember(reflect, m, offset) {
-    if (m.isArray) {
-        if (m.isStruct) {
-            return [
-                m.name,
-                new Array(m.arrayCount).fill(0).map((_, ndx) => {
-                    return addMembers(reflect, m.members, m.size / m.arrayCount, offset + (m.offset || 0) + m.size / m.arrayCount * ndx);
-                }),
-            ];
-        }
-        else {
-            return [
-                m.name,
-                {
-                    offset: offset + (m.offset || 0),
-                    size: m.size,
-                    type: m.type.format.format
-                        ? `${m.type.format.name}<${m.type.format.format.name}>`
-                        : m.type.format.name,
-                    numElements: m.arrayCount,
-                },
-            ];
-        }
-    }
-    else if (m.isStruct) {
-        return [
-            m.name,
-            addMembers(reflect, m.members, m.size, offset + (m.offset || 0)),
-        ];
-    }
-    else {
-        return [
-            m.name,
-            {
-                offset: offset + (m.offset || 0),
-                size: m.size,
-                type: m.type?.format
-                    ? `${m.type.name}<${m.type.format.name}>`
-                    : m.type?.name || m.name,
-            },
-        ];
+function assert(cond, msg = '') {
+    if (!cond) {
+        throw new Error(msg);
     }
 }
-function addMembers(reflect, members, size, offset = 0) {
-    const fields = Object.fromEntries(members.map(m => {
-        return addMember(reflect, m, offset);
-    }));
-    return {
-        fields,
-        size,
+/*
+ write down what I want for a given type
+
+    struct VSUniforms {
+        foo: u32,
     };
+    @group(4) @binding(1) var<uniform> uni1: f32;
+    @group(3) @binding(2) var<uniform> uni2: array<f32, 5>;
+    @group(2) @binding(3) var<uniform> uni3: VSUniforms;
+    @group(1) @binding(4) var<uniform> uni4: array<VSUniforms, 6>;
+
+    uni1: {
+        type: 'f32',
+        numElements: undefined
+    },
+    uni2: {
+        type: 'array',
+        elementType: 'f32'
+        numElements: 5,
+    },
+    uni3: {
+        type: 'struct',
+        fields: {
+            foo: {
+                type: 'f32',
+                numElements: undefined
+            }
+        },
+    },
+    uni4: {
+        type: 'array',
+        elementType:
+        fields: {
+            foo: {
+                type: 'f32',
+                numElements: undefined
+            }
+        },
+        fields: {
+            foo: {
+                type: 'f32',
+                numElements: undefined
+            }
+        },
+        ...
+    ]
+
+    */
+function addType(reflect, typeInfo, offset) {
+    if (typeInfo.isArray) {
+        assert(!typeInfo.isStruct, 'struct array is invalid');
+        assert(!typeInfo.isStruct, 'template array is invalid');
+        const arrayInfo = typeInfo;
+        // ArrayDefinition
+        return {
+            size: arrayInfo.size * arrayInfo.count,
+            elementType: addType(reflect, arrayInfo.format, offset),
+            numElements: arrayInfo.count,
+        };
+    }
+    else if (typeInfo.isStruct) {
+        assert(!typeInfo.isTemplate, 'template struct is invalid');
+        const structInfo = typeInfo;
+        return makeStructDefinition(reflect, structInfo, offset);
+    }
+    else {
+        // template is like vec4<f32> or mat4x4<f16>
+        const asTemplateInfo = typeInfo;
+        const type = typeInfo.isTemplate
+            ? `${asTemplateInfo.name}<${asTemplateInfo.format.name}>`
+            : typeInfo.name;
+        // IntrinsicDefinition
+        return {
+            size: typeInfo.size,
+            type,
+        };
+    }
 }
 
 function getViewDimensionForTexture(texture) {
@@ -3498,9 +3871,9 @@ function normalizeGPUExtent3D(size) {
  * @param size
  * @returns number of mip levels needed for the given size
  */
-function numMipLevels(size) {
+function numMipLevels(size, dimension) {
     const sizes = normalizeGPUExtent3D(size);
-    const maxSize = Math.max(...sizes);
+    const maxSize = Math.max(...sizes.slice(0, dimension === '3d' ? 3 : 2));
     return 1 + Math.log2(maxSize) | 0;
 }
 // Use a WeakMap so the device can be destroyed and/or lost
@@ -3518,22 +3891,16 @@ function generateMipmap(device, texture) {
     let perDeviceInfo = byDevice.get(device);
     if (!perDeviceInfo) {
         perDeviceInfo = {
-            pipelineByFormatAndView: {},
+            pipelineByFormat: {},
             moduleByView: {},
         };
         byDevice.set(device, perDeviceInfo);
     }
     let { sampler, } = perDeviceInfo;
-    const { pipelineByFormatAndView, moduleByView, } = perDeviceInfo;
+    const { pipelineByFormat, moduleByView, } = perDeviceInfo;
     const view = getViewDimensionForTexture(texture);
     let module = moduleByView[view];
     if (!module) {
-        const type = view === '2d'
-            ? 'texture_2d<f32>'
-            : 'texture_2d_array<f32>';
-        const extraSampleParamsWGSL = view === '2d'
-            ? ''
-            : ', 0u';
         module = device.createShaderModule({
             label: `mip level generation for ${view}`,
             code: `
@@ -3559,10 +3926,10 @@ function generateMipmap(device, texture) {
         }
 
         @group(0) @binding(0) var ourSampler: sampler;
-        @group(0) @binding(1) var ourTexture: ${type};
+        @group(0) @binding(1) var ourTexture: texture_2d<f32>;
 
         @fragment fn fs(fsInput: VSOutput) -> @location(0) vec4f {
-          return textureSample(ourTexture, ourSampler, fsInput.texcoord${extraSampleParamsWGSL});
+          return textureSample(ourTexture, ourSampler, fsInput.texcoord);
         }
       `,
         });
@@ -3574,9 +3941,9 @@ function generateMipmap(device, texture) {
         });
         perDeviceInfo.sampler = sampler;
     }
-    const id = `${texture.format}.${view}`;
-    if (!pipelineByFormatAndView[id]) {
-        pipelineByFormatAndView[id] = device.createRenderPipeline({
+    const id = `${texture.format}`;
+    if (!pipelineByFormat[id]) {
+        pipelineByFormat[id] = device.createRenderPipeline({
             label: `mip level generator pipeline for ${view}`,
             layout: 'auto',
             vertex: {
@@ -3590,11 +3957,10 @@ function generateMipmap(device, texture) {
             },
         });
     }
-    const pipeline = pipelineByFormatAndView[id];
+    const pipeline = pipelineByFormat[id];
     const encoder = device.createCommandEncoder({
         label: 'mip gen encoder',
     });
-    const dimension = getViewDimensionForTexture(texture);
     for (let baseMipLevel = 1; baseMipLevel < texture.mipLevelCount; ++baseMipLevel) {
         for (let baseArrayLayer = 0; baseArrayLayer < texture.depthOrArrayLayers; ++baseArrayLayer) {
             const bindGroup = device.createBindGroup({
@@ -3604,7 +3970,7 @@ function generateMipmap(device, texture) {
                     {
                         binding: 1,
                         resource: texture.createView({
-                            dimension,
+                            dimension: '2d',
                             baseMipLevel: baseMipLevel - 1,
                             mipLevelCount: 1,
                             baseArrayLayer,
@@ -3618,7 +3984,6 @@ function generateMipmap(device, texture) {
                 colorAttachments: [
                     {
                         view: texture.createView({
-                            dimension,
                             baseMipLevel,
                             mipLevelCount: 1,
                             baseArrayLayer,
@@ -5278,5 +5643,5 @@ var primitives = /*#__PURE__*/Object.freeze({
     createXYQuadVertices: createXYQuadVertices
 });
 
-export { TypedArrayViewGenerator, copySourceToTexture, copySourcesToTexture, createBufferLayoutsFromArrays, createBuffersAndAttributesFromArrays, createTextureFromImage, createTextureFromImages, createTextureFromSource, createTextureFromSources, generateMipmap, getSizeForMipFromTexture, getSizeFromSource, interleaveVertexData, isTypedArray, loadImageBitmap, makeShaderDataDefinitions, makeStructuredView, makeTypedArrayViews, normalizeGPUExtent3D, numMipLevels, primitives, setStructuredValues, setStructuredView, subarray };
+export { TypedArrayViewGenerator, WgslReflect, copySourceToTexture, copySourcesToTexture, createBufferLayoutsFromArrays, createBuffersAndAttributesFromArrays, createTextureFromImage, createTextureFromImages, createTextureFromSource, createTextureFromSources, generateMipmap, getSizeForMipFromTexture, getSizeFromSource, interleaveVertexData, isTypedArray, loadImageBitmap, makeShaderDataDefinitions, makeStructuredView, makeTypedArrayViews, normalizeGPUExtent3D, numMipLevels, primitives, setStructuredValues, setStructuredView, setTypedValues, subarray };
 //# sourceMappingURL=webgpu-utils.module.js.map

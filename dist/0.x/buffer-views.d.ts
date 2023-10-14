@@ -1,4 +1,4 @@
-import { FieldDefinition, StructDefinition } from './data-definitions.js';
+import { StructDefinition, TypeDefinition, VariableDefinition } from './data-definitions.js';
 import { TypedArray } from './typed-arrays.js';
 export type TypedArrayOrViews = TypedArray | Views | Views[];
 export interface Views {
@@ -10,12 +10,12 @@ export type ArrayBufferViews = {
 };
 /**
  * Creates a set of named TypedArray views on an ArrayBuffer
- * @param structDef Definition of the various types of views.
+ * @param typeDef Definition of the various types of views.
  * @param arrayBuffer Optional ArrayBuffer to use (if one provided one will be created)
  * @param offset Optional offset in existing ArrayBuffer to start the views.
  * @returns A bunch of named TypedArray views and the ArrayBuffer
  */
-export declare function makeTypedArrayViews(structDef: StructDefinition, arrayBuffer?: ArrayBuffer, offset?: number): ArrayBufferViews;
+export declare function makeTypedArrayViews(typeDef: TypeDefinition, arrayBuffer?: ArrayBuffer, offset?: number): ArrayBufferViews;
 /**
  * Given a set of TypeArrayViews and matching JavaScript data
  * sets the content of the views.
@@ -67,12 +67,13 @@ export type StructuredView = ArrayBufferViews & {
     set(data: any): void;
 };
 /**
- * Given a StructDefinition, create matching TypedArray views
- * @param structDef A StructDefinition as returned from {@link makeShaderDataDefinitions}
+ * Given a VariableDefinition, create matching TypedArray views
+ * @param varDef A VariableDefinition as returned from {@link makeShaderDataDefinitions}
  * @param arrayBuffer Optional ArrayBuffer for the views
  * @param offset Optional offset into the ArrayBuffer for the views
  * @returns TypedArray views for the various named fields of the structure as well
  *    as a `set` function to make them easy to set, and the arrayBuffer
  */
-export declare function makeStructuredView(structDef: StructDefinition, arrayBuffer?: ArrayBuffer, offset?: number): StructuredView;
-export declare function setStructuredValues(fieldDef: FieldDefinition, data: any, arrayBuffer: ArrayBuffer, offset?: number): void;
+export declare function makeStructuredView(varDef: VariableDefinition | StructDefinition, arrayBuffer?: ArrayBuffer, offset?: number): StructuredView;
+export declare function setTypedValues(typeDef: TypeDefinition, data: any, arrayBuffer: ArrayBuffer, offset?: number): void;
+export declare function setStructuredValues(varDef: VariableDefinition, data: any, arrayBuffer: ArrayBuffer, offset?: number): void;

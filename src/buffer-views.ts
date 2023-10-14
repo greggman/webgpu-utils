@@ -1,13 +1,16 @@
 import {
-    FieldDefinition,
     IntrinsicDefinition,
     StructDefinition,
+    ArrayDefinition,
+    TypeDefinition,
+    VariableDefinition,
 } from './data-definitions.js';
 import {
     isTypedArray,
     TypedArrayConstructor,
     TypedArray,
 } from './typed-arrays.js';
+import { roundUpToMultipleOf } from './utils.js';
 
 type TypeDef = {
     numElements: number;
@@ -104,51 +107,106 @@ export type ArrayBufferViews = {
 }
 
 // This needs to be fixed! 😱
-function getSizeOfStructDef(fieldDef: FieldDefinition): number {
-  if (Array.isArray(fieldDef)) {
-    return fieldDef.length * getSizeOfStructDef(fieldDef[0]);
+function getSizeOfTypeDef(typeDef: TypeDefinition): number {
+  const asArrayDef = typeDef as ArrayDefinition;
+  const elementType = asArrayDef.elementType;
+  if (elementType) {
+    if (isIntrinsic(elementType)) {
+        const asIntrinsicDef = elementType as IntrinsicDefinition;
+        const { align } = typeInfo[asIntrinsicDef.type];
+        return roundUpToMultipleOf(typeDef.size, align) * asArrayDef.numElements;
+    } else {
+        return asArrayDef.numElements * getSizeOfTypeDef(elementType);
+    }
   } else {
-    return fieldDef.size;
+    const asStructDef = typeDef as StructDefinition;
+    const numElements = asArrayDef.numElements || 1;
+    if (asStructDef.fields) {
+        return typeDef.size * numElements;
+    } else {
+        const asIntrinsicDef = typeDef as IntrinsicDefinition;
+        const { align } = typeInfo[asIntrinsicDef.type];
+        return numElements > 1
+           ? roundUpToMultipleOf(typeDef.size, align) * numElements
+           : typeDef.size;
+    }
   }
+}
+
+function range<T>(count: number, fn: (i: number) => T) {
+    return new Array(count).fill(0).map((_, i) => fn(i));
+}
+
+// If numElements is undefined this is NOT an array. If it is defined then it IS an array
+// Sizes for arrays are different than sizes for non-arrays. Example
+// a vec3f non array is Float32Array(3)
+// a vec3f array of 2 is Float32Array(4 * 2)
+// a vec3f array of 1 is Float32Array(4 * 1)
+function makeIntrinsicTypedArrayView(typeDef: TypeDefinition, buffer: ArrayBuffer, baseOffset: number, numElements?: number): TypedArray {
+    const { size, type } = typeDef as IntrinsicDefinition;
+    try {
+        const { View, align } = typeInfo[type];
+        const isArray = numElements !== undefined;
+        const sizeInBytes = isArray
+            ? roundUpToMultipleOf(size, align)
+            : size;
+        const baseNumElements = sizeInBytes / View.BYTES_PER_ELEMENT;
+
+        return new View(buffer, baseOffset, baseNumElements * (numElements || 1));
+    } catch {
+        throw new Error(`unknown type: ${type}`);
+    }
+
+}
+
+function isIntrinsic(typeDef: TypeDefinition) {
+    return !(typeDef as StructDefinition).fields &&
+           !(typeDef as ArrayDefinition).elementType;
 }
 
 /**
  * Creates a set of named TypedArray views on an ArrayBuffer
- * @param structDef Definition of the various types of views.
+ * @param typeDef Definition of the various types of views.
  * @param arrayBuffer Optional ArrayBuffer to use (if one provided one will be created)
  * @param offset Optional offset in existing ArrayBuffer to start the views.
  * @returns A bunch of named TypedArray views and the ArrayBuffer
  */
-export function makeTypedArrayViews(structDef: StructDefinition, arrayBuffer?: ArrayBuffer, offset?: number): ArrayBufferViews {
+export function makeTypedArrayViews(typeDef: TypeDefinition, arrayBuffer?: ArrayBuffer, offset?: number): ArrayBufferViews {
     const baseOffset = offset || 0;
-    const buffer = arrayBuffer || new ArrayBuffer(getSizeOfStructDef(structDef));
+    const buffer = arrayBuffer || new ArrayBuffer(getSizeOfTypeDef(typeDef));
 
-    const makeViews = (structDef: FieldDefinition): TypedArrayOrViews => {
-        if (Array.isArray(structDef)) {
-            return (structDef as StructDefinition[]).map(elemDef => makeViews(elemDef)) as Views[];
-        } else if (typeof structDef === 'string') {
+    const makeViews = (typeDef: TypeDefinition, baseOffset: number): TypedArrayOrViews => {
+        const asArrayDef = typeDef as ArrayDefinition;
+        const elementType = asArrayDef.elementType;
+        if (elementType) {
+            // TODO: Should be optional? Per Type? Depth set? Per field?
+            // The issue is, if we have `array<vec4, 1000>` we don't likely
+            // want 1000 `Float32Array(4)` views. We want 1 `Float32Array(1000 * 4)` view.
+            // On the other hand, if we have `array<mat4x4, 10>` the maybe we do want
+            // 10 `Float32Array(16)` views since you might want to do
+            // `mat4.perspective(fov, aspect, near, far, foo.bar.arrayOf10Mat4s[3])`;
+            if (isIntrinsic(elementType)) {
+                return makeIntrinsicTypedArrayView(elementType, buffer, baseOffset, asArrayDef.numElements);
+            } else {
+                const elementSize = getSizeOfTypeDef(elementType);
+                return range(asArrayDef.numElements, i => makeViews(elementType, baseOffset + elementSize * i)) as Views[];
+            }
+        } else if (typeof typeDef === 'string') {
             throw Error('unreachable');
         } else {
-            const fields = (structDef as StructDefinition).fields;
+            const fields = (typeDef as StructDefinition).fields;
             if (fields) {
                 const views: Views = {};
-                for (const [name, def] of Object.entries(fields)) {
-                    views[name] = makeViews(def as StructDefinition);
+                for (const [name, {type, offset}] of Object.entries(fields)) {
+                    views[name] = makeViews(type, baseOffset + offset);
                 }
                 return views;
             } else {
-                const { size, offset, type } = structDef as IntrinsicDefinition;
-              try {
-                const { View } = typeInfo[type];
-                const numElements = size / View.BYTES_PER_ELEMENT;
-                return new View(buffer, baseOffset + offset, numElements);
-              } catch {
-                throw new Error(`unknown type: ${type}`);
-              }
+                return makeIntrinsicTypedArrayView(typeDef, buffer, baseOffset);
             }
         }
     };
-    return { views: makeViews(structDef), arrayBuffer: buffer };
+    return { views: makeViews(typeDef, baseOffset), arrayBuffer: buffer };
 }
 
 /**
@@ -239,15 +297,17 @@ export type StructuredView = ArrayBufferViews & {
 }
 
 /**
- * Given a StructDefinition, create matching TypedArray views
- * @param structDef A StructDefinition as returned from {@link makeShaderDataDefinitions}
+ * Given a VariableDefinition, create matching TypedArray views
+ * @param varDef A VariableDefinition as returned from {@link makeShaderDataDefinitions}
  * @param arrayBuffer Optional ArrayBuffer for the views
  * @param offset Optional offset into the ArrayBuffer for the views
  * @returns TypedArray views for the various named fields of the structure as well
  *    as a `set` function to make them easy to set, and the arrayBuffer
  */
-export function makeStructuredView(structDef: StructDefinition, arrayBuffer?: ArrayBuffer, offset = 0): StructuredView {
-    const views = makeTypedArrayViews(structDef, arrayBuffer, offset);
+export function makeStructuredView(varDef: VariableDefinition | StructDefinition, arrayBuffer?: ArrayBuffer, offset = 0): StructuredView {
+    const asVarDef = varDef as VariableDefinition;
+    const typeDef = asVarDef.group === undefined ? varDef as StructDefinition : asVarDef.typeDefinition;
+    const views = makeTypedArrayViews(typeDef, arrayBuffer, offset);
     return {
         ...views,
         set(data: any) {
@@ -278,30 +338,57 @@ function getView<T extends TypedArray>(arrayBuffer: ArrayBuffer, Ctor: TypedArra
     return view as T;
 }
 
-export function setStructuredValues(fieldDef: FieldDefinition, data: any, arrayBuffer: ArrayBuffer, offset = 0) {
-    const asIntrinsicDefinition = fieldDef as IntrinsicDefinition;
-    if (asIntrinsicDefinition.type) {
-        const type = typeInfo[asIntrinsicDefinition.type];
-        const view = getView(arrayBuffer, type.View);
-        const index = (offset + asIntrinsicDefinition.offset) / view.BYTES_PER_ELEMENT;
-        if (typeof data === 'number') {
-            view[index] = data;
-        } else {
-            view.set(data, index);
-        }
-    } else if (Array.isArray(fieldDef)) {
-        // It's IntrinsicDefinition[] or StructDefinition[]
-        data.forEach((newValue: any, ndx: number) => {
-            setStructuredValues(fieldDef[ndx], newValue, arrayBuffer, offset);
-        });
+// Is this something like [1,2,3]?
+function isArrayLikeOfNumber(data: any) {
+    return isTypedArray(data) || Array.isArray(data) && typeof data[0] === 'number';
+}
+
+function setIntrinsicFromArrayLikeOfNumber(typeDef: IntrinsicDefinition, data: any, arrayBuffer: ArrayBuffer, offset: number) {
+    const asIntrinsicDefinition = typeDef as IntrinsicDefinition;
+    const type = typeInfo[asIntrinsicDefinition.type];
+    const view = getView(arrayBuffer, type.View);
+    const index = offset / view.BYTES_PER_ELEMENT;
+    if (typeof data === 'number') {
+        view[index] = data;
     } else {
-        // It's StructDefinition
-        const asStructDefinition = fieldDef as StructDefinition;
-        for (const [key, newValue] of Object.entries(data)) {
-            const fieldDef = asStructDefinition.fields[key];
-            if (fieldDef) {
-                setStructuredValues(fieldDef, newValue, arrayBuffer, offset);
+        view.set(data, index);
+    }
+}
+
+export function setTypedValues(typeDef: TypeDefinition, data: any, arrayBuffer: ArrayBuffer, offset = 0) {
+    const asArrayDef = typeDef as ArrayDefinition;
+    const elementType = asArrayDef.elementType;
+    if (elementType) {
+        // It's ArrayDefinition
+        if (isIntrinsic(elementType)) {
+            const asIntrinsicDef = elementType as IntrinsicDefinition;
+            if (isArrayLikeOfNumber(data)) {
+                setIntrinsicFromArrayLikeOfNumber(asIntrinsicDef, data, arrayBuffer, offset);
+                return;
             }
         }
+        data.forEach((newValue: any, ndx: number) => {
+            setTypedValues(elementType, newValue, arrayBuffer, offset + elementType.size * ndx);
+        });
+        return;
     }
+
+    const asStructDef = typeDef as StructDefinition;
+    const fields = asStructDef.fields;
+    if (fields) {
+        // It's StructDefinition
+        for (const [key, newValue] of Object.entries(data)) {
+            const fieldDef = fields[key];
+            if (fieldDef) {
+                setTypedValues(fieldDef.type, newValue, arrayBuffer, offset + fieldDef.offset);
+            }
+        }
+    } else {
+        // It's IntrinsicDefinition
+        setIntrinsicFromArrayLikeOfNumber(typeDef as IntrinsicDefinition, data, arrayBuffer, offset);
+    }
+}
+
+export function setStructuredValues(varDef: VariableDefinition, data: any, arrayBuffer: ArrayBuffer, offset = 0) {
+    setTypedValues(varDef.typeDefinition, data, arrayBuffer, offset);
 }

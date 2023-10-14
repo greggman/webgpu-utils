@@ -1,41 +1,104 @@
-import { WgslReflect, Member } from './3rdParty/wgsl_reflect/wgsl_reflect.module';
+import {
+    WgslReflect,
+    ArrayInfo,
+    StructInfo,
+    TemplateInfo,
+    TypeInfo,
+    VariableInfo,
+} from 'wgsl_reflect';
 
-export interface StructDefinition {
-    fields: FieldDefinitions;
-    size: number;
-}
+export { WgslReflect };
 
-export interface StorageDefinition extends StructDefinition {
-    binding: number;
-    group: number;
-}
-
-export type IntrinsicDefinition = {
+export type FieldDefinition = {
     offset: number;
-    size: number;
-    type: string;
-    numElements?: number;
+    type: TypeDefinition;
 };
-
-export type FieldDefinition = IntrinsicDefinition | StructDefinition | IntrinsicDefinition[] | StructDefinition[];
 
 export type FieldDefinitions = {
     [x: string]: FieldDefinition;
 };
 
+export type TypeDefinition = {
+    size: number;
+};
+
+// These 3 types are wonky. Maybe we should make them inherit from a common
+// type with a `type` field. I wanted this to be a plain object though, not an object
+// with a constructor. In any case, right now, the way you tell them apart is
+// If it's got `elementType` then it's an ArrayDefinition
+// If it's got `fields` then it's a StructDefinition
+// else it's an IntrinsicDefinition
+export type StructDefinition = TypeDefinition & {
+    fields: FieldDefinitions;
+    size: number;
+};
+
+export type IntrinsicDefinition = TypeDefinition & {
+    type: string;
+    numElements?: number;
+};
+
+export type ArrayDefinition = TypeDefinition & {
+    elementType: TypeDefinition,
+    numElements: number,
+};
+
+/**
+ * @group(x) @binding(y) var<...> definition
+ */
+export interface VariableDefinition {
+    binding: number;
+    group: number;
+    size: number;
+    typeDefinition: TypeDefinition;
+}
+
 export type StructDefinitions = {
     [x: string]: StructDefinition;
-}
+};
 
-export type StorageDefinitions = {
-    [x: string]: StorageDefinition;
-}
+export type VariableDefinitions = {
+    [x: string]: VariableDefinition;
+};
 
 type ShaderDataDefinitions = {
-    uniforms: StorageDefinitions,
-    storages: StorageDefinitions,
+    uniforms: VariableDefinitions,
+    storages: VariableDefinitions,
     structs: StructDefinitions,
 };
+
+function getNamedVariables(reflect: WgslReflect, variables: VariableInfo[]): VariableDefinitions {
+    return Object.fromEntries(variables.map(v => {
+        const typeDefinition = addType(reflect, v.type, 0);
+        return [
+            v.name,
+            {
+                typeDefinition,
+                group: v.group,
+                binding: v.binding,
+                size: typeDefinition.size,
+            },
+        ];
+    })) as VariableDefinitions;
+}
+
+function makeStructDefinition(reflect: WgslReflect, structInfo: StructInfo, offset: number) {
+    // StructDefinition
+    const fields: FieldDefinitions = Object.fromEntries(structInfo.members.map(m => {
+        return [
+            m.name,
+            {
+                offset: m.offset,
+                type: addType(reflect, m.type, 0),
+            },
+        ];
+    }));
+    return {
+        fields,
+        size: structInfo.size,
+        offset,
+    };
+}
 
 /**
  * Given a WGSL shader, returns data definitions for structures,
@@ -73,26 +136,12 @@ type ShaderDataDefinitions = {
 export function makeShaderDataDefinitions(code: string): ShaderDataDefinitions {
     const reflect = new WgslReflect(code);
 
-    const structs = Object.fromEntries(reflect.structs.map(struct => {
-        const info = reflect.getStructInfo(struct);
-        return [struct.name, addMembers(reflect, info.members, info.size)];
+    const structs = Object.fromEntries(reflect.structs.map(structInfo => {
+        return [structInfo.name, makeStructDefinition(reflect, structInfo, 0)];
     }));
 
-    const uniforms = Object.fromEntries(reflect.uniforms.map(uniform => {
-        const info = reflect.getUniformBufferInfo(uniform);
-        const member = addMember(reflect, info, 0)[1] as StorageDefinition;
-        member.binding = info.binding;
-        member.group = info.group;
-        return [uniform.name, member];
-    }));
-
-    const storages = Object.fromEntries(reflect.storage.map(uniform => {
-        const info = reflect.getStorageBufferInfo(uniform);
-        const member = addMember(reflect, info, 0)[1] as StorageDefinition;
-        member.binding = info.binding;
-        member.group = info.group;
-        return [uniform.name, member];
-    }));
+    const uniforms = getNamedVariables(reflect, reflect.uniforms);
+    const storages = getNamedVariables(reflect, reflect.storage);
 
     return {
         structs,
@@ -101,54 +150,92 @@ export function makeShaderDataDefinitions(code: string): ShaderDataDefinitions {
     };
 }
 
-function addMember(reflect: WgslReflect, m: Member, offset: number): [string, StructDefinition | IntrinsicDefinition | IntrinsicDefinition[] | StructDefinition[]] {
-    if (m.isArray) {
-        if (m.isStruct) {
-            return [
-                m.name,
-                new Array(m.arrayCount).fill(0).map((_, ndx) => {
-                    return addMembers(reflect, m.members!, m.size / m.arrayCount, offset + (m.offset || 0) + m.size / m.arrayCount * ndx);
-                }),
-            ];
-        } else {
-            return [
-                m.name,
-                {
-                    offset: offset + (m.offset || 0),
-                    size: m.size,
-                    type: m.type.format!.format
-                        ? `${m.type.format!.name!}<${m.type.format!.format!.name}>`
-                        : m.type.format!.name!,
-                    numElements: m.arrayCount,
-                },
-            ];
-        }
-    } else if (m.isStruct) {
-        return [
-            m.name,
-            addMembers(reflect, m.members!, m.size, offset + (m.offset || 0)),
-        ];
-    } else {
-        return [
-            m.name,
-            {
-                offset: offset + (m.offset || 0),
-                size: m.size,
-                type: m.type?.format
-                    ? `${m.type.name}<${m.type.format.name}>`
-                    : m.type?.name || m.name,
-            },
-        ];
+function assert(cond: boolean, msg = '') {
+    if (!cond) {
+        throw new Error(msg);
     }
 }
 
-function addMembers(reflect: WgslReflect, members: Member[], size: number, offset = 0): StructDefinition {
-    const fields: FieldDefinitions = Object.fromEntries(members.map(m => {
-        return addMember(reflect, m, offset);
-    }));
+/*
+ write down what I want for a given type
 
-    return {
-        fields,
-        size,
+    struct VSUniforms {
+        foo: u32,
     };
+    @group(4) @binding(1) var<uniform> uni1: f32;
+    @group(3) @binding(2) var<uniform> uni2: array<f32, 5>;
+    @group(2) @binding(3) var<uniform> uni3: VSUniforms;
+    @group(1) @binding(4) var<uniform> uni4: array<VSUniforms, 6>;
+
+    uni1: {
+        type: 'f32',
+        numElements: undefined
+    },
+    uni2: {
+        type: 'array',
+        elementType: 'f32'
+        numElements: 5,
+    },
+    uni3: {
+        type: 'struct',
+        fields: {
+            foo: {
+                type: 'f32',
+                numElements: undefined
+            }
+        },
+    },
+    uni4: {
+        type: 'array',
+        elementType:
+        fields: {
+            foo: {
+                type: 'f32',
+                numElements: undefined
+            }
+        },
+        fields: {
+            foo: {
+                type: 'f32',
+                numElements: undefined
+            }
+        },
+        ...
+    ]
+
+    */
+
+
+
+function addType(reflect: WgslReflect, typeInfo: TypeInfo, offset: number):
+  StructDefinition |
+  IntrinsicDefinition |
+  ArrayDefinition {
+    if (typeInfo.isArray) {
+        assert(!typeInfo.isStruct, 'struct array is invalid');
+        assert(!typeInfo.isStruct, 'template array is invalid');
+        const arrayInfo = typeInfo as ArrayInfo;
+        // ArrayDefinition
+        return {
+            size: arrayInfo.size * arrayInfo.count,
+            elementType: addType(reflect, arrayInfo.format, offset),
+            numElements: arrayInfo.count,
+        };
+    } else if (typeInfo.isStruct) {
+        assert(!typeInfo.isTemplate, 'template struct is invalid');
+        const structInfo = typeInfo as StructInfo;
+        return makeStructDefinition(reflect, structInfo, offset);
+    } else {
+        // template is like vec4<f32> or mat4x4<f16>
+        const asTemplateInfo = typeInfo as TemplateInfo;
+        const type = typeInfo.isTemplate
+           ? `${asTemplateInfo.name}<${asTemplateInfo.format!.name}>`
+           : typeInfo.name;
+        // IntrinsicDefinition
+        return {
+            size: typeInfo.size,
+            type,
+        };
+    }
 }
+

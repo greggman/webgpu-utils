@@ -1,30 +1,45 @@
-export interface StructDefinition {
-    fields: FieldDefinitions;
-    size: number;
-}
-export interface StorageDefinition extends StructDefinition {
-    binding: number;
-    group: number;
-}
-export type IntrinsicDefinition = {
+import { WgslReflect } from 'wgsl_reflect';
+export { WgslReflect };
+export type FieldDefinition = {
     offset: number;
-    size: number;
-    type: string;
-    numElements?: number;
+    type: TypeDefinition;
 };
-export type FieldDefinition = IntrinsicDefinition | StructDefinition | IntrinsicDefinition[] | StructDefinition[];
 export type FieldDefinitions = {
     [x: string]: FieldDefinition;
 };
+export type TypeDefinition = {
+    size: number;
+};
+export type StructDefinition = TypeDefinition & {
+    fields: FieldDefinitions;
+    size: number;
+};
+export type IntrinsicDefinition = TypeDefinition & {
+    type: string;
+    numElements?: number;
+};
+export type ArrayDefinition = TypeDefinition & {
+    elementType: TypeDefinition;
+    numElements: number;
+};
+/**
+ * @group(x) @binding(y) var<...> definition
+ */
+export interface VariableDefinition {
+    binding: number;
+    group: number;
+    size: number;
+    typeDefinition: TypeDefinition;
+}
 export type StructDefinitions = {
     [x: string]: StructDefinition;
 };
-export type StorageDefinitions = {
-    [x: string]: StorageDefinition;
+export type VariableDefinitions = {
+    [x: string]: VariableDefinition;
 };
 type ShaderDataDefinitions = {
-    uniforms: StorageDefinitions;
-    storages: StorageDefinitions;
+    uniforms: VariableDefinitions;
+    storages: VariableDefinitions;
     structs: StructDefinitions;
 };
 /**
@@ -61,4 +76,3 @@ type ShaderDataDefinitions = {
  * @returns definitions of the structures by name. Useful for passing to {@link makeStructuredView}
  */
 export declare function makeShaderDataDefinitions(code: string): ShaderDataDefinitions;
-export {};

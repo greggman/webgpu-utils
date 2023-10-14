@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- this file is auto-generated from README.md. Do not edited directly -->
 <!--
-@license webgpu-utils 0.11.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
+@license webgpu-utils 0.12.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/webgpu-utils for details
 -->
@@ -116,6 +116,19 @@ const texture = createTextureFromSource(device, someCanvasVideoImageBitmap, {
   flipY: true,
 });
 </code></pre>
+<h3>Load 6 images as a cubemap (with mips)</h3>
+<p>import { createTextureFromImage } from ‘webgpu-utils’;</p>
+<pre><code class="lang-js">  const texture = await createTextureFromImages(device, [
+    'images/yokohama/posx.jpg',
+    'images/yokohama/negx.jpg',
+    'images/yokohama/posy.jpg',
+    'images/yokohama/negy.jpg',
+    'images/yokohama/posz.jpg',
+    'images/yokohama/negz.jpg',
+  ], {
+    mips: true,
+  });
+</code></pre>
 <h3>Load data as a texture</h3>
 <pre><code class="lang-js">import { createTextureFromSource } from 'webgpu-utils';
 
@@ -198,6 +211,8 @@ passEncoder.drawIndexed(bi.numElements);
 <li><a href="examples/cube.html">Cube</a></li>
 <li><a href="examples/cube.html">2d-array</a></li>
 <li><a href="examples/cube-map.html">Cube-map</a></li>
+<li><a href="examples/instancing.html">Instancing</a></li>
+<li><a href="examples/instancing-size-only.html">Instancing 2</a></li>
 </ul>
 <h2>Usage</h2>
 <ul>

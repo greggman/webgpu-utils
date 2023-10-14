@@ -18,7 +18,7 @@ export declare function normalizeGPUExtent3D(size: GPUExtent3D): number[];
  * @param size
  * @returns number of mip levels needed for the given size
  */
-export declare function numMipLevels(size: GPUExtent3D): number;
+export declare function numMipLevels(size: GPUExtent3D, dimension?: GPUTextureDimension): number;
 /**
  * Generates mip levels from level 0 to the last mip for an existing texture
  *
