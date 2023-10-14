@@ -111,6 +111,8 @@ function getSizeOfTypeDef(typeDef: TypeDefinition): number {
   const asArrayDef = typeDef as ArrayDefinition;
   const elementType = asArrayDef.elementType;
   if (elementType) {
+    return asArrayDef.size;
+    /*
     if (isIntrinsic(elementType)) {
         const asIntrinsicDef = elementType as IntrinsicDefinition;
         const { align } = typeInfo[asIntrinsicDef.type];
@@ -118,6 +120,7 @@ function getSizeOfTypeDef(typeDef: TypeDefinition): number {
     } else {
         return asArrayDef.numElements * getSizeOfTypeDef(elementType);
     }
+    */
   } else {
     const asStructDef = typeDef as StructDefinition;
     const numElements = asArrayDef.numElements || 1;
