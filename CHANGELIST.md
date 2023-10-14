@@ -1,5 +1,9 @@
 # Change List
 
+### 0.12.0
+
+* Use newer version of wgsl_reflect and handle arrays of arrays
+
 ### 0.11.0
 
 * Add primitives
