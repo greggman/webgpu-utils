@@ -1,4 +1,4 @@
-/* webgpu-utils@0.12.0, license MIT */
+/* webgpu-utils@0.12.2, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -3816,7 +3816,7 @@
             const arrayInfo = typeInfo;
             // ArrayDefinition
             return {
-                size: arrayInfo.size * arrayInfo.count,
+                size: arrayInfo.size,
                 elementType: addType(reflect, arrayInfo.format, offset),
                 numElements: arrayInfo.count,
             };
@@ -5650,7 +5650,6 @@
     });
 
     exports.TypedArrayViewGenerator = TypedArrayViewGenerator;
-    exports.WgslReflect = WgslReflect;
     exports.copySourceToTexture = copySourceToTexture;
     exports.copySourcesToTexture = copySourcesToTexture;
     exports.createBufferLayoutsFromArrays = createBufferLayoutsFromArrays;

@@ -1,4 +1,4 @@
-/* webgpu-utils@0.12.0, license MIT */
+/* webgpu-utils@0.12.2, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 
 class TypedArrayViewGenerator {
@@ -3810,7 +3810,7 @@ function addType(reflect, typeInfo, offset) {
         const arrayInfo = typeInfo;
         // ArrayDefinition
         return {
-            size: arrayInfo.size * arrayInfo.count,
+            size: arrayInfo.size,
             elementType: addType(reflect, arrayInfo.format, offset),
             numElements: arrayInfo.count,
         };
@@ -5643,5 +5643,5 @@ var primitives = /*#__PURE__*/Object.freeze({
     createXYQuadVertices: createXYQuadVertices
 });
 
-export { TypedArrayViewGenerator, WgslReflect, copySourceToTexture, copySourcesToTexture, createBufferLayoutsFromArrays, createBuffersAndAttributesFromArrays, createTextureFromImage, createTextureFromImages, createTextureFromSource, createTextureFromSources, generateMipmap, getSizeForMipFromTexture, getSizeFromSource, interleaveVertexData, isTypedArray, loadImageBitmap, makeShaderDataDefinitions, makeStructuredView, makeTypedArrayViews, normalizeGPUExtent3D, numMipLevels, primitives, setStructuredValues, setStructuredView, setTypedValues, subarray };
+export { TypedArrayViewGenerator, copySourceToTexture, copySourcesToTexture, createBufferLayoutsFromArrays, createBuffersAndAttributesFromArrays, createTextureFromImage, createTextureFromImages, createTextureFromSource, createTextureFromSources, generateMipmap, getSizeForMipFromTexture, getSizeFromSource, interleaveVertexData, isTypedArray, loadImageBitmap, makeShaderDataDefinitions, makeStructuredView, makeTypedArrayViews, normalizeGPUExtent3D, numMipLevels, primitives, setStructuredValues, setStructuredView, setTypedValues, subarray };
 //# sourceMappingURL=webgpu-utils.module.js.map

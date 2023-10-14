@@ -1,5 +1,3 @@
-import { WgslReflect } from 'wgsl_reflect';
-export { WgslReflect };
 export type FieldDefinition = {
     offset: number;
     type: TypeDefinition;
@@ -76,3 +74,4 @@ type ShaderDataDefinitions = {
  * @returns definitions of the structures by name. Useful for passing to {@link makeStructuredView}
  */
 export declare function makeShaderDataDefinitions(code: string): ShaderDataDefinitions;
+export {};

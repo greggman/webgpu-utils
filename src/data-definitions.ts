@@ -7,8 +7,6 @@ import {
     VariableInfo,
 } from 'wgsl_reflect';
 
-export { WgslReflect };
-
 export type FieldDefinition = {
     offset: number;
     type: TypeDefinition;
@@ -217,7 +215,7 @@ function addType(reflect: WgslReflect, typeInfo: TypeInfo, offset: number):
         const arrayInfo = typeInfo as ArrayInfo;
         // ArrayDefinition
         return {
-            size: arrayInfo.size * arrayInfo.count,
+            size: arrayInfo.size,
             elementType: addType(reflect, arrayInfo.format, offset),
             numElements: arrayInfo.count,
         };

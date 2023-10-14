@@ -97,11 +97,17 @@ describe('data-definition-tests', () => {
         const code = `
             struct InnerUniforms {
                 bar: u32,
+                pad0: u32,
+                pad1: u32,
+                pad2: u32,
             };
 
             struct VSUniforms {
                 foo: u32,
                 moo: InnerUniforms,
+                pad0: u32,
+                pad1: u32,
+                pad2: u32,
             };
             @group(0) @binding(0) var<uniform> foo0: vec3f;
             @group(0) @binding(1) var<uniform> foo1: array<vec3f, 5>;
@@ -120,28 +126,35 @@ describe('data-definition-tests', () => {
         assertEqual(d.uniforms.foo0.typeDefinition.type, 'vec3f');
 
         assertEqual(d.uniforms.foo1.typeDefinition.numElements, 5);
+        assertEqual(d.uniforms.foo1.typeDefinition.size, 80);
         assertEqual(d.uniforms.foo1.typeDefinition.elementType.type, 'vec3f');
 
         assertEqual(d.uniforms.foo2.typeDefinition.numElements, 6);
+        assertEqual(d.uniforms.foo2.typeDefinition.size, 80 * 6);
         assertEqual(d.uniforms.foo2.typeDefinition.elementType.numElements, 5);
         assertEqual(d.uniforms.foo2.typeDefinition.elementType.elementType.type, 'vec3f');
 
         assertEqual(d.uniforms.foo3.typeDefinition.numElements, 7);
+        assertEqual(d.uniforms.foo3.typeDefinition.size, 80 * 6 * 7);
         assertEqual(d.uniforms.foo3.typeDefinition.elementType.numElements, 6);
         assertEqual(d.uniforms.foo3.typeDefinition.elementType.elementType.numElements, 5);
         assertEqual(d.uniforms.foo3.typeDefinition.elementType.elementType.elementType.type, 'vec3f');
 
         assertEqual(d.uniforms.foo4.typeDefinition.numElements, undefined);
+        assertEqual(d.uniforms.foo4.typeDefinition.size, 32);
         assertEqual(d.uniforms.foo4.typeDefinition.fields.foo.type.type, 'u32');
 
         assertEqual(d.uniforms.foo5.typeDefinition.numElements, 5);
+        assertEqual(d.uniforms.foo5.typeDefinition.size, 32 * 5);
         assertEqual(d.uniforms.foo5.typeDefinition.elementType.fields.foo.type.type, 'u32');
 
         assertEqual(d.uniforms.foo6.typeDefinition.numElements, 6);
+        assertEqual(d.uniforms.foo6.typeDefinition.size, 32 * 5 * 6);
         assertEqual(d.uniforms.foo6.typeDefinition.elementType.numElements, 5);
         assertEqual(d.uniforms.foo6.typeDefinition.elementType.elementType.fields.foo.type.type, 'u32');
 
         assertEqual(d.uniforms.foo7.typeDefinition.numElements, 7);
+        assertEqual(d.uniforms.foo7.typeDefinition.size, 32 * 5 * 6 * 7);
         assertEqual(d.uniforms.foo7.typeDefinition.elementType.numElements, 6);
         assertEqual(d.uniforms.foo7.typeDefinition.elementType.elementType.numElements, 5);
         assertEqual(d.uniforms.foo7.typeDefinition.elementType.elementType.elementType.fields.foo.type.type, 'u32');
