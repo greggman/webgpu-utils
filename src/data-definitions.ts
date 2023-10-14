@@ -7,8 +7,6 @@ import {
     VariableInfo,
 } from 'wgsl_reflect';
 
-export { WgslReflect };
-
 export type FieldDefinition = {
     offset: number;
     type: TypeDefinition;
