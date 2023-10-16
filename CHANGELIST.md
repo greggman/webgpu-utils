@@ -1,5 +1,9 @@
 # Change List
 
+### 0.13.0
+
+* Support making views of unsized arrays
+
 ### 0.12.0
 
 * Use newer version of wgsl_reflect and handle arrays of arrays

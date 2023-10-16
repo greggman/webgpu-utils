@@ -120,7 +120,7 @@ async function main() {
     indexBuffer,
     indexFormat,
     numElements,
-  } = wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createCylinderVertices(1, 2));
+  } = wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createCylinderVertices(2, 4));
 
   const module = device.createShaderModule({code});
   const module2 = device.createShaderModule({code: code2});
@@ -177,7 +177,7 @@ async function main() {
 
     fsUniformValues.set({
       lightDirection: vec3.normalize([1, 8, -10]),
-      color: cssColorToRGBA(hsl(i / numObjects * 0.2 + 0.5, 1, .3)),
+      color: cssColorToRGBA(hsl(i / numObjects * 0.2 + 0.4, 1, .3)),
     });
 
     device.queue.writeBuffer(fsUniformBuffer, 0, fsUniformValues.arrayBuffer);
@@ -287,7 +287,7 @@ async function main() {
     const newFovY = (2 * Math.atan(Math.tan((maxFovX) * .5) / aspect));
     const fovY = fovX > maxFovX ? newFovY : fov;
 
-    const projection = mat4.perspective(fovY, aspect, depth - 2, depth + 2);
+    const projection = mat4.perspective(fovY, aspect, depth - 4, depth + 4);
     const spacing = 2.5;
     const half = across * spacing * 0.5;
     const eye = [half, half, depth];
@@ -345,11 +345,11 @@ async function main() {
       pass.setVertexBuffer(0, buffers[0]);
       pass.setIndexBuffer(indexBuffer, indexFormat);
 
-      const t = time * 0.1 + 0.5;
+      const t = time * 0.025 + 0.5;
       objectInfos.forEach(({vsUniformBuffer, vsUniformValues, bindGroup}, i) => {
         const m = vsUniformValues.views.worldViewProjection;
         mat4.translation([i % across * spacing, (i / across | 0) * spacing, 0], m);
-        mat4.rotateY(m, t + i * 0.01, m);
+        mat4.rotateY(m, t + i * 0.02, m);
         mat4.rotateZ(m, t, m);
         mat4.transpose(mat4.inverse(m), vsUniformValues.views.worldInverseTranspose);
         mat4.multiply(viewProjection, m, m);

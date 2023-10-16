@@ -154,8 +154,13 @@ function makeIntrinsicTypedArrayView(typeDef: TypeDefinition, buffer: ArrayBuffe
             ? roundUpToMultipleOf(size, align)
             : size;
         const baseNumElements = sizeInBytes / View.BYTES_PER_ELEMENT;
+        const effectiveNumElements = isArray
+           ? (numElements === 0
+              ? (buffer.byteLength - baseOffset) / sizeInBytes
+              : numElements)
+           : 1;
 
-        return new View(buffer, baseOffset, baseNumElements * (numElements || 1));
+        return new View(buffer, baseOffset, baseNumElements * effectiveNumElements);
     } catch {
         throw new Error(`unknown type: ${type}`);
     }
@@ -192,7 +197,10 @@ export function makeTypedArrayViews(typeDef: TypeDefinition, arrayBuffer?: Array
                 return makeIntrinsicTypedArrayView(elementType, buffer, baseOffset, asArrayDef.numElements);
             } else {
                 const elementSize = getSizeOfTypeDef(elementType);
-                return range(asArrayDef.numElements, i => makeViews(elementType, baseOffset + elementSize * i)) as Views[];
+                const effectiveNumElements = asArrayDef.numElements === 0
+                   ? (buffer.byteLength - baseOffset) / elementSize
+                   : asArrayDef.numElements;
+                return range(effectiveNumElements, i => makeViews(elementType, baseOffset + elementSize * i)) as Views[];
             }
         } else if (typeof typeDef === 'string') {
             throw Error('unreachable');

@@ -1,4 +1,4 @@
-/* webgpu-utils@0.12.3, license MIT */
+/* webgpu-utils@0.13.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -150,7 +150,12 @@
                 ? roundUpToMultipleOf(size, align)
                 : size;
             const baseNumElements = sizeInBytes / View.BYTES_PER_ELEMENT;
-            return new View(buffer, baseOffset, baseNumElements * (numElements || 1));
+            const effectiveNumElements = isArray
+                ? (numElements === 0
+                    ? (buffer.byteLength - baseOffset) / sizeInBytes
+                    : numElements)
+                : 1;
+            return new View(buffer, baseOffset, baseNumElements * effectiveNumElements);
         }
         catch {
             throw new Error(`unknown type: ${type}`);
@@ -185,7 +190,10 @@
                 }
                 else {
                     const elementSize = getSizeOfTypeDef(elementType);
-                    return range(asArrayDef.numElements, i => makeViews(elementType, baseOffset + elementSize * i));
+                    const effectiveNumElements = asArrayDef.numElements === 0
+                        ? (buffer.byteLength - baseOffset) / elementSize
+                        : asArrayDef.numElements;
+                    return range(effectiveNumElements, i => makeViews(elementType, baseOffset + elementSize * i));
                 }
             }
             else if (typeof typeDef === 'string') {
