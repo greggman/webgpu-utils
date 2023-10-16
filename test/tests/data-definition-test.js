@@ -160,5 +160,46 @@ describe('data-definition-tests', () => {
         assertEqual(d.uniforms.foo7.typeDefinition.elementType.elementType.elementType.fields.foo.type.type, 'u32');
 
     });
+
+    it('generates correct info with unsized arrays', () => {
+        const code = `
+            struct InnerUniforms {
+                bar: u32,
+                pad0: u32,
+                pad1: u32,
+                pad2: u32,
+            };
+
+            struct VSUniforms {
+                foo: u32,
+                moo: InnerUniforms,
+                pad0: u32,
+                pad1: u32,
+                pad2: u32,
+            };
+            @group(0) @binding(1) var<uniform> foo1: array<vec3f>;
+            @group(0) @binding(2) var<uniform> foo2: array<array<vec3f, 5> >;
+
+            @group(0) @binding(5) var<uniform> foo5: array<VSUniforms>;
+            @group(0) @binding(6) var<uniform> foo6: array<array<VSUniforms, 5> >;
+        `;
+
+        const d = makeShaderDataDefinitions(code);
+        assertTruthy(d);
+
+        assertEqual(d.uniforms.foo1.typeDefinition.numElements, 0);
+        assertEqual(d.uniforms.foo1.typeDefinition.elementType.type, 'vec3f');
+
+        assertEqual(d.uniforms.foo2.typeDefinition.numElements, 0);
+        assertEqual(d.uniforms.foo2.typeDefinition.elementType.elementType.type, 'vec3f');
+        assertEqual(d.uniforms.foo2.typeDefinition.elementType.numElements, 5);
+
+        assertEqual(d.uniforms.foo5.typeDefinition.numElements, 0);
+        assertTruthy(d.uniforms.foo5.typeDefinition.elementType.fields);
+
+        assertEqual(d.uniforms.foo6.typeDefinition.numElements, 0);
+        assertEqual(d.uniforms.foo6.typeDefinition.elementType.numElements, 5);
+        assertTruthy(d.uniforms.foo6.typeDefinition.elementType.elementType.fields);
+    });
 });
 

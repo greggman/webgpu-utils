@@ -284,7 +284,7 @@ describe('buffer-views-tests', () => {
             lightDirection: new Float32Array([
                 901, 902, 903, 0,
                 801, 802, 803, 0,
-                701, 702, 703, 0,
+            701, 702, 703, 0,
                 601, 602, 603, 0,
                 501, 502, 503, 0,
                 401, 402, 403, 0,
@@ -808,11 +808,11 @@ describe('buffer-views-tests', () => {
         `;
         const defs = makeShaderDataDefinitions(code).uniforms;
         {
-            const {views, set, arrayBuffer} = makeStructuredView(defs.foo0);
+            const {/*views, set,*/ arrayBuffer} = makeStructuredView(defs.foo0);
             assertEqual(arrayBuffer.byteLength, 12);
         }
         {
-            const {views, set, arrayBuffer} = makeStructuredView(defs.foo1);
+            const {/*views, set,*/ arrayBuffer} = makeStructuredView(defs.foo1);
             assertEqual(arrayBuffer.byteLength, 16 * 5);
         }
         {
@@ -846,6 +846,55 @@ describe('buffer-views-tests', () => {
             assertEqual(views[6][5][4].foo[0], 123);
             assertEqual(views[6][5][4].moo.bar[0], 456);
         }
+    });
+
+    it('handles unsigned arrays of intrinsics', () => {
+        const code = `
+            @group(0) @binding(1) var<uniform> foo1: array<u32>;
+            @group(0) @binding(1) var<uniform> foo2: array<vec3f>;
+            @group(0) @binding(2) var<uniform> foo3: array<array<vec3f, 5> >;
+        `;
+        const defs = makeShaderDataDefinitions(code).uniforms;
+        {
+            const arrayBuffer = new ArrayBuffer(10 * 4);
+            const asU32 = new Uint32Array(arrayBuffer);
+            setStructuredValues(defs.foo1, [11, 22, 33], arrayBuffer);
+            assertEqual(asU32[0], 11);
+            assertEqual(asU32[1], 22);
+            assertEqual(asU32[2], 33);
+        }
+        {
+            const arrayBuffer = new ArrayBuffer(10 * 4);
+            const asU32 = new Uint32Array(arrayBuffer);
+            const v = makeStructuredView(defs.foo1, arrayBuffer);
+            v.set([11, 22, 33]);
+            assertEqual(asU32[0], 11);
+            assertEqual(asU32[1], 22);
+            assertEqual(asU32[2], 33);
+        }
+        {
+            const arrayBuffer = new ArrayBuffer(4 * 4 * 4);
+            const asF32 = new Float32Array(arrayBuffer);
+            setStructuredValues(defs.foo2, [12, 13, 14, 0, 21, 22, 23, 0], arrayBuffer);
+            assertEqual(asF32.subarray(0, 3), [12, 13, 14]);
+            assertEqual(asF32.subarray(4, 7), [21, 22, 23]);
+        }
+        {
+            const arrayBuffer = new ArrayBuffer(4 * 4 * 5 * 6);
+            const asF32 = new Float32Array(arrayBuffer);
+            setStructuredValues(defs.foo3, [[12, 13, 14], , [21, 22, 23]], arrayBuffer);
+            assertEqual(asF32.subarray(0, 3), [12, 13, 14]);
+            assertEqual(asF32.subarray(5 * 4 * 2, 5 * 4 * 2 + 3), [21, 22, 23]);
+        }
+        {
+            const arrayBuffer = new ArrayBuffer(4 * 4 * 5 * 6);
+            const asF32 = new Float32Array(arrayBuffer);
+            const v = makeStructuredView(defs.foo3, arrayBuffer, 0);
+            v.set([[12, 13, 14], , [21, 22, 23]]);
+            assertEqual(asF32.subarray(0, 3), [12, 13, 14]);
+            assertEqual(asF32.subarray(5 * 4 * 2, 5 * 4 * 2 + 3), [21, 22, 23]);
+        }
+
     });
 
 });
