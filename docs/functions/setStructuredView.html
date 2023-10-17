@@ -21,6 +21,12 @@
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Given a set of TypeArrayViews and matching JavaScript data
 sets the content of the views.</p>
+<p>Example:</p>
+<pre><code class="language-js"><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">code</span><span class="hl-1"> = </span><span class="hl-3">`</span><br/><span class="hl-3">struct Stuff {</span><br/><span class="hl-3">   direction: vec3f,</span><br/><span class="hl-3">   strength: f32,</span><br/><span class="hl-3">   matrix: mat4x4f,</span><br/><span class="hl-3">};</span><br/><span class="hl-3">@group(0) @binding(0) var&lt;uniform&gt; uni: Stuff;</span><br/><span class="hl-3">`</span><span class="hl-1">;</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">defs</span><span class="hl-1"> = </span><span class="hl-6">makeShaderDataDefinitions</span><span class="hl-1">(</span><span class="hl-2">code</span><span class="hl-1">);</span><br/><span class="hl-4">const</span><span class="hl-1"> </span><span class="hl-5">views</span><span class="hl-1"> = </span><span class="hl-6">makeTypedArrayViews</span><span class="hl-1">(</span><span class="hl-2">devs</span><span class="hl-1">.</span><span class="hl-2">uniforms</span><span class="hl-1">.</span><span class="hl-2">uni</span><span class="hl-1">.</span><span class="hl-2">typeDefinition</span><span class="hl-1">);</span><br/><br/><span class="hl-6">setStructuredViews</span><span class="hl-1">({</span><br/><span class="hl-1">  </span><span class="hl-2">direction:</span><span class="hl-1"> [</span><span class="hl-8">1</span><span class="hl-1">, </span><span class="hl-8">2</span><span class="hl-1">, </span><span class="hl-8">3</span><span class="hl-1">],</span><br/><span class="hl-1">  </span><span class="hl-2">strength:</span><span class="hl-1"> </span><span class="hl-8">45</span><span class="hl-1">,</span><br/><span class="hl-1">  </span><span class="hl-2">matrix:</span><span class="hl-1"> [</span><br/><span class="hl-1">    </span><span class="hl-8">1</span><span class="hl-1">, </span><span class="hl-8">0</span><span class="hl-1">, </span><span class="hl-8">0</span><span class="hl-1">, </span><span class="hl-8">0</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-8">0</span><span class="hl-1">, </span><span class="hl-8">1</span><span class="hl-1">, </span><span class="hl-8">0</span><span class="hl-1">, </span><span class="hl-8">0</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-8">0</span><span class="hl-1">, </span><span class="hl-8">0</span><span class="hl-1">, </span><span class="hl-8">1</span><span class="hl-1">, </span><span class="hl-8">0</span><span class="hl-1">,</span><br/><span class="hl-1">    </span><span class="hl-8">0</span><span class="hl-1">, </span><span class="hl-8">0</span><span class="hl-1">, </span><span class="hl-8">0</span><span class="hl-1">, </span><span class="hl-8">1</span><span class="hl-1">,</span><br/><span class="hl-1">  ],</span><br/><span class="hl-1">});</span>
+</code><button>Copy</button></pre>
+<p>The code above will set the various views, which all point to different
+locations within the same array buffer.</p>
+<p>See</p>
 </div>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
@@ -36,7 +42,9 @@ sets the content of the views.</p>
 </div>
 <div class="tsd-comment tsd-typography"></div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-<div class="tsd-comment tsd-typography"></div></li></ul></section></div>
+<div class="tsd-comment tsd-typography">
+<h4>Link</h4><p>.</p>
+</div></li></ul></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">

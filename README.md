@@ -208,6 +208,82 @@ passEncoder.drawIndexed(bi.numElements);
 * [Instancing](examples/instancing.html)
 * [Instancing 2](examples/instancing-size-only.html)
 
+## Notes about structured data
+
+### The first level of an array of intrinsic types is flattened.
+
+Example:
+
+```js
+const code = `
+@group(0) @binding(0) var<uniform> uni1: array<vec3f, 4>;
+@group(0) @binding(1) var<uniform> uni2: array<array<vec3f, 3>, 4>;
+`;
+const defs = makeShaderDataDefinitions(code);
+const uni1 = makeStructuredView(defs.uniforms.uni1);
+const uni2 = makeStructuredView(defs.uniforms.uni2);
+
+uni1.set([
+  1, 2, 3, 0,  // uni1[0]
+  4, 5, 6, 0,  // uni1[1]
+  //...
+]);
+
+uni2.set([
+  [
+    1, 2, 3, 0,  // uni2[0][0],
+    4, 5, 6, 0,  // uni2[0][1],
+  ],
+  ,  // uni2[1]
+  [
+    7, 8, 9, 0,  // uni2[2][0],
+    4, 5, 6, 0,  // uni2[2][1],
+  ],
+]);
+```
+
+The reason it's this way is it's common to make large arrays of `f32`, `u32`,
+`vec2f`, `vec3f`, `vec4f` etc. We couldn't want every element of an array to
+have its own typedarray view.
+
+### arrays of intrinsics can be set by arrays of arrays
+
+```js
+const code = `
+@group(0) @binding(0) var<uniform> uni1: array<vec2f, 4>;
+`;
+const defs = makeShaderDataDefinitions(code);
+const uni1 = makeStructuredView(defs.uniforms.uni1);
+
+uni1.set([
+  [1, 2],  // uni1[0]
+  [3, 4],  // uni1[1]
+]);
+```
+
+Currently this requires the length of each subarray to match the length of
+the intrinsic. The reason being, there is no type data used in `uni1.set` so
+there is nothing to tell it that it's a `vec2f`. In this case, it just advances
+where it's writing by the length of the source data sub arrays.
+
+### for unsized arrays you must pass in your own arrayBuffer
+
+The reason is an unsized array's size is defined to WebGPU by its buffer binding
+size. That information is provided at runtime so there's no way for webgpu-utils
+to know the size. The solution is you pass in an `ArrayBuffer`.
+
+Example:
+
+```js
+const code = `
+@group(0) @binding(0) var<uniform> uni1: array<vec3f>;  // unsized array
+`;
+const defs = makeShaderDataDefinitions(code);
+const uni1 = makeStructuredView(defs.uniforms.uni1, new ArrayBuffer(4 * 16));
+
+// uni.views will be a Float32Array representing 4 vec3fs
+```
+
 ## Usage
 
 * include from the net
