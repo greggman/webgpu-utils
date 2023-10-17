@@ -173,7 +173,37 @@ function isIntrinsic(typeDef: TypeDefinition) {
 }
 
 /**
- * Creates a set of named TypedArray views on an ArrayBuffer
+ * Creates a set of named TypedArray views on an ArrayBuffer. If you don't
+ * pass in an ArrayBuffer, one will be created. If you're using an unsized
+ * array then you must pass in your own arraybuffer
+ *
+ * Example:
+ *
+ * ```js
+ * const code = `
+ * struct Stuff {
+ *    direction: vec3f,
+ *    strength: f32,
+ *    matrix: mat4x4f,
+ * };
+ * @group(0) @binding(0) var<uniform> uni: Stuff;
+ * `;
+ * const defs = makeShaderDataDefinitions(code);
+ * const views = makeTypedArrayViews(devs.uniforms.uni.typeDefinition);
+ * ```
+ *
+ * views would effectively be
+ *
+ * ```js
+ * views = {
+ *   direction: Float32Array(arrayBuffer, 0, 3),
+ *   strength: Float32Array(arrayBuffer, 3, 4),
+ *   matrix: Float32Array(arraybuffer, 4, 20),
+ * };
+ * ```
+ *
+ * You can use the views directly or you can use @link {setStructuredView}
+ *
  * @param typeDef Definition of the various types of views.
  * @param arrayBuffer Optional ArrayBuffer to use (if one provided one will be created)
  * @param offset Optional offset in existing ArrayBuffer to start the views.
@@ -223,6 +253,38 @@ export function makeTypedArrayViews(typeDef: TypeDefinition, arrayBuffer?: Array
 /**
  * Given a set of TypeArrayViews and matching JavaScript data
  * sets the content of the views.
+ *
+ * Example:
+ *
+ * ```js
+ * const code = `
+ * struct Stuff {
+ *    direction: vec3f,
+ *    strength: f32,
+ *    matrix: mat4x4f,
+ * };
+ * @group(0) @binding(0) var<uniform> uni: Stuff;
+ * `;
+ * const defs = makeShaderDataDefinitions(code);
+ * const views = makeTypedArrayViews(devs.uniforms.uni.typeDefinition);
+ *
+ * setStructuredViews({
+ *   direction: [1, 2, 3],
+ *   strength: 45,
+ *   matrix: [
+ *     1, 0, 0, 0,
+ *     0, 1, 0, 0,
+ *     0, 0, 1, 0,
+ *     0, 0, 0, 1,
+ *   ],
+ * });
+ * ```
+ *
+ * The code above will set the various views, which all point to different
+ * locations within the same array buffer.
+ *
+ * See @link {makeTypedArrayViews}.
+ *
  * @param data The new values
  * @param views TypedArray views as returned from {@link makeTypedArrayViews}
  */
@@ -366,6 +428,13 @@ function setIntrinsicFromArrayLikeOfNumber(typeDef: IntrinsicDefinition, data: a
     }
 }
 
+/**
+ * Sets values on an existing array buffer from a TypeDefinition
+ * @param typeDef A type definition provided by @link {makeShaderDataDefinitions}
+ * @param data The source data
+ * @param arrayBuffer The arrayBuffer who's data to set.
+ * @param offset An offset in the arrayBuffer to start at.
+ */
 export function setTypedValues(typeDef: TypeDefinition, data: any, arrayBuffer: ArrayBuffer, offset = 0) {
     const asArrayDef = typeDef as ArrayDefinition;
     const elementType = asArrayDef.elementType;
@@ -400,6 +469,13 @@ export function setTypedValues(typeDef: TypeDefinition, data: any, arrayBuffer: 
     }
 }
 
+/**
+ * Same as @link {setTypedValues} except it takes a @link {VariableDefinition}.
+ * @param typeDef A variable definition provided by @link {makeShaderDataDefinitions}
+ * @param data The source data
+ * @param arrayBuffer The arrayBuffer who's data to set.
+ * @param offset An offset in the arrayBuffer to start at.
+ */
 export function setStructuredValues(varDef: VariableDefinition, data: any, arrayBuffer: ArrayBuffer, offset = 0) {
     setTypedValues(varDef.typeDefinition, data, arrayBuffer, offset);
 }
