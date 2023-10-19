@@ -243,7 +243,7 @@ uni2.set([
 ```
 
 The reason it's this way is it's common to make large arrays of `f32`, `u32`,
-`vec2f`, `vec3f`, `vec4f` etc. We couldn't want every element of an array to
+`vec2f`, `vec3f`, `vec4f` etc. We wouldn't want every element of an array to
 have its own typedarray view.
 
 ### arrays of intrinsics can be set by arrays of arrays
