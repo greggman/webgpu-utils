@@ -28,9 +28,9 @@ async function test(port) {
   const browser = await puppeteer.launch({
     headless: "new",
     args: [
-      '--enable-unsafe-webgpu',
-      '--enable-webgpu-developer-features',
-      '--use-angle=swiftshader',
+      //'--enable-unsafe-webgpu',
+      //'--enable-webgpu-developer-features',
+      //'--use-angle=swiftshader',
       '--user-agent=puppeteer',
     ],
   });
