@@ -64,9 +64,9 @@ const b: Record<string, TypeDef> = {
 const typeInfo: Record<string, TypeDef> = {
   ...b,
 
-  'vec2<i32>': b.vec2f,
-  'vec2<u32>': b.vec2i,
-  'vec2<f32>': b.vec2u,
+  'vec2<i32>': b.vec2i,
+  'vec2<u32>': b.vec2u,
+  'vec2<f32>': b.vec2f,
   'vec2<f16>': b.vec2h,
   'vec3<i32>': b.vec3i,
   'vec3<u32>': b.vec3u,
