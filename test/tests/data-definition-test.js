@@ -56,6 +56,7 @@ describe('data-definition-tests', () => {
             foo: u32,
             bar: f32,
             moo: vec3f,
+            brp: bool,   // bool is not valid in WGSL 1 for storage/uniforms but can appear internally
             mrp: i32,
         };
         @group(4) @binding(1) var<uniform> uni1: VSUniforms;
