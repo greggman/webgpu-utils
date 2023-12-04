@@ -39,7 +39,7 @@ const myUniformValues = makeStructuredView(defs.uniforms.myUniforms);
 
 // create the correct sized buffer
 const uniformBuffer = device.createBuffer({
-  size: myUniformBuffer.arrayBuffer.byteLength,
+  size: myUniformValues.arrayBuffer.byteLength,
   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
 
@@ -246,7 +246,7 @@ The reason it's this way is it's common to make large arrays of `f32`, `u32`,
 `vec2f`, `vec3f`, `vec4f` etc. We wouldn't want every element of an array to
 have its own typedarray view.
 
-You can configure this per type by calling `setIntrinsicsToView`. 
+You can configure this per type by calling `setIntrinsicsToView`.
 The configuration is global. Given th example above
 
 ```js
@@ -355,4 +355,3 @@ Super thanks to Brendan Duncan for [wgsl-reflect](https://github.com/brendan-dun
 ## License
 
 [MIT](LICENSE.md)
-
