@@ -210,7 +210,7 @@ passEncoder.drawIndexed(bi.numElements);
 
 ## Notes about structured data
 
-### The first level of an array of intrinsic types is flattened.
+### The first level of an array of intrinsic types is flattened by default.
 
 Example:
 
@@ -245,6 +245,28 @@ uni2.set([
 The reason it's this way is it's common to make large arrays of `f32`, `u32`,
 `vec2f`, `vec3f`, `vec4f` etc. We wouldn't want every element of an array to
 have its own typedarray view.
+
+You can configure this per type by calling `setIntrinsicsToView`. 
+The configuration is global. Given th example above
+
+```js
+const code = `
+@group(0) @binding(0) var<uniform> uni1: array<vec3f, 4>;
+@group(0) @binding(1) var<uniform> uni2: array<array<vec3f, 3>, 4>;
+`;
+const defs = makeShaderDataDefinitions(code);
+setIntrinsicsToView(['vec3f']);
+const uni1 = makeStructuredView(defs.uniforms.uni1);
+
+uni1.set([
+  [1, 2, 3],  // uni1[0]
+  [4, 5, 6],  // uni1[1]
+  ...
+]);
+```
+
+Or to put it another way, in the default case, `uni1.views is a Float32Array(16)`.
+In the 2nd case it's an array of 4 `Float32Array` each 3 elements big
 
 ### arrays of intrinsics can be set by arrays of arrays
 

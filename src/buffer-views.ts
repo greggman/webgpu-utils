@@ -10,7 +10,7 @@ import {
     TypedArrayConstructor,
     TypedArray,
 } from './typed-arrays.js';
-import { roundUpToMultipleOf } from './utils.js';
+import { roundUpToMultipleOf, keysOf, range } from './utils.js';
 
 type TypeDef = {
     numElements: number;
@@ -18,10 +18,11 @@ type TypeDef = {
     size: number;
     type: string;
     View: TypedArrayConstructor;
-    pad?: number[];
+    flatten?: boolean,
+    pad?: readonly number[];
 };
 
-const b: Record<string, TypeDef> = {
+const b: { readonly [K: string]: TypeDef } = {
   i32: { numElements: 1, align: 4, size: 4, type: 'i32', View: Int32Array },
   u32: { numElements: 1, align: 4, size: 4, type: 'u32', View: Uint32Array },
   f32: { numElements: 1, align: 4, size: 4, type: 'f32', View: Float32Array },
@@ -64,9 +65,9 @@ const b: Record<string, TypeDef> = {
   // You can only create one in an internal struct. But, this code generates
   // views of structs and it needs to not fail if the struct has a bool
   bool: { numElements: 0, align: 1, size: 0, type: 'bool', View: Uint32Array },
-};
+} as const;
 
-const typeInfo: Record<string, TypeDef> = {
+const typeInfo: { readonly [K: string]: TypeDef } = {
   ...b,
 
   'vec2<i32>': b.vec2i,
@@ -100,11 +101,63 @@ const typeInfo: Record<string, TypeDef> = {
   'mat3x4<f16>': b.mat3x4h,
   'mat4x4<f32>': b.mat4x4f,
   'mat4x4<f16>': b.mat4x4h,
-};
+} as const;
+export type kType = Extract<keyof typeof typeInfo, string>;
+export const kTypes: readonly kType[] = keysOf(typeInfo);
+
+/**
+ * Set which intrinsic types to make views for.
+ *
+ * Example:
+ *
+ * Given a an array of intrinsics like this
+ * `array<vec3, 200>`
+ *
+ * The default is to create a single `Float32Array(4 * 200)`
+ * because creating 200 `Float32Array` views is not usually
+ * what you want.
+ *
+ * If you do want individual views then you'd call
+ * `setIntrinsicsToView(['vec3f`])` and now you get
+ * an array of 200 `Float32Array`s.
+ *
+ * Note: `setIntrinsicsToView` always sets ALL types. The list you
+ * pass it is the types you want views created for, all other types
+ * will be reset to do the default. In other words
+ *
+ * ```js
+ * setIntrinsicsToView(['vec3f`])
+ * setIntrinsicsToView(['vec2f`])
+ * ```
+ *
+ * Only `vec2f` will have views created. `vec3f` has been reset to the default by
+ * the second call
+ *
+ * You can pass in `true` as the 2nd parameter to make it set which types
+ * to flatten and all others will be set to have views created.
+ *
+ * To reset all types to the default call it with no arguments
+ *
+ * @param types array of types to make views for
+ * @param flatten whether to flatten or expand the specified types.
+ */
+export function setIntrinsicsToView(types: readonly kType[] = [], flatten?: boolean) {
+    // we need to track what we've viewed because for example `vec3f` references
+    // the same info as `vec3<f32>` so we'd set one and reset the other.
+    const visited = new Set();
+    for (const type of kTypes) {
+        const info = typeInfo[type];
+        if (!visited.has(info)) {
+            visited.add(info);
+            info.flatten = types.includes(type) ? flatten : !flatten;
+        }
+    }
+}
+setIntrinsicsToView();
 
 export type TypedArrayOrViews = TypedArray | Views | Views[];
 export interface Views {
-  [x: string]: TypedArrayOrViews;
+    [x: string]: TypedArrayOrViews;
 }
 export type ArrayBufferViews = {
     views: TypedArrayOrViews;
@@ -113,36 +166,32 @@ export type ArrayBufferViews = {
 
 // This needs to be fixed! 😱
 function getSizeOfTypeDef(typeDef: TypeDefinition): number {
-  const asArrayDef = typeDef as ArrayDefinition;
-  const elementType = asArrayDef.elementType;
-  if (elementType) {
-    return asArrayDef.size;
-    /*
-    if (isIntrinsic(elementType)) {
-        const asIntrinsicDef = elementType as IntrinsicDefinition;
-        const { align } = typeInfo[asIntrinsicDef.type];
-        return roundUpToMultipleOf(typeDef.size, align) * asArrayDef.numElements;
+    const asArrayDef = typeDef as ArrayDefinition;
+    const elementType = asArrayDef.elementType;
+    if (elementType) {
+        return asArrayDef.size;
+        /*
+        if (isIntrinsic(elementType)) {
+            const asIntrinsicDef = elementType as IntrinsicDefinition;
+            const { align } = typeInfo[asIntrinsicDef.type];
+            return roundUpToMultipleOf(typeDef.size, align) * asArrayDef.numElements;
+        } else {
+            return asArrayDef.numElements * getSizeOfTypeDef(elementType);
+        }
+        */
     } else {
-        return asArrayDef.numElements * getSizeOfTypeDef(elementType);
+        const asStructDef = typeDef as StructDefinition;
+        const numElements = asArrayDef.numElements || 1;
+        if (asStructDef.fields) {
+            return typeDef.size * numElements;
+        } else {
+            const asIntrinsicDef = typeDef as IntrinsicDefinition;
+            const { align } = typeInfo[asIntrinsicDef.type];
+            return numElements > 1
+                ? roundUpToMultipleOf(typeDef.size, align) * numElements
+                : typeDef.size;
+        }
     }
-    */
-  } else {
-    const asStructDef = typeDef as StructDefinition;
-    const numElements = asArrayDef.numElements || 1;
-    if (asStructDef.fields) {
-        return typeDef.size * numElements;
-    } else {
-        const asIntrinsicDef = typeDef as IntrinsicDefinition;
-        const { align } = typeInfo[asIntrinsicDef.type];
-        return numElements > 1
-           ? roundUpToMultipleOf(typeDef.size, align) * numElements
-           : typeDef.size;
-    }
-  }
-}
-
-function range<T>(count: number, fn: (i: number) => T) {
-    return new Array(count).fill(0).map((_, i) => fn(i));
 }
 
 // If numElements is undefined this is NOT an array. If it is defined then it IS an array
@@ -228,7 +277,7 @@ export function makeTypedArrayViews(typeDef: TypeDefinition, arrayBuffer?: Array
             // On the other hand, if we have `array<mat4x4, 10>` the maybe we do want
             // 10 `Float32Array(16)` views since you might want to do
             // `mat4.perspective(fov, aspect, near, far, foo.bar.arrayOf10Mat4s[3])`;
-            if (isIntrinsic(elementType)) {
+            if (isIntrinsic(elementType) && typeInfo[(elementType as IntrinsicDefinition).type].flatten) {
                 return makeIntrinsicTypedArrayView(elementType, buffer, baseOffset, asArrayDef.numElements);
             } else {
                 const elementSize = getSizeOfTypeDef(elementType);
