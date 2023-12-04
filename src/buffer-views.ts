@@ -134,7 +134,9 @@ export const kTypes: readonly kType[] = keysOf(typeInfo);
  * the second call
  *
  * You can pass in `true` as the 2nd parameter to make it set which types
- * to flatten and all others will be set to have views created.
+ * to flatten and all others will be set to have views created. For example
+ * to expand all types would be `setIntrinsicsToView([], true)`. To expand
+ * all except `f32` would be `setIntrinsicsToView(['f32'], true)`.
  *
  * To reset all types to the default call it with no arguments
  *
