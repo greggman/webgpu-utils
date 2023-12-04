@@ -20,14 +20,14 @@ export type ArrayUnion = number | number[] | TypedArray | FullArraySpec;
  * Each array can be 1 of 4 things. A native JavaScript array, a TypedArray, a number, a {@link FullArraySpec}
  *
  * If it's a native array then, if the name of the array is `indices` the data will be converted
- * to a `Uint32Array`, otherwise a `Float32Array.  Use a TypedArray or a FullArraySpec to choose a different type.
- * The FullArraySpec type is only used if it's not already a TypedArray
+ * to a `Uint32Array`, otherwise a `Float32Array`.  Use a TypedArray or a {@link FullArraySpec} to choose a different type.
+ * The {@link FullArraySpec} `type` is only used if it's not already a TypedArray
  *
  * If it's a native array or a TypedArray or if `numComponents` in a {@link FullArraySpec} is not
- * specified it will be guess. If the name contains 'coord', 'texture' or 'uv' then numComponents will be 2.
+ * specified it will be guessed. If the name contains 'coord', 'texture' or 'uv' then numComponents will be 2.
  * If the name contains 'color' or 'colour' then numComponents will be 4. Otherwise it's 3.
  *
- * For attribute formats, guesses are made based on type at number of components. The guess is
+ * For attribute formats, guesses are made based on type and number of components. The guess is
  * based on this table where (d) is the default for that type if `normalize` is not specified
  *
  * | Type          |     ..      | normalize   |

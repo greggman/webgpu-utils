@@ -897,4 +897,39 @@ describe('buffer-views-tests', () => {
 
     });
 
+    // Note: At least as of WGSL V1 you can not create a bool for uniform or storage.
+    // You can only create one in an internal struct. But, this code generates
+    // views of structs and it needs to not fail if the struct has a bool
+    it('generates handles bool', () => {
+        const shader = `
+            struct Test {
+                a: u32,
+                b: bool,
+                c: u32,
+            };
+        `;
+        const defs = makeShaderDataDefinitions(shader).structs;
+        const {views, arrayBuffer} = makeStructuredView(defs.Test);
+        assertEqual(arrayBuffer.byteLength, 8);
+        assertEqual(views.a.byteOffset, 0);
+        assertEqual(views.c.byteOffset, 4);
+    });
+
+    /* wgsl_reflect returns bad data for this case. See comment above though.
+    it('generates handles bool array', () => {
+        const shader = `
+            struct Test {
+                a: u32,
+                b: array<bool, 3>,
+                c: u32,
+            };
+        `;
+        const defs = makeShaderDataDefinitions(shader).structs;
+        const {views, arrayBuffer} = makeStructuredView(defs.Test);
+        assertEqual(arrayBuffer.byteLength, 8);
+        assertEqual(views.a.byteOffset, 0);
+        assertEqual(views.c.byteOffset, 4);
+    });
+    */
+
 });

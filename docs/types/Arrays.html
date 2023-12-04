@@ -21,12 +21,12 @@
 <a href="../functions/createBufferLayoutsFromArrays.html" class="tsd-kind-function">createBufferLayoutsFromArrays</a> and <a href="../functions/createBuffersAndAttributesFromArrays.html" class="tsd-kind-function">createBuffersAndAttributesFromArrays</a></p>
 <p>Each array can be 1 of 4 things. A native JavaScript array, a TypedArray, a number, a <a href="FullArraySpec.html" class="tsd-kind-type-alias">FullArraySpec</a></p>
 <p>If it&#39;s a native array then, if the name of the array is <code>indices</code> the data will be converted
-to a <code>Uint32Array</code>, otherwise a `Float32Array.  Use a TypedArray or a FullArraySpec to choose a different type.
-The FullArraySpec type is only used if it&#39;s not already a TypedArray</p>
-<p>If it&#39;s a native array or a TypedArray or if <code>numComponents</code> in a {@link FullArraySpec} is not
-specified it will be guess. If the name contains &#39;coord&#39;, &#39;texture&#39; or &#39;uv&#39; then numComponents will be 2.
+to a <code>Uint32Array</code>, otherwise a <code>Float32Array</code>.  Use a TypedArray or a <a href="FullArraySpec.html" class="tsd-kind-type-alias">FullArraySpec</a> to choose a different type.
+The <a href="FullArraySpec.html" class="tsd-kind-type-alias">FullArraySpec</a> <code>type</code> is only used if it&#39;s not already a TypedArray</p>
+<p>If it&#39;s a native array or a TypedArray or if <code>numComponents</code> in a <a href="FullArraySpec.html" class="tsd-kind-type-alias">FullArraySpec</a> is not
+specified it will be guessed. If the name contains &#39;coord&#39;, &#39;texture&#39; or &#39;uv&#39; then numComponents will be 2.
 If the name contains &#39;color&#39; or &#39;colour&#39; then numComponents will be 4. Otherwise it&#39;s 3.</p>
-<p>For attribute formats, guesses are made based on type at number of components. The guess is
+<p>For attribute formats, guesses are made based on type and number of components. The guess is
 based on this table where (d) is the default for that type if <code>normalize</code> is not specified</p>
 <table>
 <thead>
