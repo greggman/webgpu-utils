@@ -1,6 +1,6 @@
 {
   "name": "webgpu-utils",
-  "version": "0.14.3",
+  "version": "0.15.0",
   "description": "webgpu utilities",
   "main": "dist/0.x/webgpu-utils.module.js",
   "module": "dist/0.x/webgpu-utils.module.js",

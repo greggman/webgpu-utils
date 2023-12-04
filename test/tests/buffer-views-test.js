@@ -1,13 +1,18 @@
 /* eslint-disable no-sparse-arrays */
-import { describe, it } from '../mocha-support.js';
+import { describe, it, afterEach } from '../mocha-support.js';
 import {
     makeStructuredView,
     setStructuredValues,
     makeShaderDataDefinitions,
+    setIntrinsicsToView,
 } from '../../dist/0.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertEqual, assertTruthy } from '../assert.js';
 
 describe('buffer-views-tests', () => {
+
+    afterEach(() => {
+        setIntrinsicsToView([]);
+    });
 
     it('handles intrinsics', () => {
         const shader = `
@@ -913,6 +918,39 @@ describe('buffer-views-tests', () => {
         assertEqual(arrayBuffer.byteLength, 8);
         assertEqual(views.a.byteOffset, 0);
         assertEqual(views.c.byteOffset, 4);
+    });
+
+    describe('expand arrays of intrinsics', () => {
+        it('expands arrays of intrinsics', () => {
+            setIntrinsicsToView(['vec3f', 'vec3<f32>']);
+            const shader = `
+                struct A {
+                  a: array<vec3f, 3>,
+                  b: f32
+                };
+            `;
+            const defs = makeShaderDataDefinitions(shader).structs;
+            const {views, arrayBuffer} = makeStructuredView(defs.A);
+            assertEqual(arrayBuffer.byteLength, 4 * 3 * 4 + 4 + 12);
+            assertEqual(views.a[0].byteOffset, 0);
+            assertEqual(views.a[1].length, 3);
+            assertEqual(views.b.byteOffset, 4 * 3 * 4);
+        });
+
+        it('by default it does not expand arrays of intrinsics', () => {
+            const shader = `
+                struct A {
+                  a: array<vec3f, 3>,
+                  b: f32
+                };
+            `;
+            const defs = makeShaderDataDefinitions(shader).structs;
+            const {views, arrayBuffer} = makeStructuredView(defs.A);
+            assertEqual(arrayBuffer.byteLength, 4 * 3 * 4 + 4 + 12);
+            assertEqual(views.a.byteOffset, 0);
+            assertEqual(views.a.length, 12);
+            assertEqual(views.b.byteOffset, 4 * 3 * 4);
+        });
     });
 
     /* wgsl_reflect returns bad data for this case. See comment above though.

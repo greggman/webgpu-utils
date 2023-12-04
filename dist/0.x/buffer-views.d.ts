@@ -1,5 +1,56 @@
 import { StructDefinition, TypeDefinition, VariableDefinition } from './data-definitions.js';
-import { TypedArray } from './typed-arrays.js';
+import { TypedArrayConstructor, TypedArray } from './typed-arrays.js';
+type TypeDef = {
+    numElements: number;
+    align: number;
+    size: number;
+    type: string;
+    View: TypedArrayConstructor;
+    flatten?: boolean;
+    pad?: readonly number[];
+};
+declare const typeInfo: {
+    readonly [K: string]: TypeDef;
+};
+export type kType = Extract<keyof typeof typeInfo, string>;
+export declare const kTypes: readonly kType[];
+/**
+ * Set which intrinsic types to make views for.
+ *
+ * Example:
+ *
+ * Given a an array of intrinsics like this
+ * `array<vec3, 200>`
+ *
+ * The default is to create a single `Float32Array(4 * 200)`
+ * because creating 200 `Float32Array` views is not usually
+ * what you want.
+ *
+ * If you do want individual views then you'd call
+ * `setIntrinsicsToView(['vec3f`])` and now you get
+ * an array of 200 `Float32Array`s.
+ *
+ * Note: `setIntrinsicsToView` always sets ALL types. The list you
+ * pass it is the types you want views created for, all other types
+ * will be reset to do the default. In other words
+ *
+ * ```js
+ * setIntrinsicsToView(['vec3f`])
+ * setIntrinsicsToView(['vec2f`])
+ * ```
+ *
+ * Only `vec2f` will have views created. `vec3f` has been reset to the default by
+ * the second call
+ *
+ * You can pass in `true` as the 2nd parameter to make it set which types
+ * to flatten and all others will be set to have views created.
+ *
+ * To reset all types to the default call it with no arguments
+ *
+ * @param types array of types to make views for
+ * @param flatten whether to flatten or expand the specified types.
+ */
+export declare function setIntrinsicsToView(types?: readonly kType[], flatten?: boolean): void;
 export type TypedArrayOrViews = TypedArray | Views | Views[];
 export interface Views {
     [x: string]: TypedArrayOrViews;
@@ -153,3 +204,4 @@ export declare function setTypedValues(typeDef: TypeDefinition, data: any, array
  * @param offset An offset in the arrayBuffer to start at.
  */
 export declare function setStructuredValues(varDef: VariableDefinition, data: any, arrayBuffer: ArrayBuffer, offset?: number): void;
+export {};
