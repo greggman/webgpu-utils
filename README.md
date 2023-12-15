@@ -6,6 +6,9 @@
 
 See [here](https://greggman.github.io/webgpu-utils/docs)
 
+* [ChangeList](https://github.com/greggman/webgpu-utils/CHANGELIST.md)
+* [Migration Notes](https://github.com/greggman/webgpu-utils/migration.md)
+
 ## Random useful things for WebGPU
 
 As I do more WebGPU I find I need more and more helpers to make things
