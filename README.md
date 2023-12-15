@@ -333,6 +333,14 @@ import { createTextureFromImage } from 'webgpu-utils';
 ...
 ```
 
+## <a id="examples"></a> Examples
+
+* [2d-array texture](examples/2d-array.html)
+* [cube](examples/cube.html)
+* [cube-map](examples/cube-map.html)
+* [instancing](examples/instancing.html)
+* [primitives](examples/primitives.html)
+
 ## Development
 
 ```
