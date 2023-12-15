@@ -1,10 +1,10 @@
 {
   "name": "webgpu-utils",
-  "version": "0.15.0",
+  "version": "1.0.0",
   "description": "webgpu utilities",
-  "main": "dist/0.x/webgpu-utils.module.js",
-  "module": "dist/0.x/webgpu-utils.module.js",
-  "types": "dist/0.x/webgpu-utils.d.ts",
+  "main": "dist/1.x/webgpu-utils.module.js",
+  "module": "dist/1.x/webgpu-utils.module.js",
+  "types": "dist/1.x/webgpu-utils.d.ts",
   "type": "module",
   "directories": {
     "test": "test"
