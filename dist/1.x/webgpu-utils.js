@@ -1,4 +1,4 @@
-/* webgpu-utils@1.0.1, license MIT */
+/* webgpu-utils@1.0.2, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -5207,9 +5207,9 @@
                 const uv = uvCoords[v];
                 // Each face needs all four vertices because the normals and texture
                 // coordinates are not all the same.
-                positions.push(position);
-                normals.push(normal);
-                texcoords.push(uv);
+                positions.push(...position);
+                normals.push(...normal);
+                texcoords.push(...uv);
             }
             // Two triangles make a square face.
             const offset = 4 * f;

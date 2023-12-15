@@ -1,4 +1,4 @@
-/* webgpu-utils@1.0.1, license MIT */
+/* webgpu-utils@1.0.2, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -5201,9 +5201,9 @@ function createCubeVertices({ size = 1 } = {}) {
             const uv = uvCoords[v];
             // Each face needs all four vertices because the normals and texture
             // coordinates are not all the same.
-            positions.push(position);
-            normals.push(normal);
-            texcoords.push(uv);
+            positions.push(...position);
+            normals.push(...normal);
+            texcoords.push(...uv);
         }
         // Two triangles make a square face.
         const offset = 4 * f;

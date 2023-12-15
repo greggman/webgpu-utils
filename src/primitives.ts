@@ -356,9 +356,9 @@ export function createCubeVertices({size = 1} = {}) {
 
       // Each face needs all four vertices because the normals and texture
       // coordinates are not all the same.
-      positions.push(position);
-      normals.push(normal);
-      texcoords.push(uv);
+      positions.push(...position);
+      normals.push(...normal);
+      texcoords.push(...uv);
 
     }
     // Two triangles make a square face.
