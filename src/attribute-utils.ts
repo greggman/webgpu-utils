@@ -482,3 +482,57 @@ export function createBuffersAndAttributesFromArrays(device: GPUDevice, arrays: 
 
   return buffersAndAttributes;
 }
+
+/**
+ * Calls `passEncoder.setVertexBuffer` and optionally `passEncoder.setIndexBuffer`
+ * for the buffers specified in `buffersAndAttributes`.
+ *
+ * This is extremely simple function. It is equivalent to
+ *
+ * ```js
+ * buffersAndAttributes.buffers.forEach((buffer, i) => {
+ *   passEncoder.setVertexBuffer(firstVertexBufferIndex + i, buffer);
+ * });
+*
+ * if (buffersAndAttributes.indexBuffer) {
+ *   passEncoder.setIndexBuffer(buffersAndAttributes.indexBuffer, buffersAndAttributes.indexFormat!);
+ * }
+ * ```
+ *
+ * It exists solely for simple cases. If you have a complex case, call the passEncoder
+ * yourself as appropriate.
+ *
+ * @param passEncoder a render pass encoder
+ * @param buffersAndAttributes As returned from {@link createBuffersAndAttributesFromArrays}
+ * @param firstVertexBufferIndex The first vertex buffer index. default = 0.
+ */
+export function setVertexAndIndexBuffers(
+    passEncoder: GPURenderPassEncoder,
+    buffersAndAttributes: BuffersAndAttributes,
+    firstVertexBufferIndex = 0) {
+  buffersAndAttributes.buffers.forEach((buffer, i) => {
+    passEncoder.setVertexBuffer(firstVertexBufferIndex + i, buffer);
+  });
+
+  if (buffersAndAttributes.indexBuffer) {
+    passEncoder.setIndexBuffer(buffersAndAttributes.indexBuffer, buffersAndAttributes.indexFormat!);
+  }
+}
+
+/**
+ * Calls {@link setVertexAndIndexBuffers} and then calls either `draw` or `drawIndexed`
+ *
+ * This is an extremely simple function. See  {@link setVertexAndIndexBuffers}.
+ * If you need something more complex, call pass encoder functions yourself as appropriate.
+ *
+ * @param passEncoder a render pass encoder
+ * @param buffersAndAttributes As returned from {@link createBuffersAndAttributesFromArrays}
+ */
+export function drawArrays(passEncoder: GPURenderPassEncoder, buffersAndAttributes: BuffersAndAttributes) {
+  setVertexAndIndexBuffers(passEncoder, buffersAndAttributes);
+  if (buffersAndAttributes.indexBuffer) {
+    passEncoder.drawIndexed(buffersAndAttributes.numElements);
+  } else {
+    passEncoder.draw(buffersAndAttributes.numElements);
+  }
+}
