@@ -311,7 +311,7 @@ const uni1 = makeStructuredView(defs.uniforms.uni1, new ArrayBuffer(4 * 16));
 * include from the net
 
 ```js
-import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/0.x/webgpu-utils.module.js'
+import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/1.x/webgpu-utils.module.js'
 
 ...
 ```
@@ -340,7 +340,7 @@ npm start
 ```
 
 This will run rollup in watch mode, building from typescript into
-`dist/0.x/webgpu-utils.js`.
+`dist/1.x/webgpu-utils.js`.
 
 ```
 npx servez
