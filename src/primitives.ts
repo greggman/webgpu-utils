@@ -100,13 +100,16 @@ function createAugmentedTypedArray<T extends TypedArrayConstructor>(numComponent
  *
  *     primitives.createXYQuadVertices(1, 0, 0.5);
  *
- * @param size the size across the quad. Defaults to 2 which means vertices will go from -1 to +1
- * @param xOffset the amount to offset the quad in X
- * @param yOffset the amount to offset the quad in Y
+ * @param params
+ * @param params.size the size across the quad. Defaults to 2 which means vertices will go from -1 to +1
+ * @param params.xOffset the amount to offset the quad in X. Default = 0
+ * @param params.yOffset the amount to offset the quad in Y. Default = 0
  * @return the created XY Quad vertices
  */
-export function createXYQuadVertices(size: number = 2, xOffset: number = 0, yOffset: number = 0) {
-  size *= 0.5;
+export function createXYQuadVertices({
+    size: inSize = 2, xOffset = 0, yOffset = 0
+  } = {}) {
+  const size = inSize * 0.5;
   return {
     position: {
       numComponents: 2,
@@ -138,17 +141,19 @@ export function createXYQuadVertices(size: number = 2, xOffset: number = 0, yOff
  *
  * The created plane has position, normal, and texcoord data
  *
- * @param width Width of the plane. Default = 1
- * @param depth Depth of the plane. Default = 1
- * @param subdivisionsWidth Number of steps across the plane. Default = 1
- * @param subdivisionsDepth Number of steps down the plane. Default = 1
+ * @param params
+ * @param params.width Width of the plane. Default = 1
+ * @param params.depth Depth of the plane. Default = 1
+ * @param params.subdivisionsWidth Number of steps across the plane. Default = 1
+ * @param params.subdivisionsDepth Number of steps down the plane. Default = 1
  * @return The created plane vertices.
  */
-export function createPlaneVertices(
+export function createPlaneVertices({
     width = 1,
     depth = 1,
     subdivisionsWidth = 1,
-    subdivisionsDepth = 1) {
+    subdivisionsDepth = 1,
+} = {}) {
   const numVertices = (subdivisionsWidth + 1) * (subdivisionsDepth + 1);
   const positions = createAugmentedTypedArray(3, numVertices, Float32Array);
   const normals = createAugmentedTypedArray(3, numVertices, Float32Array);
@@ -200,27 +205,29 @@ export function createPlaneVertices(
  *
  * The created sphere has position, normal, and texcoord data
  *
- * @param radius radius of the sphere.
- * @param subdivisionsAxis number of steps around the sphere.
- * @param subdivisionsHeight number of vertically on the sphere.
- * @param startLatitudeInRadians where to start the
- *     top of the sphere.
- * @param endLatitudeInRadians Where to end the
- *     bottom of the sphere.
- * @param startLongitudeInRadians where to start
- *     wrapping the sphere.
- * @param endLongitudeInRadians where to end
- *     wrapping the sphere.
+ * @param params
+ * @param params.radius radius of the sphere. Default = 1
+ * @param params.subdivisionsAxis number of steps around the sphere. Default = 24
+ * @param params.subdivisionsHeight number of vertically on the sphere. Default = 12
+ * @param params.startLatitudeInRadians where to start the
+ *     top of the sphere. Default = 0
+ * @param params.endLatitudeInRadians Where to end the
+ *     bottom of the sphere. Default = π
+ * @param params.startLongitudeInRadians where to start
+ *     wrapping the sphere. Default = 0
+ * @param params.endLongitudeInRadians where to end
+ *     wrapping the sphere. Default = 2π
  * @return The created sphere vertices.
  */
-export function createSphereVertices(
+export function createSphereVertices({
     radius = 1,
     subdivisionsAxis = 24,
     subdivisionsHeight = 12,
     startLatitudeInRadians = 0,
     endLatitudeInRadians = Math.PI,
     startLongitudeInRadians = 0,
-    endLongitudeInRadians = Math.PI * 2) {
+    endLongitudeInRadians = Math.PI * 2,
+} = {}) {
   if (subdivisionsAxis <= 0 || subdivisionsHeight <= 0) {
     throw new Error('subdivisionAxis and subdivisionHeight must be > 0');
   }
@@ -300,10 +307,11 @@ const CUBE_FACE_INDICES = [
  *
  * The cube is created around the origin. (-size / 2, size / 2).
  *
- * @param size width, height and depth of the cube.
+ * @param params
+ * @param params.size width, height and depth of the cube. Default = 1
  * @return The created vertices.
  */
-export function createCubeVertices(size = 1) {
+export function createCubeVertices({size = 1} = {}) {
   const k = size / 2;
 
   const cornerVertices = [
@@ -374,25 +382,26 @@ export function createCubeVertices(size = 1) {
  * truncated cone will be created centered about the origin, with the
  * y axis as its vertical axis. .
  *
- * @param bottomRadius Bottom radius of truncated cone.
- * @param topRadius Top radius of truncated cone.
- * @param height Height of truncated cone.
+ * @param bottomRadius Bottom radius of truncated cone. Default = 1
+ * @param topRadius Top radius of truncated cone. Default = 0
+ * @param height Height of truncated cone. Default = 1
  * @param radialSubdivisions The number of subdivisions around the
- *     truncated cone.
+ *     truncated cone. Default = 24
  * @param verticalSubdivisions The number of subdivisions down the
- *     truncated cone.
+ *     truncated cone. Default = 1
  * @param topCap Create top cap. Default = true.
  * @param bottomCap Create bottom cap. Default = true.
  * @return The created cone vertices.
  */
-export function createTruncatedConeVertices(
+export function createTruncatedConeVertices({
     bottomRadius = 1,
     topRadius = 0,
     height = 1,
     radialSubdivisions = 24,
     verticalSubdivisions = 1,
     topCap = true,
-    bottomCap = true) {
+    bottomCap = true,
+} = {}) {
   if (radialSubdivisions < 3) {
     throw new Error('radialSubdivisions must be 3 or greater');
   }
@@ -876,23 +885,25 @@ export function create3DFVertices() {
 /**
  * Creates crescent vertices.
  *
- * @param verticalRadius The vertical radius of the crescent.
- * @param outerRadius The outer radius of the crescent.
- * @param innerRadius The inner radius of the crescent.
- * @param thickness The thickness of the crescent.
- * @param subdivisionsDown number of steps around the crescent.
- * @param startOffset Where to start arc. Default 0.
- * @param endOffset Where to end arg. Default 1.
+ * @param params
+ * @param params.verticalRadius The vertical radius of the crescent. Default = 2
+ * @param params.outerRadius The outer radius of the crescent. Default = 1
+ * @param params.innerRadius The inner radius of the crescent. Default = 0
+ * @param params.thickness The thickness of the crescent. Default = 1
+ * @param params.subdivisionsDown number of steps around the crescent. Default = 12
+ * @param params.startOffset Where to start arc. Default 0. Default = 0
+ * @param params.endOffset Where to end arg. Default 1. Default = 1
  * @return The created vertices.
  */
-export function createCrescentVertices(
-    verticalRadius: 2,
-    outerRadius: 1,
-    innerRadius: 0,
-    thickness: 1,
-    subdivisionsDown: 12,
-    startOffset: 0,
-    endOffset: 1) {
+export function createCrescentVertices({
+    verticalRadius = 2,
+    outerRadius = 1,
+    innerRadius = 0,
+    thickness = 1,
+    subdivisionsDown = 12,
+    startOffset = 0,
+    endOffset = 1,
+} = {}) {
   if (subdivisionsDown <= 0) {
     throw new Error('subdivisionDown must be > 0');
   }
@@ -986,49 +997,54 @@ export function createCrescentVertices(
   * Creates cylinder vertices. The cylinder will be created around the origin
   * along the y-axis.
   *
-  * @param radius Radius of cylinder.
-  * @param height Height of cylinder.
-  * @param radialSubdivisions The number of subdivisions around the cylinder.
-  * @param verticalSubdivisions The number of subdivisions down the cylinder.
-  * @param topCap Create top cap. Default = true.
-  * @param bottomCap Create bottom cap. Default = true.
+  * @param params
+  * @param params.radius Radius of cylinder. Default = 1
+  * @param params.height Height of cylinder. Default = 1
+  * @param params.radialSubdivisions The number of subdivisions around the cylinder. Default = 24
+  * @param params.verticalSubdivisions The number of subdivisions down the cylinder. Default = 1
+  * @param params.topCap Create top cap. Default = true.
+  * @param params.bottomCap Create bottom cap. Default = true.
   * @return The created vertices.
   */
-export function createCylinderVertices(
+export function createCylinderVertices({
     radius = 1,
     height = 1,
     radialSubdivisions = 24,
     verticalSubdivisions = 1,
     topCap = true,
-    bottomCap = true) {
-  return createTruncatedConeVertices(
-      radius,
-      radius,
+    bottomCap = true,
+} = {}) {
+  return createTruncatedConeVertices({
+      bottomRadius: radius,
+      topRadius: radius,
       height,
       radialSubdivisions,
       verticalSubdivisions,
       topCap,
-      bottomCap);
+      bottomCap,
+  });
 }
 
 /**
  * Creates vertices for a torus
  *
- * @param radius radius of center of torus circle.
- * @param thickness radius of torus ring.
- * @param radialSubdivisions The number of subdivisions around the torus.
- * @param bodySubdivisions The number of subdivisions around the body torus.
- * @param startAngle start angle in radians. Default = 0.
- * @param endAngle end angle in radians. Default = Math.PI * 2.
+ * @param params
+ * @param params.radius radius of center of torus circle. Default = 1
+ * @param params.thickness radius of torus ring. Default = 0.24
+ * @param params.radialSubdivisions The number of subdivisions around the torus. Default = 24
+ * @param params.bodySubdivisions The number of subdivisions around the body torus. Default = 12
+ * @param params.startAngle start angle in radians. Default = 0.
+ * @param params.endAngle end angle in radians. Default = Math.PI * 2.
  * @return The created vertices.
  */
-export function createTorusVertices(
+export function createTorusVertices({
     radius = 1,
     thickness = 0.24,
     radialSubdivisions = 24,
     bodySubdivisions = 12,
     startAngle = 0,
-    endAngle = Math.PI * 2) {
+    endAngle = Math.PI * 2,
+} = {}) {
   if (radialSubdivisions < 3) {
     throw new Error('radialSubdivisions must be 3 or greater');
   }
@@ -1106,19 +1122,21 @@ export function createTorusVertices(
  * the square of the stack index. A value of 1 will give uniform
  * stacks.
  *
- * @param radius Radius of the ground plane.
- * @param divisions Number of triangles in the ground plane (at least 3).
- * @param stacks Number of radial divisions (default=1).
- * @param innerRadius Default 0.
- * @param stackPower Power to raise stack size to for decreasing width.
+ * @param params
+ * @param params.radius Radius of the ground plane. Default = 1
+ * @param params.divisions Number of triangles in the ground plane (at least 3). Default = 24
+ * @param params.stacks Number of radial divisions. Default = 1
+ * @param params.innerRadius Default = 0
+ * @param params.stackPower Power to raise stack size to for decreasing width. Default = 1
  * @return The created vertices.
  */
-export function createDiscVertices(
+export function createDiscVertices({
     radius = 1,
     divisions = 24,
     stacks = 1,
     innerRadius = 0,
-    stackPower = 1) {
+    stackPower = 1,
+} = {}) {
   if (divisions < 3) {
     throw new Error('divisions must be at least 3');
   }
