@@ -18,7 +18,7 @@
 <h1>Function createXYQuadVertices</h1></div>
 <section class="tsd-panel">
 <ul class="tsd-signatures">
-<li class="tsd-signature tsd-anchor-link" id="createXYQuadVertices"><span class="tsd-kind-call-signature">createXYQuad<wbr/>Vertices</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">size</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">xOffset</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">yOffset</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../types/Arrays.html" class="tsd-signature-type tsd-kind-type-alias">Arrays</a><a href="#createXYQuadVertices" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><g stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" id="icon-anchor"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path></g></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="createXYQuadVertices"><span class="tsd-kind-call-signature">createXYQuad<wbr/>Vertices</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">params</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../types/Arrays.html" class="tsd-signature-type tsd-kind-type-alias">Arrays</a><a href="#createXYQuadVertices" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><g stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" id="icon-anchor"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path></g></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Creates XY quad vertices</p>
 <p>The default with no parameters will return a 2x2 quad with values from -1 to +1.
@@ -33,20 +33,24 @@ If you want a unit quad with that goes from 0 to 1 you&#39;d call it with</p>
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5><span class="tsd-kind-parameter">size</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 2</span></h5>
+<h5><span class="tsd-kind-parameter">params</span>: <span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">size</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">xOffset</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">yOffset</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = {}</span></h5>
+<div class="tsd-comment tsd-typography"></div>
+<ul class="tsd-parameters">
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">size</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
 <div class="tsd-comment tsd-typography"><p>the size across the quad. Defaults to 2 which means vertices will go from -1 to +1</p>
 </div>
 <div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">xOffset</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></h5>
-<div class="tsd-comment tsd-typography"><p>the amount to offset the quad in X</p>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">x<wbr/>Offset</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>the amount to offset the quad in X. Default = 0</p>
 </div>
 <div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">yOffset</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></h5>
-<div class="tsd-comment tsd-typography"><p>the amount to offset the quad in Y</p>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">y<wbr/>Offset</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>the amount to offset the quad in Y. Default = 0</p>
 </div>
-<div class="tsd-comment tsd-typography"></div></li></ul></div>
+<div class="tsd-comment tsd-typography"></div></li></ul></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="../types/Arrays.html" class="tsd-signature-type tsd-kind-type-alias">Arrays</a></h4><p>the created XY Quad vertices</p>
 
 <div class="tsd-comment tsd-typography"></div></li></ul></section></div>
@@ -121,6 +125,7 @@ If you want a unit quad with that goes from 0 to 1 you&#39;d call it with</p>
 <li><a href="createTextureFromImages.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Images</span></a></li>
 <li><a href="createTextureFromSource.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Source</span></a></li>
 <li><a href="createTextureFromSources.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Sources</span></a></li>
+<li><a href="drawArrays.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>draw<wbr/>Arrays</span></a></li>
 <li><a href="generateMipmap.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>generate<wbr/>Mipmap</span></a></li>
 <li><a href="getSizeForMipFromTexture.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>get<wbr/>Size<wbr/>For<wbr/>Mip<wbr/>From<wbr/>Texture</span></a></li>
 <li><a href="getSizeFromSource.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>get<wbr/>Size<wbr/>From<wbr/>Source</span></a></li>
@@ -136,6 +141,7 @@ If you want a unit quad with that goes from 0 to 1 you&#39;d call it with</p>
 <li><a href="setStructuredValues.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Structured<wbr/>Values</span></a></li>
 <li><a href="setStructuredView.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Structured<wbr/>View</span></a></li>
 <li><a href="setTypedValues.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Typed<wbr/>Values</span></a></li>
+<li><a href="setVertexAndIndexBuffers.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Vertex<wbr/>And<wbr/>Index<wbr/>Buffers</span></a></li>
 <li><a href="subarray.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>subarray</span></a></li></ul></nav></div></div></div>
 <div class="tsd-generator">
 <p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div>

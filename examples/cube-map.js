@@ -1,7 +1,6 @@
 /* global GPUBufferUsage */
-/* global GPUTextureUsage */
 import { mat4 } from 'https://wgpu-matrix.org/dist/2.x/wgpu-matrix.module.js';
-import * as wgh from '../dist/0.x/webgpu-utils.module.js';
+import * as wgh from '../dist/1.x/webgpu-utils.module.js';
 import GUI from './3rdparty/muigui-0.x.module.js';
 
 async function main() {
@@ -47,7 +46,7 @@ async function main() {
 
   @group(0) @binding(1) var<uniform> fsUniforms: FSUniforms;
   @group(0) @binding(2) var diffuseSampler: sampler;
-  @group(0) @binding(3) var diffuseTexture: texture_cubef;
+  @group(0) @binding(3) var diffuseTexture: texture_cube<f32>;
 
   @fragment
   fn myFSMain(v: MyVSOutput) -> @location(0) vec4f {

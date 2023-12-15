@@ -1,7 +1,7 @@
 import { describe, it } from '../mocha-support.js';
 import {
     makeShaderDataDefinitions,
-} from '../../dist/0.x/webgpu-utils.module.js';
+} from '../../dist/1.x/webgpu-utils.module.js';
 import { assertEqual, assertFalsy, assertTruthy } from '../assert.js';
 
 describe('data-definition-tests', () => {

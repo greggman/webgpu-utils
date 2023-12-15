@@ -1,7 +1,7 @@
 /* global GPUBufferUsage */
 /* global GPUTextureUsage */
 import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/2.x/wgpu-matrix.module.js';
-import * as wgh from '../dist/0.x/webgpu-utils.module.js';
+import * as wgh from '../dist/1.x/webgpu-utils.module.js';
 
 async function main() {
   const adapter = await navigator.gpu?.requestAdapter();
@@ -120,7 +120,7 @@ async function main() {
     indexBuffer,
     indexFormat,
     numElements,
-  } = wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createCylinderVertices(2, 4));
+  } = wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createCylinderVertices({radius: 2, height: 4}));
 
   const module = device.createShaderModule({code});
   const module2 = device.createShaderModule({code: code2});

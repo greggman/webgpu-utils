@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- this file is auto-generated from README.md. Do not edited directly -->
 <!--
-@license webgpu-utils 0.15.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
+@license webgpu-utils 1.0.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/webgpu-utils for details
 -->
@@ -47,6 +47,10 @@ see: http://github.com/greggman/webgpu-utils for details
 <p><img src="https://img.shields.io/npm/v/webgpu-utils" alt=""></p>
 <h2>Docs</h2>
 <p>See <a href="./docs">here</a></p>
+<ul>
+<li><a href="https://github.com/greggman/webgpu-utils/CHANGELIST.md">ChangeList</a></li>
+<li><a href="https://github.com/greggman/webgpu-utils/migration.md">Migration Notes</a></li>
+</ul>
 <h2>Random useful things for WebGPU</h2>
 <p>As I do more WebGPU I find I need more and more helpers to make things
 less tedious. These are the result. I expect I’ll add more over time.</p>
@@ -74,7 +78,7 @@ const myUniformValues = makeStructuredView(defs.uniforms.myUniforms);
 
 // create the correct sized buffer
 const uniformBuffer = device.createBuffer({
-  size: myUniformBuffer.arrayBuffer.byteLength,
+  size: myUniformValues.arrayBuffer.byteLength,
   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
 
@@ -297,7 +301,7 @@ const uni1 = makeStructuredView(defs.uniforms.uni1, new ArrayBuffer(4 * 16));
 <ul>
 <li>include from the net</li>
 </ul>
-<pre><code class="lang-js">import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/0.x/webgpu-utils.module.js'
+<pre><code class="lang-js">import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/1.x/webgpu-utils.module.js'
 
 ...
 </code></pre>
@@ -315,6 +319,14 @@ const uni1 = makeStructuredView(defs.uniforms.uni1, new ArrayBuffer(4 * 16));
 
 ...
 </code></pre>
+<h2><a id="examples"></a> Examples</h2>
+<ul>
+<li><a href="examples/2d-array.html">2d-array texture</a></li>
+<li><a href="examples/cube.html">cube</a></li>
+<li><a href="examples/cube-map.html">cube-map</a></li>
+<li><a href="examples/instancing.html">instancing</a></li>
+<li><a href="examples/primitives.html">primitives</a></li>
+</ul>
 <h2>Development</h2>
 <pre><code>git clone https://github.com/greggman/webgpu-utils.git
 cd webgpu-utils
@@ -322,7 +334,7 @@ npm install
 npm start
 </code></pre>
 <p>This will run rollup in watch mode, building from typescript into
-<code>dist/0.x/webgpu-utils.js</code>.</p>
+<code>dist/1.x/webgpu-utils.js</code>.</p>
 <pre><code>npx servez
 </code></pre>
 <p>Now open <a href="http://localhost:8080/test/"><code>http://localhost:8080/test/</code></a> to run tests.</p>

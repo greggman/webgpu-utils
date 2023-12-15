@@ -18,7 +18,7 @@
 <h1>Function createCylinderVertices</h1></div>
 <section class="tsd-panel">
 <ul class="tsd-signatures">
-<li class="tsd-signature tsd-anchor-link" id="createCylinderVertices"><span class="tsd-kind-call-signature">create<wbr/>Cylinder<wbr/>Vertices</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">radius</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">height</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">radialSubdivisions</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">verticalSubdivisions</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">topCap</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">bottomCap</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">indices</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Uint16Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">normal</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">position</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">texcoord</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><a href="#createCylinderVertices" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><g stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" id="icon-anchor"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path></g></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="createCylinderVertices"><span class="tsd-kind-call-signature">create<wbr/>Cylinder<wbr/>Vertices</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">params</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">indices</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Uint16Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">normal</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">position</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">texcoord</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><a href="#createCylinderVertices" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><g stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" id="icon-anchor"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path></g></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Creates cylinder vertices. The cylinder will be created around the origin
 along the y-axis.</p>
@@ -27,35 +27,39 @@ along the y-axis.</p>
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5><span class="tsd-kind-parameter">radius</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 1</span></h5>
-<div class="tsd-comment tsd-typography"><p>Radius of cylinder.</p>
+<h5><span class="tsd-kind-parameter">params</span>: <span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">bottomCap</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">height</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">radialSubdivisions</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">radius</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">topCap</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">verticalSubdivisions</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = {}</span></h5>
+<div class="tsd-comment tsd-typography"></div>
+<ul class="tsd-parameters">
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">bottom<wbr/>Cap</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">boolean</span></h5>
+<div class="tsd-comment tsd-typography"><p>Create bottom cap. Default = true.</p>
 </div>
 <div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">height</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 1</span></h5>
-<div class="tsd-comment tsd-typography"><p>Height of cylinder.</p>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">height</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>Height of cylinder. Default = 1</p>
 </div>
 <div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">radialSubdivisions</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 24</span></h5>
-<div class="tsd-comment tsd-typography"><p>The number of subdivisions around the cylinder.</p>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">radial<wbr/>Subdivisions</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>The number of subdivisions around the cylinder. Default = 24</p>
 </div>
 <div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">verticalSubdivisions</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 1</span></h5>
-<div class="tsd-comment tsd-typography"><p>The number of subdivisions down the cylinder.</p>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">radius</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>Radius of cylinder. Default = 1</p>
 </div>
 <div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">topCap</span>: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">top<wbr/>Cap</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">boolean</span></h5>
 <div class="tsd-comment tsd-typography"><p>Create top cap. Default = true.</p>
 </div>
 <div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">bottomCap</span>: <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = true</span></h5>
-<div class="tsd-comment tsd-typography"><p>Create bottom cap. Default = true.</p>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">vertical<wbr/>Subdivisions</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>The number of subdivisions down the cylinder. Default = 1</p>
 </div>
-<div class="tsd-comment tsd-typography"></div></li></ul></div>
+<div class="tsd-comment tsd-typography"></div></li></ul></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">indices</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Uint16Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">normal</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">position</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">texcoord</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></h4><p>The created vertices.</p>
 
 <ul class="tsd-parameters">
@@ -139,6 +143,7 @@ along the y-axis.</p>
 <li><a href="createTextureFromImages.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Images</span></a></li>
 <li><a href="createTextureFromSource.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Source</span></a></li>
 <li><a href="createTextureFromSources.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Sources</span></a></li>
+<li><a href="drawArrays.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>draw<wbr/>Arrays</span></a></li>
 <li><a href="generateMipmap.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>generate<wbr/>Mipmap</span></a></li>
 <li><a href="getSizeForMipFromTexture.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>get<wbr/>Size<wbr/>For<wbr/>Mip<wbr/>From<wbr/>Texture</span></a></li>
 <li><a href="getSizeFromSource.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>get<wbr/>Size<wbr/>From<wbr/>Source</span></a></li>
@@ -154,6 +159,7 @@ along the y-axis.</p>
 <li><a href="setStructuredValues.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Structured<wbr/>Values</span></a></li>
 <li><a href="setStructuredView.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Structured<wbr/>View</span></a></li>
 <li><a href="setTypedValues.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Typed<wbr/>Values</span></a></li>
+<li><a href="setVertexAndIndexBuffers.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Vertex<wbr/>And<wbr/>Index<wbr/>Buffers</span></a></li>
 <li><a href="subarray.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>subarray</span></a></li></ul></nav></div></div></div>
 <div class="tsd-generator">
 <p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div>

@@ -36,7 +36,9 @@ will be reset to do the default. In other words</p>
 <p>Only <code>vec2f</code> will have views created. <code>vec3f</code> has been reset to the default by
 the second call</p>
 <p>You can pass in <code>true</code> as the 2nd parameter to make it set which types
-to flatten and all others will be set to have views created.</p>
+to flatten and all others will be set to have views created. For example
+to expand all types would be <code>setIntrinsicsToView([], true)</code>. To expand
+all except <code>f32</code> would be <code>setIntrinsicsToView([&#39;f32&#39;], true)</code>.</p>
 <p>To reset all types to the default call it with no arguments</p>
 </div>
 <div class="tsd-parameters">
@@ -111,6 +113,7 @@ to flatten and all others will be set to have views created.</p>
 <li><a href="createTextureFromImages.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Images</span></a></li>
 <li><a href="createTextureFromSource.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Source</span></a></li>
 <li><a href="createTextureFromSources.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Sources</span></a></li>
+<li><a href="drawArrays.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>draw<wbr/>Arrays</span></a></li>
 <li><a href="generateMipmap.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>generate<wbr/>Mipmap</span></a></li>
 <li><a href="getSizeForMipFromTexture.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>get<wbr/>Size<wbr/>For<wbr/>Mip<wbr/>From<wbr/>Texture</span></a></li>
 <li><a href="getSizeFromSource.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>get<wbr/>Size<wbr/>From<wbr/>Source</span></a></li>
@@ -126,6 +129,7 @@ to flatten and all others will be set to have views created.</p>
 <li><a href="setStructuredValues.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Structured<wbr/>Values</span></a></li>
 <li><a href="setStructuredView.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Structured<wbr/>View</span></a></li>
 <li><a href="setTypedValues.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Typed<wbr/>Values</span></a></li>
+<li><a href="setVertexAndIndexBuffers.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Vertex<wbr/>And<wbr/>Index<wbr/>Buffers</span></a></li>
 <li><a href="subarray.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>subarray</span></a></li></ul></nav></div></div></div>
 <div class="tsd-generator">
 <p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div>

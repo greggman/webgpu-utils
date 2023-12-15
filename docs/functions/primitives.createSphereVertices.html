@@ -18,7 +18,7 @@
 <h1>Function createSphereVertices</h1></div>
 <section class="tsd-panel">
 <ul class="tsd-signatures">
-<li class="tsd-signature tsd-anchor-link" id="createSphereVertices"><span class="tsd-kind-call-signature">create<wbr/>Sphere<wbr/>Vertices</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">radius</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">subdivisionsAxis</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">subdivisionsHeight</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">startLatitudeInRadians</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">endLatitudeInRadians</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">startLongitudeInRadians</span><span class="tsd-signature-symbol">?</span>, <span class="tsd-kind-parameter">endLongitudeInRadians</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">indices</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Uint16Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">normal</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">position</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">texcoord</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><a href="#createSphereVertices" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><g stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" id="icon-anchor"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path></g></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="createSphereVertices"><span class="tsd-kind-call-signature">create<wbr/>Sphere<wbr/>Vertices</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">params</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">indices</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Uint16Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">normal</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">position</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">texcoord</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><a href="#createSphereVertices" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><g stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" id="icon-anchor"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path></g></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-comment tsd-typography"><p>Creates sphere vertices.</p>
 <p>The created sphere has position, normal, and texcoord data</p>
@@ -27,44 +27,48 @@
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5><span class="tsd-kind-parameter">radius</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 1</span></h5>
-<div class="tsd-comment tsd-typography"><p>radius of the sphere.</p>
-</div>
-<div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">subdivisionsAxis</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 24</span></h5>
-<div class="tsd-comment tsd-typography"><p>number of steps around the sphere.</p>
-</div>
-<div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">subdivisionsHeight</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 12</span></h5>
-<div class="tsd-comment tsd-typography"><p>number of vertically on the sphere.</p>
-</div>
-<div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">startLatitudeInRadians</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></h5>
-<div class="tsd-comment tsd-typography"><p>where to start the
-    top of the sphere.</p>
-</div>
-<div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">endLatitudeInRadians</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = Math.PI</span></h5>
+<h5><span class="tsd-kind-parameter">params</span>: <span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">endLatitudeInRadians</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">endLongitudeInRadians</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">radius</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">startLatitudeInRadians</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">startLongitudeInRadians</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">subdivisionsAxis</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">subdivisionsHeight</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = {}</span></h5>
+<div class="tsd-comment tsd-typography"></div>
+<ul class="tsd-parameters">
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">end<wbr/>Latitude<wbr/>In<wbr/>Radians</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
 <div class="tsd-comment tsd-typography"><p>Where to end the
-    bottom of the sphere.</p>
+    bottom of the sphere. Default = π</p>
 </div>
 <div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">startLongitudeInRadians</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></h5>
-<div class="tsd-comment tsd-typography"><p>where to start
-    wrapping the sphere.</p>
-</div>
-<div class="tsd-comment tsd-typography"></div></li>
-<li>
-<h5><span class="tsd-kind-parameter">endLongitudeInRadians</span>: <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = ...</span></h5>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">end<wbr/>Longitude<wbr/>In<wbr/>Radians</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
 <div class="tsd-comment tsd-typography"><p>where to end
-    wrapping the sphere.</p>
+    wrapping the sphere. Default = 2π</p>
 </div>
-<div class="tsd-comment tsd-typography"></div></li></ul></div>
+<div class="tsd-comment tsd-typography"></div></li>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">radius</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>radius of the sphere. Default = 1</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">start<wbr/>Latitude<wbr/>In<wbr/>Radians</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>where to start the
+    top of the sphere. Default = 0</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">start<wbr/>Longitude<wbr/>In<wbr/>Radians</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>where to start
+    wrapping the sphere. Default = 0</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">subdivisions<wbr/>Axis</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>number of steps around the sphere. Default = 24</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
+<li class="tsd-parameter">
+<h5><span class="tsd-kind-property">subdivisions<wbr/>Height</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
+<div class="tsd-comment tsd-typography"><p>number of vertically on the sphere. Default = 12</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li></ul></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">indices</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Uint16Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">normal</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">position</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">texcoord</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Float32Array</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></h4><p>The created sphere vertices.</p>
 
 <ul class="tsd-parameters">
@@ -148,6 +152,7 @@
 <li><a href="createTextureFromImages.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Images</span></a></li>
 <li><a href="createTextureFromSource.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Source</span></a></li>
 <li><a href="createTextureFromSources.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>create<wbr/>Texture<wbr/>From<wbr/>Sources</span></a></li>
+<li><a href="drawArrays.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>draw<wbr/>Arrays</span></a></li>
 <li><a href="generateMipmap.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>generate<wbr/>Mipmap</span></a></li>
 <li><a href="getSizeForMipFromTexture.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>get<wbr/>Size<wbr/>For<wbr/>Mip<wbr/>From<wbr/>Texture</span></a></li>
 <li><a href="getSizeFromSource.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>get<wbr/>Size<wbr/>From<wbr/>Source</span></a></li>
@@ -163,6 +168,7 @@
 <li><a href="setStructuredValues.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Structured<wbr/>Values</span></a></li>
 <li><a href="setStructuredView.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Structured<wbr/>View</span></a></li>
 <li><a href="setTypedValues.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Typed<wbr/>Values</span></a></li>
+<li><a href="setVertexAndIndexBuffers.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>set<wbr/>Vertex<wbr/>And<wbr/>Index<wbr/>Buffers</span></a></li>
 <li><a href="subarray.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-64"></use></svg><span>subarray</span></a></li></ul></nav></div></div></div>
 <div class="tsd-generator">
 <p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div>

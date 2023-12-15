@@ -1,5 +1,25 @@
 # Change List
 
+### 1.0.0
+
+* switch primitive functions to use named parameters.
+
+### 0.15.0
+
+* add `setIntrinsicsToView`
+
+### 0.14.3
+
+* Fixes for vec2 typos
+
+### 0.14.2
+
+* Handle bool issue fix
+
+### 0.14.0
+
+* Use latest wgsl_reflect
+
 ### 0.13.0
 
 * Support making views of unsized arrays

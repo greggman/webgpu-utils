@@ -2,7 +2,7 @@ import { describe, it } from '../mocha-support.js';
 import {
   generateMipmap,
   numMipLevels,
-} from '../../dist/0.x/webgpu-utils.module.js';
+} from '../../dist/1.x/webgpu-utils.module.js';
 import { assertArrayEqualApproximately, assertEqual } from '../assert.js';
 import { readTextureUnpadded, testWithDevice } from '../webgpu.js';
 

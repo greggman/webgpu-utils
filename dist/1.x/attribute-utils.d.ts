@@ -192,4 +192,38 @@ export declare function interleaveVertexData(attributes: GPUVertexAttribute[], t
  * Also see the cube and instancing examples.
  */
 export declare function createBuffersAndAttributesFromArrays(device: GPUDevice, arrays: Arrays, options?: ArraysOptions): BuffersAndAttributes;
+/**
+ * Calls `passEncoder.setVertexBuffer` and optionally `passEncoder.setIndexBuffer`
+ * for the buffers specified in `buffersAndAttributes`.
+ *
+ * This is extremely simple function. It is equivalent to
+ *
+ * ```js
+ * buffersAndAttributes.buffers.forEach((buffer, i) => {
+ *   passEncoder.setVertexBuffer(firstVertexBufferIndex + i, buffer);
+ * });
+*
+ * if (buffersAndAttributes.indexBuffer) {
+ *   passEncoder.setIndexBuffer(buffersAndAttributes.indexBuffer, buffersAndAttributes.indexFormat!);
+ * }
+ * ```
+ *
+ * It exists solely for simple cases. If you have a complex case, call the passEncoder
+ * yourself as appropriate.
+ *
+ * @param passEncoder a render pass encoder
+ * @param buffersAndAttributes As returned from {@link createBuffersAndAttributesFromArrays}
+ * @param firstVertexBufferIndex The first vertex buffer index. default = 0.
+ */
+export declare function setVertexAndIndexBuffers(passEncoder: GPURenderPassEncoder, buffersAndAttributes: BuffersAndAttributes, firstVertexBufferIndex?: number): void;
+/**
+ * Calls {@link setVertexAndIndexBuffers} and then calls either `draw` or `drawIndexed`
+ *
+ * This is an extremely simple function. See  {@link setVertexAndIndexBuffers}.
+ * If you need something more complex, call pass encoder functions yourself as appropriate.
+ *
+ * @param passEncoder a render pass encoder
+ * @param buffersAndAttributes As returned from {@link createBuffersAndAttributesFromArrays}
+ */
+export declare function drawArrays(passEncoder: GPURenderPassEncoder, buffersAndAttributes: BuffersAndAttributes): void;
 export {};

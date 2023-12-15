@@ -6,6 +6,9 @@
 
 See [here](https://greggman.github.io/webgpu-utils/docs)
 
+* [ChangeList](https://github.com/greggman/webgpu-utils/CHANGELIST.md)
+* [Migration Notes](https://github.com/greggman/webgpu-utils/migration.md)
+
 ## Random useful things for WebGPU
 
 As I do more WebGPU I find I need more and more helpers to make things
@@ -39,7 +42,7 @@ const myUniformValues = makeStructuredView(defs.uniforms.myUniforms);
 
 // create the correct sized buffer
 const uniformBuffer = device.createBuffer({
-  size: myUniformBuffer.arrayBuffer.byteLength,
+  size: myUniformValues.arrayBuffer.byteLength,
   usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
 
@@ -246,7 +249,7 @@ The reason it's this way is it's common to make large arrays of `f32`, `u32`,
 `vec2f`, `vec3f`, `vec4f` etc. We wouldn't want every element of an array to
 have its own typedarray view.
 
-You can configure this per type by calling `setIntrinsicsToView`. 
+You can configure this per type by calling `setIntrinsicsToView`.
 The configuration is global. Given th example above
 
 ```js
@@ -311,7 +314,7 @@ const uni1 = makeStructuredView(defs.uniforms.uni1, new ArrayBuffer(4 * 16));
 * include from the net
 
 ```js
-import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/0.x/webgpu-utils.module.js'
+import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/1.x/webgpu-utils.module.js'
 
 ...
 ```
@@ -330,6 +333,14 @@ import { createTextureFromImage } from 'webgpu-utils';
 ...
 ```
 
+## <a id="examples"></a> Examples
+
+* [2d-array texture](examples/2d-array.html)
+* [cube](examples/cube.html)
+* [cube-map](examples/cube-map.html)
+* [instancing](examples/instancing.html)
+* [primitives](examples/primitives.html)
+
 ## Development
 
 ```
@@ -340,7 +351,7 @@ npm start
 ```
 
 This will run rollup in watch mode, building from typescript into
-`dist/0.x/webgpu-utils.js`.
+`dist/1.x/webgpu-utils.js`.
 
 ```
 npx servez
@@ -355,4 +366,3 @@ Super thanks to Brendan Duncan for [wgsl-reflect](https://github.com/brendan-dun
 ## License
 
 [MIT](LICENSE.md)
-

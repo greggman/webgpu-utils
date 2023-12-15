@@ -5,7 +5,7 @@ import {
     setStructuredValues,
     makeShaderDataDefinitions,
     setIntrinsicsToView,
-} from '../../dist/0.x/webgpu-utils.module.js';
+} from '../../dist/1.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertEqual, assertTruthy } from '../assert.js';
 
 describe('buffer-views-tests', () => {
