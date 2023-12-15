@@ -2,6 +2,7 @@
 
 import puppeteer from  'puppeteer';
 import path from  'path';
+import fs from 'fs';
 import express from 'express';
 import url from 'url';
 const app = express();
@@ -23,6 +24,16 @@ function makePromiseInfo() {
   return info;
 }
 
+const exampleInjectJS = fs.readFileSync('test/src/js/example-inject.js', {encoding: 'utf-8'});
+
+function getExamples(port) {
+  return fs.readdirSync('examples')
+      .filter(f => f.endsWith('.html'))
+      .map(f => ({
+        url: `http://localhost:${port}/examples/${f}`,
+        js: exampleInjectJS,
+      }));
+}
 
 async function test(port) {
   const browser = await puppeteer.launch({
@@ -55,15 +66,29 @@ async function test(port) {
     waitingPromiseInfo.resolve();
   });
 
-  const urls = [
-    `http://localhost:${port}/test/index.html?reporter=spec`,
+  const testPages = [
+    {url: `http://localhost:${port}/test/index.html?reporter=spec` },
+    ...getExamples(port),
   ];
 
-  for (const url of urls) {
+  for (const {url, js} of testPages) {
     waitingPromiseInfo = makePromiseInfo();
+    console.log(`===== [ ${url} ] =====`);
+    if (js) {
+      await page.evaluateOnNewDocument(js);
+    }
     await page.goto(url);
+    await page.waitForNetworkIdle();
+    if (js) {
+      await page.evaluate(() => {
+        setTimeout(() => {
+          window.testsPromiseInfo.resolve(0);
+        }, 10);
+      });
+    }
     await waitingPromiseInfo.promise;
   }
+
 
   await browser.close();
   server.close();
