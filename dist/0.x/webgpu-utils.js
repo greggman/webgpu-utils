@@ -1,4 +1,4 @@
-/* webgpu-utils@1.0.1, license MIT */
+/* webgpu-utils@0.15.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -142,9 +142,7 @@
      * the second call
      *
      * You can pass in `true` as the 2nd parameter to make it set which types
-     * to flatten and all others will be set to have views created. For example
-     * to expand all types would be `setIntrinsicsToView([], true)`. To expand
-     * all except `f32` would be `setIntrinsicsToView(['f32'], true)`.
+     * to flatten and all others will be set to have views created.
      *
      * To reset all types to the default call it with no arguments
      *
@@ -4571,55 +4569,6 @@
         }
         return buffersAndAttributes;
     }
-    /**
-     * Calls `passEncoder.setVertexBuffer` and optionally `passEncoder.setIndexBuffer`
-     * for the buffers specified in `buffersAndAttributes`.
-     *
-     * This is extremely simple function. It is equivalent to
-     *
-     * ```js
-     * buffersAndAttributes.buffers.forEach((buffer, i) => {
-     *   passEncoder.setVertexBuffer(firstVertexBufferIndex + i, buffer);
-     * });
-    *
-     * if (buffersAndAttributes.indexBuffer) {
-     *   passEncoder.setIndexBuffer(buffersAndAttributes.indexBuffer, buffersAndAttributes.indexFormat!);
-     * }
-     * ```
-     *
-     * It exists solely for simple cases. If you have a complex case, call the passEncoder
-     * yourself as appropriate.
-     *
-     * @param passEncoder a render pass encoder
-     * @param buffersAndAttributes As returned from {@link createBuffersAndAttributesFromArrays}
-     * @param firstVertexBufferIndex The first vertex buffer index. default = 0.
-     */
-    function setVertexAndIndexBuffers(passEncoder, buffersAndAttributes, firstVertexBufferIndex = 0) {
-        buffersAndAttributes.buffers.forEach((buffer, i) => {
-            passEncoder.setVertexBuffer(firstVertexBufferIndex + i, buffer);
-        });
-        if (buffersAndAttributes.indexBuffer) {
-            passEncoder.setIndexBuffer(buffersAndAttributes.indexBuffer, buffersAndAttributes.indexFormat);
-        }
-    }
-    /**
-     * Calls {@link setVertexAndIndexBuffers} and then calls either `draw` or `drawIndexed`
-     *
-     * This is an extremely simple function. See  {@link setVertexAndIndexBuffers}.
-     * If you need something more complex, call pass encoder functions yourself as appropriate.
-     *
-     * @param passEncoder a render pass encoder
-     * @param buffersAndAttributes As returned from {@link createBuffersAndAttributesFromArrays}
-     */
-    function drawArrays(passEncoder, buffersAndAttributes) {
-        setVertexAndIndexBuffers(passEncoder, buffersAndAttributes);
-        if (buffersAndAttributes.indexBuffer) {
-            passEncoder.drawIndexed(buffersAndAttributes.numElements);
-        }
-        else {
-            passEncoder.draw(buffersAndAttributes.numElements);
-        }
-    }
 
     function isTextureData(source) {
         const src = source;
@@ -5003,14 +4952,13 @@
      *
      *     primitives.createXYQuadVertices(1, 0, 0.5);
      *
-     * @param params
-     * @param params.size the size across the quad. Defaults to 2 which means vertices will go from -1 to +1
-     * @param params.xOffset the amount to offset the quad in X. Default = 0
-     * @param params.yOffset the amount to offset the quad in Y. Default = 0
+     * @param size the size across the quad. Defaults to 2 which means vertices will go from -1 to +1
+     * @param xOffset the amount to offset the quad in X
+     * @param yOffset the amount to offset the quad in Y
      * @return the created XY Quad vertices
      */
-    function createXYQuadVertices({ size: inSize = 2, xOffset = 0, yOffset = 0 } = {}) {
-        const size = inSize * 0.5;
+    function createXYQuadVertices(size = 2, xOffset = 0, yOffset = 0) {
+        size *= 0.5;
         return {
             position: {
                 numComponents: 2,
@@ -5041,14 +4989,13 @@
      *
      * The created plane has position, normal, and texcoord data
      *
-     * @param params
-     * @param params.width Width of the plane. Default = 1
-     * @param params.depth Depth of the plane. Default = 1
-     * @param params.subdivisionsWidth Number of steps across the plane. Default = 1
-     * @param params.subdivisionsDepth Number of steps down the plane. Default = 1
+     * @param width Width of the plane. Default = 1
+     * @param depth Depth of the plane. Default = 1
+     * @param subdivisionsWidth Number of steps across the plane. Default = 1
+     * @param subdivisionsDepth Number of steps down the plane. Default = 1
      * @return The created plane vertices.
      */
-    function createPlaneVertices({ width = 1, depth = 1, subdivisionsWidth = 1, subdivisionsDepth = 1, } = {}) {
+    function createPlaneVertices(width = 1, depth = 1, subdivisionsWidth = 1, subdivisionsDepth = 1) {
         const numVertices = (subdivisionsWidth + 1) * (subdivisionsDepth + 1);
         const positions = createAugmentedTypedArray(3, numVertices, Float32Array);
         const normals = createAugmentedTypedArray(3, numVertices, Float32Array);
@@ -5084,21 +5031,20 @@
      *
      * The created sphere has position, normal, and texcoord data
      *
-     * @param params
-     * @param params.radius radius of the sphere. Default = 1
-     * @param params.subdivisionsAxis number of steps around the sphere. Default = 24
-     * @param params.subdivisionsHeight number of vertically on the sphere. Default = 12
-     * @param params.startLatitudeInRadians where to start the
-     *     top of the sphere. Default = 0
-     * @param params.endLatitudeInRadians Where to end the
-     *     bottom of the sphere. Default = π
-     * @param params.startLongitudeInRadians where to start
-     *     wrapping the sphere. Default = 0
-     * @param params.endLongitudeInRadians where to end
-     *     wrapping the sphere. Default = 2π
+     * @param radius radius of the sphere.
+     * @param subdivisionsAxis number of steps around the sphere.
+     * @param subdivisionsHeight number of vertically on the sphere.
+     * @param startLatitudeInRadians where to start the
+     *     top of the sphere.
+     * @param endLatitudeInRadians Where to end the
+     *     bottom of the sphere.
+     * @param startLongitudeInRadians where to start
+     *     wrapping the sphere.
+     * @param endLongitudeInRadians where to end
+     *     wrapping the sphere.
      * @return The created sphere vertices.
      */
-    function createSphereVertices({ radius = 1, subdivisionsAxis = 24, subdivisionsHeight = 12, startLatitudeInRadians = 0, endLatitudeInRadians = Math.PI, startLongitudeInRadians = 0, endLongitudeInRadians = Math.PI * 2, } = {}) {
+    function createSphereVertices(radius = 1, subdivisionsAxis = 24, subdivisionsHeight = 12, startLatitudeInRadians = 0, endLatitudeInRadians = Math.PI, startLongitudeInRadians = 0, endLongitudeInRadians = Math.PI * 2) {
         if (subdivisionsAxis <= 0 || subdivisionsHeight <= 0) {
             throw new Error('subdivisionAxis and subdivisionHeight must be > 0');
         }
@@ -5164,11 +5110,10 @@
      *
      * The cube is created around the origin. (-size / 2, size / 2).
      *
-     * @param params
-     * @param params.size width, height and depth of the cube. Default = 1
+     * @param size width, height and depth of the cube.
      * @return The created vertices.
      */
-    function createCubeVertices({ size = 1 } = {}) {
+    function createCubeVertices(size = 1) {
         const k = size / 2;
         const cornerVertices = [
             [-k, -k, -k],
@@ -5230,18 +5175,18 @@
      * truncated cone will be created centered about the origin, with the
      * y axis as its vertical axis. .
      *
-     * @param bottomRadius Bottom radius of truncated cone. Default = 1
-     * @param topRadius Top radius of truncated cone. Default = 0
-     * @param height Height of truncated cone. Default = 1
+     * @param bottomRadius Bottom radius of truncated cone.
+     * @param topRadius Top radius of truncated cone.
+     * @param height Height of truncated cone.
      * @param radialSubdivisions The number of subdivisions around the
-     *     truncated cone. Default = 24
+     *     truncated cone.
      * @param verticalSubdivisions The number of subdivisions down the
-     *     truncated cone. Default = 1
+     *     truncated cone.
      * @param topCap Create top cap. Default = true.
      * @param bottomCap Create bottom cap. Default = true.
      * @return The created cone vertices.
      */
-    function createTruncatedConeVertices({ bottomRadius = 1, topRadius = 0, height = 1, radialSubdivisions = 24, verticalSubdivisions = 1, topCap = true, bottomCap = true, } = {}) {
+    function createTruncatedConeVertices(bottomRadius = 1, topRadius = 0, height = 1, radialSubdivisions = 24, verticalSubdivisions = 1, topCap = true, bottomCap = true) {
         if (radialSubdivisions < 3) {
             throw new Error('radialSubdivisions must be 3 or greater');
         }
@@ -5654,17 +5599,16 @@
     /**
      * Creates crescent vertices.
      *
-     * @param params
-     * @param params.verticalRadius The vertical radius of the crescent. Default = 2
-     * @param params.outerRadius The outer radius of the crescent. Default = 1
-     * @param params.innerRadius The inner radius of the crescent. Default = 0
-     * @param params.thickness The thickness of the crescent. Default = 1
-     * @param params.subdivisionsDown number of steps around the crescent. Default = 12
-     * @param params.startOffset Where to start arc. Default 0. Default = 0
-     * @param params.endOffset Where to end arg. Default 1. Default = 1
+     * @param verticalRadius The vertical radius of the crescent.
+     * @param outerRadius The outer radius of the crescent.
+     * @param innerRadius The inner radius of the crescent.
+     * @param thickness The thickness of the crescent.
+     * @param subdivisionsDown number of steps around the crescent.
+     * @param startOffset Where to start arc. Default 0.
+     * @param endOffset Where to end arg. Default 1.
      * @return The created vertices.
      */
-    function createCrescentVertices({ verticalRadius = 2, outerRadius = 1, innerRadius = 0, thickness = 1, subdivisionsDown = 12, startOffset = 0, endOffset = 1, } = {}) {
+    function createCrescentVertices(verticalRadius, outerRadius, innerRadius, thickness, subdivisionsDown, startOffset, endOffset) {
         if (subdivisionsDown <= 0) {
             throw new Error('subdivisionDown must be > 0');
         }
@@ -5739,39 +5683,29 @@
      * Creates cylinder vertices. The cylinder will be created around the origin
      * along the y-axis.
      *
-     * @param params
-     * @param params.radius Radius of cylinder. Default = 1
-     * @param params.height Height of cylinder. Default = 1
-     * @param params.radialSubdivisions The number of subdivisions around the cylinder. Default = 24
-     * @param params.verticalSubdivisions The number of subdivisions down the cylinder. Default = 1
-     * @param params.topCap Create top cap. Default = true.
-     * @param params.bottomCap Create bottom cap. Default = true.
+     * @param radius Radius of cylinder.
+     * @param height Height of cylinder.
+     * @param radialSubdivisions The number of subdivisions around the cylinder.
+     * @param verticalSubdivisions The number of subdivisions down the cylinder.
+     * @param topCap Create top cap. Default = true.
+     * @param bottomCap Create bottom cap. Default = true.
      * @return The created vertices.
      */
-    function createCylinderVertices({ radius = 1, height = 1, radialSubdivisions = 24, verticalSubdivisions = 1, topCap = true, bottomCap = true, } = {}) {
-        return createTruncatedConeVertices({
-            bottomRadius: radius,
-            topRadius: radius,
-            height,
-            radialSubdivisions,
-            verticalSubdivisions,
-            topCap,
-            bottomCap,
-        });
+    function createCylinderVertices(radius = 1, height = 1, radialSubdivisions = 24, verticalSubdivisions = 1, topCap = true, bottomCap = true) {
+        return createTruncatedConeVertices(radius, radius, height, radialSubdivisions, verticalSubdivisions, topCap, bottomCap);
     }
     /**
      * Creates vertices for a torus
      *
-     * @param params
-     * @param params.radius radius of center of torus circle. Default = 1
-     * @param params.thickness radius of torus ring. Default = 0.24
-     * @param params.radialSubdivisions The number of subdivisions around the torus. Default = 24
-     * @param params.bodySubdivisions The number of subdivisions around the body torus. Default = 12
-     * @param params.startAngle start angle in radians. Default = 0.
-     * @param params.endAngle end angle in radians. Default = Math.PI * 2.
+     * @param radius radius of center of torus circle.
+     * @param thickness radius of torus ring.
+     * @param radialSubdivisions The number of subdivisions around the torus.
+     * @param bodySubdivisions The number of subdivisions around the body torus.
+     * @param startAngle start angle in radians. Default = 0.
+     * @param endAngle end angle in radians. Default = Math.PI * 2.
      * @return The created vertices.
      */
-    function createTorusVertices({ radius = 1, thickness = 0.24, radialSubdivisions = 24, bodySubdivisions = 12, startAngle = 0, endAngle = Math.PI * 2, } = {}) {
+    function createTorusVertices(radius = 1, thickness = 0.24, radialSubdivisions = 24, bodySubdivisions = 12, startAngle = 0, endAngle = Math.PI * 2) {
         if (radialSubdivisions < 3) {
             throw new Error('radialSubdivisions must be 3 or greater');
         }
@@ -5839,15 +5773,14 @@
      * the square of the stack index. A value of 1 will give uniform
      * stacks.
      *
-     * @param params
-     * @param params.radius Radius of the ground plane. Default = 1
-     * @param params.divisions Number of triangles in the ground plane (at least 3). Default = 24
-     * @param params.stacks Number of radial divisions. Default = 1
-     * @param params.innerRadius Default = 0
-     * @param params.stackPower Power to raise stack size to for decreasing width. Default = 1
+     * @param radius Radius of the ground plane.
+     * @param divisions Number of triangles in the ground plane (at least 3).
+     * @param stacks Number of radial divisions (default=1).
+     * @param innerRadius Default 0.
+     * @param stackPower Power to raise stack size to for decreasing width.
      * @return The created vertices.
      */
-    function createDiscVertices({ radius = 1, divisions = 24, stacks = 1, innerRadius = 0, stackPower = 1, } = {}) {
+    function createDiscVertices(radius = 1, divisions = 24, stacks = 1, innerRadius = 0, stackPower = 1) {
         if (divisions < 3) {
             throw new Error('divisions must be at least 3');
         }
@@ -5918,7 +5851,6 @@
     exports.createTextureFromImages = createTextureFromImages;
     exports.createTextureFromSource = createTextureFromSource;
     exports.createTextureFromSources = createTextureFromSources;
-    exports.drawArrays = drawArrays;
     exports.generateMipmap = generateMipmap;
     exports.getSizeForMipFromTexture = getSizeForMipFromTexture;
     exports.getSizeFromSource = getSizeFromSource;
@@ -5936,7 +5868,6 @@
     exports.setStructuredValues = setStructuredValues;
     exports.setStructuredView = setStructuredView;
     exports.setTypedValues = setTypedValues;
-    exports.setVertexAndIndexBuffers = setVertexAndIndexBuffers;
     exports.subarray = subarray;
 
 }));
