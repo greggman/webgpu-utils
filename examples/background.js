@@ -100,11 +100,11 @@ async function main() {
       let xy = vec2u(fsInput.position.xy);
       let color = textureLoad(colorTexture, xy, 0);
       let normal = textureLoad(normalTexture, xy, 0).xyz * 2.0 - 1.0;
-      let normalR = textureLoad(normalTexture, xy + vec2u(2, 0), 0).xyz * 2.0 - 1.0;
-      let normalL = textureLoad(normalTexture, xy + vec2u(0, 2), 0).xyz * 2.0 - 1.0;
+      let normalR = textureLoad(normalTexture, xy + vec2u(4, 0), 0).xyz * 2.0 - 1.0;
+      let normalL = textureLoad(normalTexture, xy + vec2u(0, 4), 0).xyz * 2.0 - 1.0;
       let depth = textureLoad(depthTexture, xy, 0).r;
-      let depthR = textureLoad(depthTexture, xy + vec2u(1, 0), 0).r;
-      let depthU = textureLoad(depthTexture, xy + vec2u(0, 1), 0).r;
+      let depthR = textureLoad(depthTexture, xy + vec2u(2, 0), 0).r;
+      let depthU = textureLoad(depthTexture, xy + vec2u(0, 2), 0).r;
       let maxDepthDiff = max(abs(depth - depthR), abs(depth - depthU));
       let dotR = 1.0 - (dot(normal, normalR) * 0.5 + 0.5);
       let dotL = 1.0 - (dot(normal, normalL) * 0.5 + 0.5);
@@ -177,7 +177,7 @@ async function main() {
 
     fsUniformValues.set({
       lightDirection: vec3.normalize([1, 8, -10]),
-      color: cssColorToRGBA(hsl(i / numObjects * 0.2 + 0.4, 1, .3)),
+      color: cssColorToRGBA(hsl(i / numObjects * 0.2 + 0.6, 1, .6)),
     });
 
     device.queue.writeBuffer(fsUniformBuffer, 0, fsUniformValues.arrayBuffer);
