@@ -109,7 +109,7 @@ async function main() {
       let dotR = 1.0 - (dot(normal, normalR) * 0.5 + 0.5);
       let dotL = 1.0 - (dot(normal, normalL) * 0.5 + 0.5);
       let maxDot = max(dotR, dotL);
-      let c = mix(color, vec4f(1), saturate(maxDot + maxDepthDiff)); // > 0.1 || maxDepthDiff > 0.15);
+      let c = mix(color, vec4f(1), saturate(pow(maxDot + 0.5, 5.0) + maxDepthDiff * 2.0)); // > 0.1 || maxDepthDiff > 0.15);
       return c;
     }
   `;
