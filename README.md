@@ -346,16 +346,12 @@ import { createTextureFromImage } from 'webgpu-utils';
 ```
 git clone https://github.com/greggman/webgpu-utils.git
 cd webgpu-utils
-npm install
+npm ci
 npm start
 ```
 
 This will run rollup in watch mode, building from typescript into
-`dist/1.x/webgpu-utils.js`.
-
-```
-npx servez
-```
+`dist/1.x/webgpu-utils.js` and start a server
 
 Now open [`http://localhost:8080/test/`](http://localhost:8080/test/) to run tests.
 
