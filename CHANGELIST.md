@@ -1,5 +1,9 @@
 # Change List
 
+### 1.1.0
+
+* Make `generateMipmap` support compatibility mode
+
 ### 1.0.0
 
 * switch primitive functions to use named parameters.
