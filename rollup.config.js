@@ -12,6 +12,11 @@ const plugins = [
     nodeResolve(),
     typescript({ tsconfig: './tsconfig.json' }),
 ];
+const shared = {
+    watch: {
+        clearScreen: false,
+    },
+};
 
 export default [
     {
@@ -25,6 +30,7 @@ export default [
             },
         ],
         plugins,
+        ...shared,
     },
     {
         input: 'src/webgpu-utils.ts',
@@ -38,6 +44,7 @@ export default [
             },
         ],
         plugins,
+        ...shared,
     },
     {
         input: 'src/webgpu-utils.ts',
@@ -54,5 +61,6 @@ export default [
             ...plugins,
             terser(),
         ],
+        ...shared,
     },
 ];

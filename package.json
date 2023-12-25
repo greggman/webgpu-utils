@@ -1,6 +1,6 @@
 {
   "name": "webgpu-utils",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "webgpu utilities",
   "main": "dist/1.x/webgpu-utils.module.js",
   "module": "dist/1.x/webgpu-utils.module.js",
@@ -20,7 +20,7 @@
     "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
     "pre-push": "npm run lint && npm run build && npm run test",
     "watch": "rollup -c -w",
-    "start": "rollup -c rollup.config.js -w",
+    "start": "node build/tools/serve.js",
     "test": "node test/puppeteer.js"
   },
   "repository": {
@@ -60,6 +60,7 @@
     "mocha": "^10.2.0",
     "puppeteer": "^21.0.1",
     "rollup": "^3.27.1",
+    "servez": "^2.1.2",
     "tslib": "^2.6.1",
     "typedoc": "^0.24.8",
     "typescript": "^5.1.6",

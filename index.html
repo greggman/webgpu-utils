@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- this file is auto-generated from README.md. Do not edited directly -->
 <!--
-@license webgpu-utils 1.0.2 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
+@license webgpu-utils 1.1.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/webgpu-utils for details
 -->
@@ -330,13 +330,11 @@ const uni1 = makeStructuredView(defs.uniforms.uni1, new ArrayBuffer(4 * 16));
 <h2>Development</h2>
 <pre><code>git clone https://github.com/greggman/webgpu-utils.git
 cd webgpu-utils
-npm install
+npm ci
 npm start
 </code></pre>
 <p>This will run rollup in watch mode, building from typescript into
-<code>dist/1.x/webgpu-utils.js</code>.</p>
-<pre><code>npx servez
-</code></pre>
+<code>dist/1.x/webgpu-utils.js</code> and start a server</p>
 <p>Now open <a href="http://localhost:8080/test/"><code>http://localhost:8080/test/</code></a> to run tests.</p>
 <h2>Thanks</h2>
 <p>Super thanks to Brendan Duncan for <a href="https://github.com/brendan-duncan/wgsl_reflect">wgsl-reflect</a> on which much of this is based.</p>

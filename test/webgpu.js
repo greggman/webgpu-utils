@@ -30,9 +30,9 @@ GPUDevice.prototype.createBuffer = (function (origFn) {
   };
 })(GPUDevice.prototype.createBuffer);
 
-export function testWithDevice(fn, ...args) {
+export function testWithDeviceWithOptions(options, fn, ...args) {
   return async function () {
-    const adapter = await globalThis?.navigator?.gpu?.requestAdapter();
+    const adapter = await globalThis?.navigator?.gpu?.requestAdapter(options);
     const device = await adapter?.requestDevice();
     if (!device) {
       this.skip();
@@ -42,7 +42,7 @@ export function testWithDevice(fn, ...args) {
 
     let caughtErr;
     try {
-      await fn(device, ...args);
+      await fn.call(this, device, ...args);
     } catch (e) {
       caughtErr = e;
     } finally {
@@ -54,6 +54,12 @@ export function testWithDevice(fn, ...args) {
     if (caughtErr) {
       throw caughtErr;
     }
+  };
+}
+
+export function testWithDevice(fn, ...args) {
+  return async function () {
+    await testWithDeviceWithOptions({}, fn, ...args).call(this);
   };
 }
 
