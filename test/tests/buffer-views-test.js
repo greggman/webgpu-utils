@@ -1076,45 +1076,54 @@ describe('buffer-views-tests', () => {
             @group(0) @binding(7) var<storage> foo8: WithUnsizedArrayArrayMember;
         `;
 
-        const d = makeShaderDataDefinitions(code);
-        assertTruthy(d);
-
         it('for intrinsic', () => {
-          const {size, align, unalignedSize} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo1);
-          assertEqual(size, 16);
-          assertEqual(align, 16);
-          assertEqual(unalignedSize, 12);
+            const d = makeShaderDataDefinitions(code);
+            assertTruthy(d);
+            const {size, align, unalignedSize} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo1);
+            assertEqual(size, 16);
+            assertEqual(align, 16);
+            assertEqual(unalignedSize, 12);
         });
 
         it('for array of intrinsic', () => {
-          const {size, align, unalignedSize} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo2);
-          assertEqual(size, 20 * 4);
-          assertEqual(align, 16);
-          assertEqual(unalignedSize, 20 * 4);
+            const d = makeShaderDataDefinitions(code);
+            assertTruthy(d);
+            const {size, align, unalignedSize} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo2);
+            assertEqual(size, 20 * 4);
+            assertEqual(align, 16);
+            assertEqual(unalignedSize, 20 * 4);
         });
 
         it('for struct', () => {
-          const {size, align} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo5);
-          assertEqual(size, (4 + 4) * 4);
-          assertEqual(align, 4);
+            const d = makeShaderDataDefinitions(code);
+            assertTruthy(d);
+            const {size, align} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo5);
+            assertEqual(size, (4 + 4) * 4);
+            assertEqual(align, 4);
         });
 
         it('for array of struct', () => {
-          const {size, align} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo6);
-          assertEqual(size, (4 + 4) * 4 * 5);
-          assertEqual(align, 4);
+            const d = makeShaderDataDefinitions(code);
+            assertTruthy(d);
+            const {size, align} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo6);
+            assertEqual(size, (4 + 4) * 4 * 5);
+            assertEqual(align, 4);
         });
 
         it('for last field of struct', () => {
-          const {size, align} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo7);
-          assertEqual(size, (4 + 4) * 4);
-          assertEqual(align, 4);
+            const d = makeShaderDataDefinitions(code);
+            assertTruthy(d);
+            const {size, align} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo7);
+            assertEqual(size, (4 + 4) * 4);
+            assertEqual(align, 4);
         });
 
         it('for last field of struct array', () => {
-          const {size, align} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo8);
-          assertEqual(size, (4 + 4) * 4 * 5);
-          assertEqual(align, 4);
+            const d = makeShaderDataDefinitions(code);
+            assertTruthy(d);
+            const {size, align} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo8);
+            assertEqual(size, (4 + 4) * 4 * 5);
+            assertEqual(align, 4);
         });
 
     });
