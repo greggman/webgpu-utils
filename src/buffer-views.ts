@@ -282,11 +282,11 @@ export function makeTypedArrayViews(typeDef: TypeDefinition, arrayBuffer?: Array
             if (isIntrinsic(elementType) && typeInfo[(elementType as IntrinsicDefinition).type].flatten) {
                 return makeIntrinsicTypedArrayView(elementType, buffer, baseOffset, asArrayDef.numElements);
             } else {
-                const elementSize = getSizeOfTypeDef(elementType);
+                const {size} = getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef);
                 const effectiveNumElements = asArrayDef.numElements === 0
-                   ? (buffer.byteLength - baseOffset) / elementSize
+                   ? (buffer.byteLength - baseOffset) / size
                    : asArrayDef.numElements;
-                return range(effectiveNumElements, i => makeViews(elementType, baseOffset + elementSize * i)) as Views[];
+                return range(effectiveNumElements, i => makeViews(elementType, baseOffset + size * i)) as Views[];
             }
         } else if (typeof typeDef === 'string') {
             throw Error('unreachable');
@@ -534,4 +534,100 @@ export function setTypedValues(typeDef: TypeDefinition, data: any, arrayBuffer: 
  */
 export function setStructuredValues(varDef: VariableDefinition, data: any, arrayBuffer: ArrayBuffer, offset = 0) {
     setTypedValues(varDef.typeDefinition, data, arrayBuffer, offset);
+}
+
+function getAlignmentOfTypeDef(typeDef: TypeDefinition): number {
+    const asArrayDef = typeDef as ArrayDefinition;
+    const elementType = asArrayDef.elementType;
+    if (elementType) {
+        return getAlignmentOfTypeDef(elementType);
+    }
+
+    const asStructDef = typeDef as StructDefinition;
+    const fields = asStructDef.fields;
+    if (fields) {
+        return Object.values(fields).reduce((max, {type}) => Math.max(max, getAlignmentOfTypeDef(type)), 0);
+    }
+
+    const { type } = typeDef as IntrinsicDefinition;
+    const { align } = typeInfo[type];
+    return align;
+}
+
+type ElementInfo = {
+    unalignedSize: number,
+    align: number,
+    size: number,
+};
+
+function getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef: TypeDefinition): ElementInfo {
+    const asArrayDef = typeDef as ArrayDefinition;
+    const elementType = asArrayDef.elementType;
+    if (elementType) {
+        const unalignedSize = elementType.size;
+        const align = getAlignmentOfTypeDef(elementType);
+        return {
+            unalignedSize,
+            align,
+            size: roundUpToMultipleOf(unalignedSize, align),
+        };
+    }
+
+    const asStructDef = typeDef as StructDefinition;
+    const fields = asStructDef.fields;
+    if (fields) {
+        const lastField = Object.values(fields).pop()!;
+        return getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(lastField.type);
+    }
+
+    throw new Error('no unsigned array element');
+}
+
+/**
+ * Returns the size, align, and unalignedSize of "the" unsized array element. Unsized arrays are only
+ * allowed at the outer most level or the last member of a top level struct.
+ *
+ * Example:
+ *
+ * ```js
+ * const code = `
+ * struct Foo {
+ *   a: u32,
+ *   b: array<vec3f>,
+ * };
+ * @group(0) @binding(0) var<storage> f: Foo;
+ * `;
+ * const defs = makeShaderDataDefinitions(code);
+ * const { size, align, unalignedSize } = getSizeAndAlignmentOfUnsizedArrayElement(
+ *    defs.storages.f);
+ * // size = 16   (since you need to allocate 16 bytes per element)
+ * // align = 16  (since vec3f needs to be aligned to 16 bytes)
+ * // unalignedSize = 12 (since only 12 bytes are used for a vec3f)
+ * ```
+ *
+ * Generally you only need size. Example:
+ *
+ *
+ * ```js
+ * const code = `
+ * struct Foo {
+ *   a: u32,
+ *   b: array<vec3f>,
+ * };
+ * @group(0) @binding(0) var<storage> f: Foo;
+ * `;
+ * const defs = makeShaderDataDefinitions(code);
+ * const { size } = getSizeAndAlignmentOfUnsizedArrayElement(defs.storages.f);
+ * const numElements = 10;
+ * const views = makeStructuredViews(
+ *    defs.storages.f,
+ *    new ArrayBuffer(defs.storages.f.size + size * numElements));
+ * ```
+  * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
+ * @returns the size, align, and unalignedSize in bytes of the unsized array element in this type definition.
+ */
+export function getSizeAndAlignmentOfUnsizedArrayElement(varDef: VariableDefinition | StructDefinition): {size: number, align: number} {
+    const asVarDef = varDef as VariableDefinition;
+    const typeDef = asVarDef.group === undefined ? varDef as StructDefinition : asVarDef.typeDefinition;
+    return getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef);
 }
