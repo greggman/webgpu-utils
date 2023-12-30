@@ -527,7 +527,7 @@ export function setTypedValues(typeDef: TypeDefinition, data: any, arrayBuffer: 
 
 /**
  * Same as @link {setTypedValues} except it takes a @link {VariableDefinition}.
- * @param typeDef A variable definition provided by @link {makeShaderDataDefinitions}
+ * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
  * @param data The source data
  * @param arrayBuffer The arrayBuffer who's data to set.
  * @param offset An offset in the arrayBuffer to start at.
