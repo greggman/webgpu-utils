@@ -1,6 +1,7 @@
 import { describe, it } from '../mocha-support.js';
 import {
     makeShaderDataDefinitions,
+    getSizeOfUnsizedArrayElement,
 } from '../../dist/1.x/webgpu-utils.module.js';
 import { assertEqual, assertFalsy, assertTruthy } from '../assert.js';
 
@@ -178,29 +179,95 @@ describe('data-definition-tests', () => {
                 pad1: u32,
                 pad2: u32,
             };
-            @group(0) @binding(1) var<uniform> foo1: array<vec3f>;
-            @group(0) @binding(2) var<uniform> foo2: array<array<vec3f, 5> >;
+            @group(0) @binding(1) var<storage> foo1: array<vec3f>;
+            @group(0) @binding(2) var<storage> foo2: array<array<vec3f, 5> >;
 
-            @group(0) @binding(5) var<uniform> foo5: array<VSUniforms>;
-            @group(0) @binding(6) var<uniform> foo6: array<array<VSUniforms, 5> >;
+            @group(0) @binding(5) var<storage> foo5: array<VSUniforms>;
+            @group(0) @binding(6) var<storage> foo6: array<array<VSUniforms, 5> >;
         `;
 
         const d = makeShaderDataDefinitions(code);
         assertTruthy(d);
 
-        assertEqual(d.uniforms.foo1.typeDefinition.numElements, 0);
-        assertEqual(d.uniforms.foo1.typeDefinition.elementType.type, 'vec3f');
+        assertEqual(d.storages.foo1.typeDefinition.numElements, 0);
+        assertEqual(d.storages.foo1.typeDefinition.elementType.type, 'vec3f');
 
-        assertEqual(d.uniforms.foo2.typeDefinition.numElements, 0);
-        assertEqual(d.uniforms.foo2.typeDefinition.elementType.elementType.type, 'vec3f');
-        assertEqual(d.uniforms.foo2.typeDefinition.elementType.numElements, 5);
+        assertEqual(d.storages.foo2.typeDefinition.numElements, 0);
+        assertEqual(d.storages.foo2.typeDefinition.elementType.elementType.type, 'vec3f');
+        assertEqual(d.storages.foo2.typeDefinition.elementType.numElements, 5);
 
-        assertEqual(d.uniforms.foo5.typeDefinition.numElements, 0);
-        assertTruthy(d.uniforms.foo5.typeDefinition.elementType.fields);
+        assertEqual(d.storages.foo5.typeDefinition.numElements, 0);
+        assertTruthy(d.storages.foo5.typeDefinition.elementType.fields);
 
-        assertEqual(d.uniforms.foo6.typeDefinition.numElements, 0);
-        assertEqual(d.uniforms.foo6.typeDefinition.elementType.numElements, 5);
-        assertTruthy(d.uniforms.foo6.typeDefinition.elementType.elementType.fields);
+        assertEqual(d.storages.foo6.typeDefinition.numElements, 0);
+        assertEqual(d.storages.foo6.typeDefinition.elementType.numElements, 5);
+        assertTruthy(d.storages.foo6.typeDefinition.elementType.elementType.fields);
+    });
+
+    describe('gets size of unsized array elements', () => {
+        const code = `
+            struct InnerUniforms {
+                bar: u32,
+                pad0: u32,
+                pad1: u32,
+                pad2: u32,
+            };
+
+            struct VSUniforms {
+                foo: u32,
+                moo: InnerUniforms,
+                pad0: u32,
+                pad1: u32,
+                pad2: u32,
+            };
+
+            struct WithUnsizedArrayMember {
+                foo: u32,
+                bar: array<VSUniforms>,
+            };
+
+            struct WithUnsizedArrayArrayMember {
+                foo: u32,
+                bar: array<array<VSUniforms, 5>>,
+            };
+
+            @group(0) @binding(1) var<storage> foo1: array<vec3f>;
+            @group(0) @binding(2) var<storage> foo2: array<array<vec3f, 5> >;
+
+            @group(0) @binding(5) var<storage> foo5: array<VSUniforms>;
+            @group(0) @binding(6) var<storage> foo6: array<array<VSUniforms, 5> >;
+
+            @group(0) @binding(7) var<storage> foo7: WithUnsizedArrayMember;
+            @group(0) @binding(7) var<storage> foo8: WithUnsizedArrayArrayMember;
+        `;
+
+        const d = makeShaderDataDefinitions(code);
+        assertTruthy(d);
+
+        it('for intrinsic', () => {
+          assertEqual(getSizeOfUnsizedArrayElement(d.storages.foo1), 12);
+        });
+
+        it('for array of intrinsic', () => {
+          assertEqual(getSizeOfUnsizedArrayElement(d.storages.foo2), 20 * 4);
+        });
+
+        it('for struct', () => {
+          assertEqual(getSizeOfUnsizedArrayElement(d.storages.foo5), (4 + 4) * 4);
+        });
+
+        it('for array of struct', () => {
+          assertEqual(getSizeOfUnsizedArrayElement(d.storages.foo6), (4 + 4) * 4 * 5);
+        });
+
+        it('for last field of struct', () => {
+          assertEqual(getSizeOfUnsizedArrayElement(d.storages.foo7), (4 + 4) * 4);
+        });
+
+        it('for last field of struct array', () => {
+          assertEqual(getSizeOfUnsizedArrayElement(d.storages.foo8), (4 + 4) * 4 * 5);
+        });
+
     });
 });
 

@@ -202,9 +202,6 @@ function assert(cond: boolean, msg = '') {
     ]
 
     */
-
-
-
 function addType(reflect: WgslReflect, typeInfo: TypeInfo, offset: number):
   StructDefinition |
   IntrinsicDefinition |
@@ -235,5 +232,35 @@ function addType(reflect: WgslReflect, typeInfo: TypeInfo, offset: number):
             type,
         };
     }
+}
+
+function getSizeOfUnsizedArrayElementOfTypeDef(typeDef: TypeDefinition): number {
+    const asArrayDef = typeDef as ArrayDefinition;
+    const elementType = asArrayDef.elementType;
+    if (elementType) {
+        const asArrayDef = typeDef as ArrayDefinition;
+        return asArrayDef.elementType.size;
+    }
+
+    const asStructDef = typeDef as StructDefinition;
+    const fields = asStructDef.fields;
+    if (fields) {
+        const lastField = Object.values(fields).pop()!;
+        return getSizeOfUnsizedArrayElementOfTypeDef(lastField.type);
+    }
+
+    throw new Error('no unsigned array element');
+}
+
+/**
+ * Returns the size of "the" unsized array element. Unsized arrays are only
+ * allowed at the outer most level or the last member of a top level struct.
+ * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
+ * @returns the size in bytes of the unsized array element in this type definition.
+ */
+export function getSizeOfUnsizedArrayElement(varDef: VariableDefinition | StructDefinition): number {
+    const asVarDef = varDef as VariableDefinition;
+    const typeDef = asVarDef.group === undefined ? varDef as StructDefinition : asVarDef.typeDefinition;
+    return getSizeOfUnsizedArrayElementOfTypeDef(typeDef);
 }
 
