@@ -1,5 +1,9 @@
 # Change List
 
+### 1.2.0
+
+* Add `getSizeOfUnsizedArrayElement`
+
 ### 1.1.0
 
 * Make `generateMipmap` support compatibility mode
