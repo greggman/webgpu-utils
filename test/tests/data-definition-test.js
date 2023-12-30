@@ -1,8 +1,9 @@
+/* global GPUShaderStage */
 import { describe, it } from '../mocha-support.js';
 import {
     makeShaderDataDefinitions,
 } from '../../dist/1.x/webgpu-utils.module.js';
-import { assertEqual, assertFalsy, assertTruthy } from '../assert.js';
+import { assertDeepEqual, assertEqual, assertFalsy, assertTruthy } from '../assert.js';
 
 describe('data-definition-tests', () => {
 
@@ -201,6 +202,32 @@ describe('data-definition-tests', () => {
         assertEqual(d.storages.foo6.typeDefinition.numElements, 0);
         assertEqual(d.storages.foo6.typeDefinition.elementType.numElements, 5);
         assertTruthy(d.storages.foo6.typeDefinition.elementType.elementType.fields);
+    });
+
+    describe('it generates bind group layout descriptors', () => {
+      it('handles uniform buffers layout', () => {
+        const code = `
+        @group(1) @binding(1) var<uniform> u: mat4x4f;
+        @vertex fn vs() -> @builtin(position) vec4f {
+          _ = u; // need to test  
+          return u * vec4f(0);
+        }
+        `;
+        const d = makeShaderDataDefinitions(code);
+        const expected =  {
+          binding: 1,
+          visibility: GPUShaderStage.VERTEX,
+          buffer: {
+            type: 'uniform',
+            hasDynamicOffset: false,
+            minBindingSize: 0,
+          },
+        };
+        assertDeepEqual(d.u.layouts[1], expected);
+
+      });
+
+
     });
 
 });

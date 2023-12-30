@@ -63,6 +63,7 @@ type ShaderDataDefinitions = {
     uniforms: VariableDefinitions,
     storages: VariableDefinitions,
     structs: StructDefinitions,
+    layouts: GPUBindGroupLayoutDescriptor[];
 };
 
 function getNamedVariables(reflect: WgslReflect, variables: VariableInfo[]): VariableDefinitions {
@@ -96,6 +97,33 @@ function makeStructDefinition(reflect: WgslReflect, structInfo: StructInfo, offs
         size: structInfo.size,
         offset,
     };
+}
+
+type BufferBindingLayout = { buffer: GPUBufferBindingLayout };
+type SamplerBindingLayout = { sampler: GPUSamplerBindingLayout };
+type TextureBindingLayout = { texture: GPUTextureBindingLayout };
+type StorageTextureBindingLayout = { storageTexture: GPUStorageTextureBindingLayout };
+type ExternalTextureBindingLayout = { externalTexture: GPUExternalTextureBindingLayout };
+type BindingLayout = BufferBindingLayout
+                   | SamplerBindingLayout
+                   | TextureBindingLayout
+                   | StorageTextureBindingLayout
+                   | ExternalTextureBindingLayout;
+
+function addBindings(
+        layouts: GPUBindGroupLayoutDescriptor[],
+        varInfos: VariableInfo[],
+        fn: (varInfo: VariableInfo) => BindingLayout) {
+    for (const varInfo of varInfos) {
+        const { group, binding } = varInfo;
+        const layout = layouts[group] || { entries: [] };
+        layouts[group] = layout;
+        (layout.entries as GPUBindGroupLayoutEntry[]).push({
+            binding,
+            visibility: 0,
+            ...fn(varInfo),
+        });
+    }
 }
 
 /**
@@ -141,10 +169,24 @@ export function makeShaderDataDefinitions(code: string): ShaderDataDefinitions {
     const uniforms = getNamedVariables(reflect, reflect.uniforms);
     const storages = getNamedVariables(reflect, reflect.storage);
 
+    const layouts: GPUBindGroupLayoutDescriptor[] = [];
+
+    //addBindings(layouts, reflect.storage);
+    addBindings(layouts, reflect.uniforms, (/*varInfo: VariableInfo*/) => {
+        return {
+            buffer: {
+                type: "uniform",
+            },
+        };
+    });
+    //addBindings(layouts, reflect.samplers);
+    //addBindings(layouts, reflect.textures);
+
     return {
         structs,
         storages,
         uniforms,
+        layouts,
     };
 }
 
