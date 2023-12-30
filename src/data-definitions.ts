@@ -202,9 +202,6 @@ function assert(cond: boolean, msg = '') {
     ]
 
     */
-
-
-
 function addType(reflect: WgslReflect, typeInfo: TypeInfo, offset: number):
   StructDefinition |
   IntrinsicDefinition |
@@ -236,4 +233,3 @@ function addType(reflect: WgslReflect, typeInfo: TypeInfo, offset: number):
         };
     }
 }
-

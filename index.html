@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- this file is auto-generated from README.md. Do not edited directly -->
 <!--
-@license webgpu-utils 1.1.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
+@license webgpu-utils 1.2.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/webgpu-utils for details
 -->
@@ -290,12 +290,44 @@ size. That information is provided at runtime so there’s no way for webgpu-uti
 to know the size. The solution is you pass in an <code>ArrayBuffer</code>.</p>
 <p>Example:</p>
 <pre><code class="lang-js">const code = `
-@group(0) @binding(0) var&lt;uniform&gt; uni1: array&lt;vec3f&gt;;  // unsized array
+@group(0) @binding(0) var&lt;storage&gt; buf1: array&lt;vec3f&gt;;  // unsized array
 `;
 const defs = makeShaderDataDefinitions(code);
-const uni1 = makeStructuredView(defs.uniforms.uni1, new ArrayBuffer(4 * 16));
+const buf1 = makeStructuredView(defs.storages.buf1, new ArrayBuffer(4 * 16));
 
-// uni.views will be a Float32Array representing 4 vec3fs
+// buf1.views will be a Float32Array representing 4 vec3fs
+</code></pre>
+<p>Note: If you have a complex array element type you can call
+<code>getSizeOfUnsizedArrayElement</code> to get its size. Example:</p>
+<pre><code class="lang-js">const code = `
+struct Light {
+  intensity: f32,
+  direction: vec3f,
+};
+@group(0) @binding(7) var&lt;storage&gt; lights: array&lt;Light&gt;;
+`;
+const defs = makeShaderDataDefinitions(code);
+const {size} = getSizeOfUnsizedArrayElement(defs.storages.lights);
+const numLights = 4;
+const buf1 = makeStructuredView(
+    defs.storages.lights, new ArrayBuffer(numLights * size));
+</code></pre>
+<p>Similarly if you are using an unsized array as the last member of a struct
+you might do this</p>
+<pre><code class="lang-js">const code = `
+struct Kernel {
+  amount: f32,
+  entries: array&lt;vec3f&gt;,
+};
+@group(0) @binding(7) var&lt;storage&gt; conv: Kernel;
+`;
+const defs = makeShaderDataDefinitions(code);
+const {size: elemSize} = getSizeOfUnsizedArrayElement(defs.storages.conv);
+const numKernelEntries = 4;
+const size = defs.storages.conv.size + numKernelEntries * elemSize;
+const buf1 = makeStructuredView(
+    defs.storages.conv, new ArrayBuffer(size));
+)
 </code></pre>
 <h2>Usage</h2>
 <ul>

@@ -301,12 +301,50 @@ Example:
 
 ```js
 const code = `
-@group(0) @binding(0) var<uniform> uni1: array<vec3f>;  // unsized array
+@group(0) @binding(0) var<storage> buf1: array<vec3f>;  // unsized array
 `;
 const defs = makeShaderDataDefinitions(code);
-const uni1 = makeStructuredView(defs.uniforms.uni1, new ArrayBuffer(4 * 16));
+const buf1 = makeStructuredView(defs.storages.buf1, new ArrayBuffer(4 * 16));
 
-// uni.views will be a Float32Array representing 4 vec3fs
+// buf1.views will be a Float32Array representing 4 vec3fs
+```
+
+Note: If you have a complex array element type you can call
+`getSizeOfUnsizedArrayElement` to get its size. Example:
+
+```js
+const code = `
+struct Light {
+  intensity: f32,
+  direction: vec3f,
+};
+@group(0) @binding(7) var<storage> lights: array<Light>;
+`;
+const defs = makeShaderDataDefinitions(code);
+const {size} = getSizeOfUnsizedArrayElement(defs.storages.lights);
+const numLights = 4;
+const buf1 = makeStructuredView(
+    defs.storages.lights, new ArrayBuffer(numLights * size));
+```
+
+Similarly if you are using an unsized array as the last member of a struct
+you might do this
+
+```js
+const code = `
+struct Kernel {
+  amount: f32,
+  entries: array<vec3f>,
+};
+@group(0) @binding(7) var<storage> conv: Kernel;
+`;
+const defs = makeShaderDataDefinitions(code);
+const {size: elemSize} = getSizeOfUnsizedArrayElement(defs.storages.conv);
+const numKernelEntries = 4;
+const size = defs.storages.conv.size + numKernelEntries * elemSize;
+const buf1 = makeStructuredView(
+    defs.storages.conv, new ArrayBuffer(size));
+)
 ```
 
 ## Usage
