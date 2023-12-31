@@ -1,4 +1,4 @@
-/* webgpu-utils@1.2.0, license MIT */
+/* webgpu-utils@1.2.1, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -511,9 +511,15 @@ function getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef) {
     const fields = asStructDef.fields;
     if (fields) {
         const lastField = Object.values(fields).pop();
-        return getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(lastField.type);
+        if (lastField.type.size === 0) {
+            return getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(lastField.type);
+        }
     }
-    throw new Error('no unsigned array element');
+    return {
+        size: 0,
+        unalignedSize: 0,
+        align: 1,
+    };
 }
 /**
  * Returns the size, align, and unalignedSize of "the" unsized array element. Unsized arrays are only
@@ -557,6 +563,7 @@ function getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef) {
  * ```
   * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
  * @returns the size, align, and unalignedSize in bytes of the unsized array element in this type definition.
+ *   If there is no unsized array, size = 0.
  */
 function getSizeAndAlignmentOfUnsizedArrayElement(varDef) {
     const asVarDef = varDef;

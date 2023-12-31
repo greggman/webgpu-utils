@@ -248,6 +248,7 @@ export declare function setStructuredValues(varDef: VariableDefinition, data: an
  * ```
   * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
  * @returns the size, align, and unalignedSize in bytes of the unsized array element in this type definition.
+ *   If there is no unsized array, size = 0.
  */
 export declare function getSizeAndAlignmentOfUnsizedArrayElement(varDef: VariableDefinition | StructDefinition): {
     size: number;
