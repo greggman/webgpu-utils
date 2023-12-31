@@ -577,10 +577,16 @@ function getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef: TypeDefiniti
     const fields = asStructDef.fields;
     if (fields) {
         const lastField = Object.values(fields).pop()!;
-        return getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(lastField.type);
+        if (lastField.type.size === 0) {
+            return getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(lastField.type);
+        }
     }
 
-    throw new Error('no unsigned array element');
+    return {
+        size: 0,
+        unalignedSize: 0,
+        align: 1,
+    };
 }
 
 /**
@@ -625,6 +631,7 @@ function getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef: TypeDefiniti
  * ```
   * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
  * @returns the size, align, and unalignedSize in bytes of the unsized array element in this type definition.
+ *   If there is no unsized array, size = 0.
  */
 export function getSizeAndAlignmentOfUnsizedArrayElement(varDef: VariableDefinition | StructDefinition): {size: number, align: number} {
     const asVarDef = varDef as VariableDefinition;
