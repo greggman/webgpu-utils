@@ -1124,6 +1124,10 @@ describe('buffer-views-tests', () => {
             const {size, align} = getSizeAndAlignmentOfUnsizedArrayElement(d.storages.foo8);
             assertEqual(size, (4 + 4) * 4 * 5);
             assertEqual(align, 4);
+            const numElements = 3;
+            const { views } = makeStructuredView(d.storages.foo8, new ArrayBuffer(d.storages.foo8.size + size * numElements));
+            assertEqual(views.bar.length, 3);
+            assertEqual(views.bar[2].length, 5);
         });
 
     });
