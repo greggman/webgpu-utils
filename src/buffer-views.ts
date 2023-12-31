@@ -613,7 +613,6 @@ function getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef: TypeDefiniti
  *
  * Generally you only need size. Example:
  *
- *
  * ```js
  * const code = `
  * struct Foo {
@@ -629,7 +628,8 @@ function getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef: TypeDefiniti
  *    defs.storages.f,
  *    new ArrayBuffer(defs.storages.f.size + size * numElements));
  * ```
-  * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
+ *
+ * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
  * @returns the size, align, and unalignedSize in bytes of the unsized array element in this type definition.
  *   If there is no unsized array, size = 0.
  */
