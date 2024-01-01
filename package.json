@@ -64,6 +64,6 @@
     "tslib": "^2.6.1",
     "typedoc": "^0.24.8",
     "typescript": "^5.1.6",
-    "wgsl_reflect": "github:brendan-duncan/wgsl_reflect#713ad94"
+    "wgsl_reflect": "github:brendan-duncan/wgsl_reflect#565030a98794256bc7fc2f54543cdc71faa5311b"
   }
 }
