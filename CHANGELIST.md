@@ -1,5 +1,9 @@
 # Change List
 
+### 1.3.0
+
+* Add `makeBindGroupLayoutDescriptors`
+
 ### 1.2.0
 
 * Add `getSizeOfUnsizedArrayElement`
