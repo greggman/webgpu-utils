@@ -1,8 +1,7 @@
-/* global GPUShaderStage */
 import { describe, it } from '../mocha-support.js';
 import {
     makeShaderDataDefinitions,
-    getBindGroupLayoutDescriptors,
+    makeBindGroupLayoutDescriptors,
 } from '../../dist/1.x/webgpu-utils.module.js';
 import { assertDeepEqual, assertEqual, assertFalsy, assertTruthy } from '../assert.js';
 
@@ -241,7 +240,7 @@ describe('data-definition-tests', () => {
         }
         `;
         const d = makeShaderDataDefinitions(code);
-        const layouts = getBindGroupLayoutDescriptors(d, {
+        const layouts = makeBindGroupLayoutDescriptors(d, {
           vertex: {
             entryPoint: 'vs',
           },
@@ -377,7 +376,7 @@ describe('data-definition-tests', () => {
         }
         `;
         const d = makeShaderDataDefinitions(code);
-        const layouts = getBindGroupLayoutDescriptors(d, {
+        const layouts = makeBindGroupLayoutDescriptors(d, {
           vertex: {
             entryPoint: 'vs',
           },
@@ -425,7 +424,7 @@ describe('data-definition-tests', () => {
         }
         `;
         const d = makeShaderDataDefinitions(code);
-        const layouts = getBindGroupLayoutDescriptors(d, {
+        const layouts = makeBindGroupLayoutDescriptors(d, {
           vertex: {
             entryPoint: 'vs',
           },
