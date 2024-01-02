@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- this file is auto-generated from README.md. Do not edited directly -->
 <!--
-@license webgpu-utils 1.2.1 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
+@license webgpu-utils 1.3.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/webgpu-utils for details
 -->
@@ -209,6 +209,65 @@ const pipeline = device.createRenderPipeline({
 passEncoder.setVertexBuffer(0, bi.buffers[0]);
 passEncoder.setIndexBuffer(bi.indexBuffer, bi.indexFormat);
 passEncoder.drawIndexed(bi.numElements);
+</code></pre>
+<h3>Create <code>GPUBindGroupLayoutDescriptors</code> from WGSL code</h3>
+<pre><code class="lang-js">import {
+  makeShaderDataDefinitions,
+  makeBindGroupLayoutDescriptors,
+} from 'webgpu-utils';
+
+const code = `
+@group(0) @binding(0) var&lt;uniform&gt; mat: mat4x4f;
+
+struct MyVSOutput {
+  @builtin(position) position: vec4f,
+  @location(1) texcoord: vec2f,
+};
+
+@vertex
+fn myVSMain(v: MyVSInput) -&gt; MyVSOutput {
+  var vsOut: MyVSOutput;
+  vsOut.position = mat * v.position;
+  vsOut.texcoord = v.texcoord;
+  return vsOut;
+}
+
+@group(0) @binding(2) var diffuseSampler: sampler;
+@group(0) @binding(3) var diffuseTexture: texture_2d&lt;f32&gt;;
+
+@fragment
+fn myFSMain(v: MyVSOutput) -&gt; @location(0) vec4f {
+  return textureSample(diffuseTexture, diffuseSampler, v.texcoord);
+}
+`;
+
+const module = device.createShaderModule({code});
+const defs = wgh.makeShaderDataDefinitions(code);
+
+const pipelineDesc = {
+  vertex: {
+    module,
+    entryPoint: 'myVSMain',
+    buffers: bufferLayouts,
+  },
+  fragment: {
+    module,
+    entryPoint: 'myFSMain',
+    targets: [
+      {format: presentationFormat},
+    ],
+  },
+};
+
+const descriptors = wgh.makeBindGroupLayoutDescriptors(defs, pipelineDesc);
+const group0Layout = device.createBindGroupLayout(descriptors[0]);
+const layout = device.createPipelineLayout({
+  bindGroupLayouts: [group0Layout],
+});
+const pipeline = device.createRenderPipeline({
+  layout,
+  ...pipelineDesc,
+});
 </code></pre>
 <h2>Examples:</h2>
 <ul>

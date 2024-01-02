@@ -1,8 +1,9 @@
 import { describe, it } from '../mocha-support.js';
 import {
     makeShaderDataDefinitions,
+    makeBindGroupLayoutDescriptors,
 } from '../../dist/1.x/webgpu-utils.module.js';
-import { assertEqual, assertFalsy, assertTruthy } from '../assert.js';
+import { assertDeepEqual, assertEqual, assertFalsy, assertTruthy } from '../assert.js';
 
 describe('data-definition-tests', () => {
 
@@ -203,5 +204,259 @@ describe('data-definition-tests', () => {
         assertTruthy(d.storages.foo6.typeDefinition.elementType.elementType.fields);
     });
 
-});
+    describe('it generates bind group layout descriptors', () => {
 
+      it('handles various resources', () => {
+        const code = `
+        // TODO: unfiltered-float???
+        // These 3 intentionally not in order
+        @group(0) @binding(2) var tex2d: texture_2d<f32>;
+        @group(0) @binding(1) var texMS2d: texture_multisampled_2d<f32>;
+        @group(0) @binding(0) var texDepth: texture_depth_2d;
+        @group(0) @binding(3) var samp: sampler;
+        @group(0) @binding(4) var sampC: sampler_comparison;
+        @group(0) @binding(5) var texExt: texture_external;
+        @group(1) @binding(0) var<uniform> u: mat4x4f;
+        @group(1) @binding(1) var<storage> s: mat4x4f;
+        @group(1) @binding(2) var<storage, read> sr: mat4x4f;
+        @group(1) @binding(3) var<storage, read_write> srw: mat4x4f;
+        @group(3) @binding(0) var tsR: texture_storage_2d<rgba8unorm, read>;
+        @group(3) @binding(1) var tsW: texture_storage_2d<rgba32float, write>;
+        @group(3) @binding(2) var tsRW: texture_storage_2d<rgba16uint, read_write>;
+        @vertex fn vs() -> @builtin(position) vec4f {
+          _ = tex2d;
+          _ = texMS2d;
+          _ = texDepth;
+          _ = samp;
+          _ = sampC;
+          _ = texExt;
+          _ = u;
+          _ = s;
+          _ = sr;
+          _ = srw;
+          _ = tsR;
+          _ = tsW;
+          _ = tsRW;
+        }
+        `;
+        const d = makeShaderDataDefinitions(code);
+        const layouts = makeBindGroupLayoutDescriptors(d, {
+          vertex: {
+            entryPoint: 'vs',
+          },
+        });
+
+        const expected = [
+          {
+            entries: [
+              {
+                binding: 0,
+                visibility: 1,
+                texture: {
+                  sampleType: 'depth',
+                  viewDimension: '2d',
+                  multisampled: false,
+                },
+              },
+              {
+                binding: 1,
+                visibility: 1,
+                texture: {
+                  sampleType: 'float',
+                  viewDimension: '2d',
+                  multisampled: true,
+                },
+              },
+              {
+                binding: 2,
+                visibility: 1,
+                texture: {
+                  sampleType: 'float',
+                  viewDimension: '2d',
+                  multisampled: false,
+                },
+              },
+              {
+                binding: 3,
+                visibility: 1,
+                sampler: {
+                  type: 'filtering',
+                },
+              },
+              {
+                binding: 4,
+                visibility: 1,
+                sampler: {
+                  type: 'comparison',
+                },
+              },
+              {
+                binding: 5,
+                visibility: 1,
+                externalTexture: {},
+              },
+            ],
+          },
+          {
+            entries: [
+              {
+                binding: 0,
+                visibility: 1,
+                buffer: {},
+              },
+              {
+                binding: 1,
+                visibility: 1,
+                buffer: {
+                  type: 'read-only-storage',
+                },
+              },
+              {
+                binding: 2,
+                visibility: 1,
+                buffer: {
+                  type: 'read-only-storage',
+                },
+              },
+              {
+                binding: 3,
+                visibility: 1,
+                buffer: {
+                  type: 'storage',
+                },
+              },
+            ],
+          },
+          undefined,
+          {
+            entries: [
+              {
+                binding: 0,
+                visibility: 1,
+                storageTexture: {
+                  access: 'read-only',
+                  format: 'rgba8unorm',
+                  viewDimension: '2d',
+                },
+              },
+              {
+                binding: 1,
+                visibility: 1,
+                storageTexture: {
+                  access: 'write-only',
+                  format: 'rgba32float',
+                  viewDimension: '2d',
+                },
+              },
+              {
+                binding: 2,
+                visibility: 1,
+                storageTexture: {
+                  access: 'read-write',
+                  format: 'rgba16uint',
+                  viewDimension: '2d',
+                },
+              },
+            ],
+          },
+        ];
+        assertDeepEqual(layouts, expected);
+      });
+
+      it('handles multiple stages', () => {
+        const code = `
+        @group(0) @binding(1) var tex2d: texture_2d<f32>;
+        @group(0) @binding(2) var samp: sampler;
+        @vertex fn vs() -> @builtin(position) vec4f {
+          _ = tex2d;
+        }
+        @fragment fn fs() -> @location(0) vec4f {
+          _ = samp;
+          return vec4f(0);
+        }
+        `;
+        const d = makeShaderDataDefinitions(code);
+        const layouts = makeBindGroupLayoutDescriptors(d, {
+          vertex: {
+            entryPoint: 'vs',
+          },
+          fragment: {
+            entryPoint: 'fs',
+          },
+        });
+        const expected = [
+          {
+            entries: [
+              {
+                binding: 1,
+                visibility: 1,
+                texture: {
+                  sampleType: 'float',
+                  viewDimension: '2d',
+                  multisampled: false,
+                },
+              },
+              {
+                binding: 2,
+                visibility: 2,
+                sampler: {
+                  type: 'filtering',
+                },
+              },
+            ],
+          },
+        ];
+        assertDeepEqual(layouts, expected);
+      });
+
+      it('handles merges stages', () => {
+        const code = `
+        @group(0) @binding(1) var tex2d: texture_2d<f32>;
+        @group(0) @binding(2) var samp: sampler;
+        @vertex fn vs() -> @builtin(position) vec4f {
+          _ = tex2d;
+          _ = samp;
+        }
+        @fragment fn fs() -> @location(0) vec4f {
+          _ = tex2d;
+          _ = samp;
+          return vec4f(0);
+        }
+        `;
+        const d = makeShaderDataDefinitions(code);
+        const layouts = makeBindGroupLayoutDescriptors(d, {
+          vertex: {
+            entryPoint: 'vs',
+          },
+          fragment: {
+            entryPoint: 'fs',
+          },
+        });
+        const expected = [
+          {
+            entries: [
+              {
+                binding: 1,
+                visibility: 3,
+                texture: {
+                  sampleType: 'float',
+                  viewDimension: '2d',
+                  multisampled: false,
+                },
+              },
+              {
+                binding: 2,
+                visibility: 3,
+                sampler: {
+                  type: 'filtering',
+                },
+              },
+            ],
+          },
+        ];
+        assertDeepEqual(layouts, expected);
+      });
+
+    });
+
+});

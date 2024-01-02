@@ -5,6 +5,8 @@ import {
     TemplateInfo,
     TypeInfo,
     VariableInfo,
+    FunctionInfo,
+    ResourceType,
 } from 'wgsl_reflect';
 
 export type FieldDefinition = {
@@ -59,11 +61,108 @@ export type VariableDefinitions = {
     [x: string]: VariableDefinition;
 };
 
+export type Resource = {
+    name: string;
+    group: number;
+    entry: GPUBindGroupLayoutEntry;
+};
+
+export type EntryPoint = {
+    stage: GPUShaderStageFlags;
+    resources: Resource[];
+}
+
+export type EntryPoints = {
+    [x: string]: EntryPoint;
+}
+
 type ShaderDataDefinitions = {
     uniforms: VariableDefinitions,
     storages: VariableDefinitions,
     structs: StructDefinitions,
+    entryPoints: EntryPoints,
 };
+
+/**
+ * This should be compatible with GPUProgramableStage
+ */
+export type ProgrammableStage = {
+    entryPoint?: string,
+}
+
+/**
+ * Compatible with GPURenderPipelineDescriptor and GPUComputePipelineDescriptor
+ */
+export type PipelineDescriptor = {
+    vertex?: ProgrammableStage,
+    fragment?: ProgrammableStage,
+    compute?: ProgrammableStage,
+};
+
+function getEntryPointForStage(defs: ShaderDataDefinitions, stage: ProgrammableStage, stageFlags: GPUShaderStageFlags) {
+    const {entryPoint: entryPointName} = stage;
+    if (entryPointName) {
+        const ep = defs.entryPoints[entryPointName];
+        return (ep && ep.stage === stageFlags) ? ep : undefined;
+    }
+
+    return Object.values(defs.entryPoints).filter(ep => ep.stage === stageFlags)[0];
+}
+
+function getStageResources(defs: ShaderDataDefinitions, stage: ProgrammableStage | undefined, stageFlags: GPUShaderStageFlags) {
+    if (!stage) {
+        return [];
+    }
+    const entryPoint = getEntryPointForStage(defs, stage, stageFlags);
+    return entryPoint?.resources || [];
+}
+
+const byBinding = (a: GPUBindGroupLayoutEntry, b: GPUBindGroupLayoutEntry) => Math.sign(a.binding - b.binding);
+
+/**
+ * Gets GPUBindGroupLayoutDescriptors for the given pipeline.
+ *
+ * Important: Assumes you pipeline is valid (it doesn't check for errors).
+ *
+ * Note: In WebGPU some layouts must be specified manually. For example an unfiltered-float
+ *    sampler can not be derived since it is unknown at compile time pipeline creation time
+ *    which texture you'll use.
+ *
+ * MAINTENANCE_TODO: Add example
+ *
+ * @param defs ShaderDataDefinitions or an array of ShaderDataDefinitions as
+ *    returned from @link {makeShaderDataDefinitions}. If an array more than 1
+ *    definition it's assumed the vertex shader is in the first and the fragment
+ *    shader in the second.
+ * @param desc A PipelineDescriptor. You should be able to pass in the same object you passed
+ *    to `createRenderPipeline` or `createComputePipeline`.
+ * @returns An array of GPUBindGroupLayoutDescriptors which you can pass, one at a time, to
+ *    `createBindGroupLayout`. Note: the array will be sparse if there are gaps in group
+ *    numbers. Note: Each GPUBindGroupLayoutDescriptor.entries will be sorted by binding.
+ */
+export function makeBindGroupLayoutDescriptors(
+    defs: ShaderDataDefinitions | ShaderDataDefinitions[],
+    desc: PipelineDescriptor,
+): GPUBindGroupLayoutDescriptor[] {
+    defs = Array.isArray(defs) ? defs : [defs];
+    const resources = [
+        ...getStageResources(defs[0], desc.vertex, GPUShaderStage.VERTEX),
+        ...getStageResources(defs[defs.length - 1], desc.fragment, GPUShaderStage.FRAGMENT),
+        ...getStageResources(defs[0], desc.compute, GPUShaderStage.COMPUTE),
+    ];
+    const bindGroupLayoutDescriptorsByGroupByBinding: Map<number, GPUBindGroupLayoutEntry>[] = [];
+    for (const resource of resources) {
+        const bindingsToBindGroupEntry = bindGroupLayoutDescriptorsByGroupByBinding[resource.group] || new Map<number, GPUBindGroupLayoutEntry>();
+        bindGroupLayoutDescriptorsByGroupByBinding[resource.group] = bindingsToBindGroupEntry;
+        // Should we error here if the 2 don't match?
+        const entry = bindingsToBindGroupEntry.get(resource.entry.binding);
+        bindingsToBindGroupEntry.set(resource.entry.binding, {
+            ...resource.entry,
+            visibility: resource.entry.visibility | (entry?.visibility || 0),
+        });
+    }
+    return bindGroupLayoutDescriptorsByGroupByBinding.map(v => ({entries: [...v.values()].sort(byBinding) }));
+}
 
 function getNamedVariables(reflect: WgslReflect, variables: VariableInfo[]): VariableDefinitions {
     return Object.fromEntries(variables.map(v => {
@@ -96,6 +195,133 @@ function makeStructDefinition(reflect: WgslReflect, structInfo: StructInfo, offs
         size: structInfo.size,
         offset,
     };
+}
+
+function getTextureSampleType(type: TypeInfo) {
+    if (type.name.includes('depth')) {
+        return 'depth';
+    }
+    // unfiltered-float
+    switch ((type as TemplateInfo).format?.name) {
+        case 'f32': return 'float';
+        case 'i32': return 'sint';
+        case 'u32': return 'uint';
+        default:
+            throw new Error('unknown texture sample type');
+    }
+}
+
+function getViewDimension(type: TypeInfo): GPUTextureViewDimension {
+    if (type.name.includes('2d_array')) {
+        return '2d-array';
+    }
+    if (type.name.includes('cube_array')) {
+        return 'cube-array';
+    }
+    if (type.name.includes('3d')) {
+        return '3d';
+    }
+    if (type.name.includes('1d')) {
+        return '1d';
+    }
+    if (type.name.includes('cube')) {
+        return 'cube';
+    }
+    return '2d';
+}
+
+function getStorageTextureAccess(type: TypeInfo): GPUStorageTextureAccess {
+    switch ((type as TemplateInfo).access) {
+        case 'read': return 'read-only';
+        case 'write': return 'write-only';
+        case 'read_write': return 'read-write';
+        default:
+            throw new Error('unknonw storage texture access');
+    }
+}
+
+function getSamplerType(type: TypeInfo) {
+    // "non-filtering" can only be specified manually.
+    return type.name.endsWith('_comparison')
+        ? 'comparison'
+        : 'filtering';
+}
+
+function getBindGroupLayoutEntry(resource: VariableInfo, visibility: GPUShaderStageFlags): GPUBindGroupLayoutEntry {
+    const { binding, access, type } = resource;
+    switch (resource.resourceType) {
+        case ResourceType.Uniform:
+            return {
+                binding,
+                visibility,
+                buffer: { },
+            };
+        case ResourceType.Storage:
+            return {
+                binding,
+                visibility,
+                buffer: {
+                    type: (access === '' || access === 'read') ? 'read-only-storage' : 'storage',
+                },
+            };
+        case ResourceType.Texture: {
+            if (type.name === 'texture_external') {
+                return {
+                    binding,
+                    visibility,
+                    externalTexture: {},
+                };
+            }
+            const multisampled = type.name.includes('multisampled');
+            return {
+                binding,
+                visibility,
+                texture: {
+                    sampleType: getTextureSampleType(type),
+                    viewDimension: getViewDimension(type),
+                    multisampled,
+                },
+            };
+        }
+        case ResourceType.Sampler:
+            return {
+                binding,
+                visibility,
+                sampler: {
+                    type: getSamplerType(type),
+                },
+            };
+        case ResourceType.StorageTexture:
+            return {
+                binding,
+                visibility,
+                storageTexture: {
+                    access: getStorageTextureAccess(type),
+                    format: ((type as TemplateInfo).format!.name as GPUTextureFormat),
+                    viewDimension: getViewDimension(type),
+                },
+            };
+        default:
+            throw new Error('unknown resource type');
+    }
+}
+
+function addEntryPoints(funcInfos: FunctionInfo[], stage: GPUShaderStageFlags): EntryPoints {
+    const entryPoints: EntryPoints = {};
+    for (const info of funcInfos) {
+        entryPoints[info.name] = {
+            stage,
+            resources: info.resources.map(resource => {
+                const {name, group} = resource;
+                return {
+                    name,
+                    group,
+                    entry: getBindGroupLayoutEntry(resource, stage),
+                };
+            }),
+        };
+    }
+    return entryPoints;
 }
 
 /**
@@ -141,10 +367,17 @@ export function makeShaderDataDefinitions(code: string): ShaderDataDefinitions {
     const uniforms = getNamedVariables(reflect, reflect.uniforms);
     const storages = getNamedVariables(reflect, reflect.storage);
 
+    const entryPoints: EntryPoints = {
+        ...addEntryPoints(reflect.entry.vertex, GPUShaderStage.VERTEX),
+        ...addEntryPoints(reflect.entry.fragment, GPUShaderStage.FRAGMENT),
+        ...addEntryPoints(reflect.entry.compute, GPUShaderStage.COMPUTE),
+    };
+
     return {
         structs,
         storages,
         uniforms,
+        entryPoints,
     };
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "webgpu-utils",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "webgpu utilities",
   "main": "dist/1.x/webgpu-utils.module.js",
   "module": "dist/1.x/webgpu-utils.module.js",
@@ -49,7 +49,7 @@
     "@tsconfig/recommended": "^1.0.2",
     "@typescript-eslint/eslint-plugin": "^6.2.1",
     "@typescript-eslint/parser": "^6.2.1",
-    "@webgpu/types": "^0.1.34",
+    "@webgpu/types": "^0.1.40",
     "eslint": "^8.46.0",
     "eslint-plugin-html": "^7.1.0",
     "eslint-plugin-one-variable-per-var": "^0.0.3",
@@ -64,6 +64,6 @@
     "tslib": "^2.6.1",
     "typedoc": "^0.24.8",
     "typescript": "^5.1.6",
-    "wgsl_reflect": "github:brendan-duncan/wgsl_reflect#713ad94"
+    "wgsl_reflect": "github:greggman/wgsl_reflect#e24111a6674cc52e2c39801f416c89133e4fd279"
   }
 }

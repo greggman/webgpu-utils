@@ -203,6 +203,68 @@ passEncoder.setIndexBuffer(bi.indexBuffer, bi.indexFormat);
 passEncoder.drawIndexed(bi.numElements);
 ```
 
+### Create `GPUBindGroupLayoutDescriptors` from WGSL code
+
+```js
+import {
+  makeShaderDataDefinitions,
+  makeBindGroupLayoutDescriptors,
+} from 'webgpu-utils';
+
+const code = `
+@group(0) @binding(0) var<uniform> mat: mat4x4f;
+
+struct MyVSOutput {
+  @builtin(position) position: vec4f,
+  @location(1) texcoord: vec2f,
+};
+
+@vertex
+fn myVSMain(v: MyVSInput) -> MyVSOutput {
+  var vsOut: MyVSOutput;
+  vsOut.position = mat * v.position;
+  vsOut.texcoord = v.texcoord;
+  return vsOut;
+}
+
+@group(0) @binding(2) var diffuseSampler: sampler;
+@group(0) @binding(3) var diffuseTexture: texture_2d<f32>;
+
+@fragment
+fn myFSMain(v: MyVSOutput) -> @location(0) vec4f {
+  return textureSample(diffuseTexture, diffuseSampler, v.texcoord);
+}
+`;
+
+const module = device.createShaderModule({code});
+const defs = wgh.makeShaderDataDefinitions(code);
+
+const pipelineDesc = {
+  vertex: {
+    module,
+    entryPoint: 'myVSMain',
+    buffers: bufferLayouts,
+  },
+  fragment: {
+    module,
+    entryPoint: 'myFSMain',
+    targets: [
+      {format: presentationFormat},
+    ],
+  },
+};
+
+const descriptors = wgh.makeBindGroupLayoutDescriptors(defs, pipelineDesc);
+const group0Layout = device.createBindGroupLayout(descriptors[0]);
+const layout = device.createPipelineLayout({
+  bindGroupLayouts: [group0Layout],
+});
+const pipeline = device.createRenderPipeline({
+  layout,
+  ...pipelineDesc,
+});
+```
+
 ## Examples:
 
 * [Cube](examples/cube.html)
