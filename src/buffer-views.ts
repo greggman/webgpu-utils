@@ -70,6 +70,9 @@ const b: { readonly [K: string]: TypeDef } = {
 const typeInfo: { readonly [K: string]: TypeDef } = {
   ...b,
 
+  'atomic<i32>': b.i32,
+  'atomic<u32>': b.u32,
+
   'vec2<i32>': b.vec2i,
   'vec2<u32>': b.vec2u,
   'vec2<f32>': b.vec2f,
