@@ -1,5 +1,9 @@
 # Change List
 
+### 1.4.0
+
+* Support `atomic`
+
 ### 1.3.0
 
 * Add `makeBindGroupLayoutDescriptors`
