@@ -204,6 +204,334 @@ describe('data-definition-tests', () => {
         assertTruthy(d.storages.foo6.typeDefinition.elementType.elementType.fields);
     });
 
+    it('handles various resources', () => {
+      const code = `
+      // TODO: unfiltered-float???
+      // These 3 intentionally not in order
+      @group(0) @binding(2) var tex2d: texture_2d<f32>;
+      @group(0) @binding(1) var texMS2d: texture_multisampled_2d<f32>;
+      @group(0) @binding(0) var texDepth: texture_depth_2d;
+      @group(0) @binding(3) var samp: sampler;
+      @group(0) @binding(4) var sampC: sampler_comparison;
+      @group(0) @binding(5) var texExt: texture_external;
+      @group(1) @binding(0) var<uniform> u: mat4x4f;
+      @group(1) @binding(1) var<storage> s: mat4x4f;
+      @group(1) @binding(2) var<storage, read> sr: mat4x4f;
+      @group(1) @binding(3) var<storage, read_write> srw: mat4x4f;
+      @group(3) @binding(0) var tsR: texture_storage_2d<rgba8unorm, read>;
+      @group(3) @binding(1) var tsW: texture_storage_2d<rgba32float, write>;
+      @group(3) @binding(2) var tsRW: texture_storage_2d<rgba16uint, read_write>;
+      @vertex fn vs() -> @builtin(position) vec4f {
+        _ = tex2d;
+        _ = texMS2d;
+        _ = texDepth;
+        _ = samp;
+        _ = sampC;
+        _ = texExt;
+        _ = u;
+        _ = s;
+        _ = sr;
+        _ = srw;
+        _ = tsR;
+        _ = tsW;
+        _ = tsRW;
+      }
+      `;
+      const d = makeShaderDataDefinitions(code);
+      const expected = {
+        "externalTextures": {
+          "texExt": {
+            "typeDefinition": {
+              "size": 0,
+              "type": "texture_external",
+            },
+            "group": 0,
+            "binding": 5,
+            "size": 0,
+          }
+        },
+        "samplers": {
+          "samp": {
+            "typeDefinition": {
+              "size": 0,
+              "type": "sampler",
+            },
+            "group": 0,
+            "binding": 3,
+            "size": 0,
+          },
+          "sampC": {
+            "typeDefinition": {
+              "size": 0,
+              "type": "sampler_comparison",
+            },
+            "group": 0,
+            "binding": 4,
+            "size": 0,
+          },
+        },
+        "structs": {},
+        "storages": {
+          "s": {
+            "typeDefinition": {
+              "size": 64,
+              "type": "mat4x4f",
+            },
+            "group": 1,
+            "binding": 1,
+            "size": 64,
+          },
+          "sr": {
+            "typeDefinition": {
+              "size": 64,
+              "type": "mat4x4f",
+            },
+            "group": 1,
+            "binding": 2,
+            "size": 64,
+          },
+          "srw": {
+            "typeDefinition": {
+              "size": 64,
+              "type": "mat4x4f",
+            },
+            "group": 1,
+            "binding": 3,
+            "size": 64,
+          }
+        },
+        "storageTextures": {
+          "tsR": {
+            "typeDefinition": {
+              "size": 0,
+              "type": "texture_storage_2d<rgba8unorm>",
+            },
+            "group": 3,
+            "binding": 0,
+            "size": 0,
+          },
+          "tsW": {
+            "typeDefinition": {
+              "size": 0,
+              "type": "texture_storage_2d<rgba32float>",
+            },
+            "group": 3,
+            "binding": 1,
+            "size": 0,
+          },
+          "tsRW": {
+            "typeDefinition": {
+              "size": 0,
+              "type": "texture_storage_2d<rgba16uint>",
+            },
+            "group": 3,
+            "binding": 2,
+            "size": 0,
+          },
+        },
+        "textures": {
+          "tex2d": {
+            "typeDefinition": {
+              "size": 0,
+              "type": "texture_2d",
+            },
+            "group": 0,
+            "binding": 2,
+            "size": 0,
+          },
+          "texMS2d": {
+            "typeDefinition": {
+              "size": 0,
+              "type": "texture_multisampled_2d",
+            },
+            "group": 0,
+            "binding": 1,
+            "size": 0,
+          },
+          "texDepth": {
+            "typeDefinition": {
+              "size": 0,
+              "type": "texture_depth_2d",
+            },
+            "group": 0,
+            "binding": 0,
+            "size": 0,
+          },
+        },
+        "uniforms": {
+          "u": {
+            "typeDefinition": {
+              "size": 64,
+              "type": "mat4x4f",
+            },
+            "group": 1,
+            "binding": 0,
+            "size": 64,
+          },
+        },
+        "entryPoints": {
+          "vs": {
+            "stage": 1,
+            "resources": [
+              {
+                "name": "tex2d",
+                "group": 0,
+                "entry": {
+                  "binding": 2,
+                  "visibility": 1,
+                  "texture": {
+                    "sampleType": "float",
+                    "viewDimension": "2d",
+                    "multisampled": false,
+                  },
+                },
+              },
+              {
+                "name": "texMS2d",
+                "group": 0,
+                "entry": {
+                  "binding": 1,
+                  "visibility": 1,
+                  "texture": {
+                    "sampleType": "float",
+                    "viewDimension": "2d",
+                    "multisampled": true,
+                  },
+                },
+              },
+              {
+                "name": "texDepth",
+                "group": 0,
+                "entry": {
+                  "binding": 0,
+                  "visibility": 1,
+                  "texture": {
+                    "sampleType": "depth",
+                    "viewDimension": "2d",
+                    "multisampled": false,
+                  }
+                }
+              },
+              {
+                "name": "samp",
+                "group": 0,
+                "entry": {
+                  "binding": 3,
+                  "visibility": 1,
+                  "sampler": {
+                    "type": "filtering",
+                  },
+                },
+              },
+              {
+                "name": "sampC",
+                "group": 0,
+                "entry": {
+                  "binding": 4,
+                  "visibility": 1,
+                  "sampler": {
+                    "type": "comparison",
+                  },
+                },
+              },
+              {
+                "name": "texExt",
+                "group": 0,
+                "entry": {
+                  "binding": 5,
+                  "visibility": 1,
+                  "externalTexture": {},
+                },
+              },
+              {
+                "name": "u",
+                "group": 1,
+                "entry": {
+                  "binding": 0,
+                  "visibility": 1,
+                  "buffer": {},
+                },
+              },
+              {
+                "name": "s",
+                "group": 1,
+                "entry": {
+                  "binding": 1,
+                  "visibility": 1,
+                  "buffer": {
+                    "type": "read-only-storage",
+                  },
+                },
+              },
+              {
+                "name": "sr",
+                "group": 1,
+                "entry": {
+                  "binding": 2,
+                  "visibility": 1,
+                  "buffer": {
+                    "type": "read-only-storage",
+                  },
+                },
+              },
+              {
+                "name": "srw",
+                "group": 1,
+                "entry": {
+                  "binding": 3,
+                  "visibility": 1,
+                  "buffer": {
+                    "type": "storage",
+                  },
+                },
+              },
+              {
+                "name": "tsR",
+                "group": 3,
+                "entry": {
+                  "binding": 0,
+                  "visibility": 1,
+                  "storageTexture": {
+                    "access": "read-only",
+                    "format": "rgba8unorm",
+                    "viewDimension": "2d",
+                  },
+                },
+              },
+              {
+                "name": "tsW",
+                "group": 3,
+                "entry": {
+                  "binding": 1,
+                  "visibility": 1,
+                  "storageTexture": {
+                    "access": "write-only",
+                    "format": "rgba32float",
+                    "viewDimension": "2d",
+                  },
+                },
+              },
+              {
+                "name": "tsRW",
+                "group": 3,
+                "entry": {
+                  "binding": 2,
+                  "visibility": 1,
+                  "storageTexture": {
+                    "access": "read-write",
+                    "format": "rgba16uint",
+                    "viewDimension": "2d",
+                  },
+                },
+              },
+            ],
+          },
+        },
+      };
+
+      assertDeepEqual(d, expected);
+    });
+
     describe('it generates bind group layout descriptors', () => {
 
       it('handles various resources', () => {

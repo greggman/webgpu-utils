@@ -21,6 +21,12 @@ export type ArrayDefinition = TypeDefinition & {
     elementType: TypeDefinition;
     numElements: number;
 };
+export type TextureDefinition = TypeDefinition & {
+    type: string;
+};
+export type SamplerDefinition = TypeDefinition & {
+    type: string;
+};
 /**
  * @group(x) @binding(y) var<...> definition
  */
@@ -51,6 +57,10 @@ export type EntryPoints = {
 type ShaderDataDefinitions = {
     uniforms: VariableDefinitions;
     storages: VariableDefinitions;
+    samplers: VariableDefinitions;
+    textures: VariableDefinitions;
+    storageTextures: VariableDefinitions;
+    externalTextures: VariableDefinitions;
     structs: StructDefinitions;
     entryPoints: EntryPoints;
 };
