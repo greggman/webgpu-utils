@@ -1,4 +1,4 @@
-/* webgpu-utils@1.3.0, license MIT */
+/* webgpu-utils@1.4.0, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -75,6 +75,8 @@ const b = {
 };
 const typeInfo = {
     ...b,
+    'atomic<i32>': b.i32,
+    'atomic<u32>': b.u32,
     'vec2<i32>': b.vec2i,
     'vec2<u32>': b.vec2u,
     'vec2<f32>': b.vec2f,

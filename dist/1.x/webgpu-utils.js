@@ -1,4 +1,4 @@
-/* webgpu-utils@1.3.0, license MIT */
+/* webgpu-utils@1.4.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -81,6 +81,8 @@
     };
     const typeInfo = {
         ...b,
+        'atomic<i32>': b.i32,
+        'atomic<u32>': b.u32,
         'vec2<i32>': b.vec2i,
         'vec2<u32>': b.vec2u,
         'vec2<f32>': b.vec2f,

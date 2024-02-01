@@ -227,6 +227,49 @@ describe('buffer-views-tests', () => {
         test(defs.storages.vsStorage);
     });
 
+    it('handles atomics', () => {
+        const shader = `
+    struct AB {
+        a: atomic<u32>,
+        b: array<atomic<u32>, 4>,
+    };
+
+    @group(0) @binding(0) var<storage, read_write> s1: atomic<u32>;
+    @group(0) @binding(1) var<storage, read_write> s2: array<atomic<u32>, 4>;
+    @group(0) @binding(2) var<storage, read_write> s3: AB;
+    @group(0) @binding(0) var<storage, read_write> s4: atomic<i32>;
+        `;
+        const defs = makeShaderDataDefinitions(shader);
+        {
+            const {views, arrayBuffer} = makeStructuredView(defs.storages.s1);
+            assertEqual(arrayBuffer.byteLength, 4);
+            assertEqual(views.length, 1);
+            assertTruthy(views instanceof Uint32Array);
+        }
+        {
+            const {views, arrayBuffer} = makeStructuredView(defs.storages.s2);
+            assertEqual(arrayBuffer.byteLength, 16);
+            assertEqual(views.length, 4);
+            assertTruthy(views instanceof Uint32Array);
+        }
+        {
+            const {views, arrayBuffer} = makeStructuredView(defs.storages.s3);
+            assertEqual(arrayBuffer.byteLength, 20);
+            assertEqual(views.a.length, 1);
+            assertEqual(views.a.byteOffset, 0);
+            assertEqual(views.b.length, 4);
+            assertEqual(views.b.byteOffset, 4);
+            assertTruthy(views.a instanceof Uint32Array);
+            assertTruthy(views.b instanceof Uint32Array);
+        }
+        {
+            const {views, arrayBuffer} = makeStructuredView(defs.storages.s4);
+            assertEqual(arrayBuffer.byteLength, 4);
+            assertEqual(views.length, 1);
+            assertTruthy(views instanceof Int32Array);
+        }
+    });
+
     it('handles arrays of structs', () => {
         const shader = `
     struct VertexDesc {
