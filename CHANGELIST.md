@@ -1,5 +1,9 @@
 # Change List
 
+### 1.5.0
+
+* Add support for storage textures, external textures, and samplers
+
 ### 1.4.0
 
 * Support `atomic`

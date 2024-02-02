@@ -1,0 +1,348 @@
+<script type="module">
+import { WgslReflect } from './dist/0.x/webgpu-utils.module.js';
+
+const reflect = new WgslReflect(`
+    struct InnerUniforms {
+        bar: u32,
+    };
+
+    struct VSUniforms {
+        foo: u32,
+        moo: InnerUniforms,
+    };
+@group(0) @binding(0) var<uniform> foo0: vec3f;
+@group(0) @binding(1) var<uniform> foo1: array<vec3f, 5>;
+@group(0) @binding(2) var<uniform> foo2: array<array<vec3f, 5>, 6>;
+@group(0) @binding(3) var<uniform> foo3: array<array<array<vec3f, 5>, 6>, 7>;
+
+@group(0) @binding(4) var<uniform> foo4: VSUniforms;
+@group(0) @binding(5) var<uniform> foo5: array<VSUniforms, 5>;
+@group(0) @binding(6) var<uniform> foo6: array<array<VSUniforms, 5>, 6>;
+@group(0) @binding(7) var<uniform> foo7: array<array<array<VSUniforms, 5>, 6>, 7>;
+`);
+
+console.log(reflect);
+console.log('--here--');
+reflect.uniforms.map(uniform => {
+    console.log('---------:', uniform.name);
+    console.log(JSON.stringify(uniform, null, 2));
+});
+console.log('--end--');
+</script>
+
+<!--
+---------: foo0
+{
+  "align": 16,
+  "size": 12,
+  "name": "foo0",
+  "type": {
+    "name": "vec3f",
+    "attributes": null
+  },
+  "isArray": false,
+  "isStruct": false,
+  "arrayStride": 12,
+  "arrayCount": 0,
+  "group": 0,
+  "binding": 0
+}
+---------: foo1
+{
+  "align": 16,
+  "size": 80,
+  "name": "foo1",
+  "type": {
+    "name": "array",
+    "attributes": null,
+    "format": {
+      "name": "vec3f"
+    },
+    "count": 5
+  },
+  "isArray": true,
+  "isStruct": false,
+  "arrayStride": 12,
+  "arrayCount": 5,
+  "group": 0,
+  "binding": 1
+}
+---------: foo2
+{
+  "align": 16,
+  "size": 480,
+  "name": "foo2",
+  "type": {
+    "name": "array",
+    "attributes": null,
+    "format": {
+      "name": "array",
+      "attributes": null,
+      "format": {
+        "name": "vec3f"
+      },
+      "count": 5
+    },
+    "count": 6
+  },
+  "isArray": true,
+  "isStruct": false,
+  "arrayStride": 80,
+  "arrayCount": 6,
+  "group": 0,
+  "binding": 2
+}
+---------: foo3
+{
+  "align": 16,
+  "size": 3360,
+  "name": "foo3",
+  "type": {
+    "name": "array",
+    "attributes": null,
+    "format": {
+      "name": "array",
+      "attributes": null,
+      "format": {
+        "name": "array",
+        "attributes": null,
+        "format": {
+          "name": "vec3f"
+        },
+        "count": 5
+      },
+      "count": 6
+    },
+    "count": 7
+  },
+  "isArray": true,
+  "isStruct": false,
+  "arrayStride": 480,
+  "arrayCount": 7,
+  "group": 0,
+  "binding": 3
+}
+---------: foo4
+{
+  "align": 4,
+  "size": 8,
+  "name": "foo4",
+  "type": {
+    "name": "VSUniforms",
+    "attributes": null
+  },
+  "members": [
+    {
+      "node": {
+        "name": "foo",
+        "type": {
+          "name": "u32",
+          "attributes": null
+        },
+        "attributes": null
+      },
+      "name": "foo",
+      "offset": 0,
+      "size": 4,
+      "type": {
+        "name": "u32",
+        "attributes": null
+      },
+      "isArray": false,
+      "arrayCount": 0,
+      "arrayStride": 4,
+      "isStruct": false
+    },
+    {
+      "node": {
+        "name": "moo",
+        "type": {
+          "name": "InnerUniforms",
+          "attributes": null
+        },
+        "attributes": null
+      },
+      "name": "moo",
+      "offset": 4,
+      "size": 4,
+      "type": {
+        "name": "InnerUniforms",
+        "attributes": null
+      },
+      "isArray": false,
+      "arrayCount": 0,
+      "isStruct": true,
+      "members": [
+        {
+          "node": {
+            "name": "bar",
+            "type": {
+              "name": "u32",
+              "attributes": null
+            },
+            "attributes": null
+          },
+          "name": "bar",
+          "offset": 0,
+          "size": 4,
+          "type": {
+            "name": "u32",
+            "attributes": null
+          },
+          "isArray": false,
+          "arrayCount": 0,
+          "arrayStride": 4,
+          "isStruct": false
+        }
+      ]
+    }
+  ],
+  "isArray": false,
+  "isStruct": true,
+  "arrayCount": 0,
+  "group": 0,
+  "binding": 4
+}
+---------: foo5
+{
+  "align": 4,
+  "size": 40,
+  "name": "foo5",
+  "type": {
+    "name": "array",
+    "attributes": null,
+    "format": {
+      "name": "VSUniforms"
+    },
+    "count": 5
+  },
+  "isArray": true,
+  "isStruct": true,
+  "members": [
+    {
+      "node": {
+        "name": "foo",
+        "type": {
+          "name": "u32",
+          "attributes": null
+        },
+        "attributes": null
+      },
+      "name": "foo",
+      "offset": 0,
+      "size": 4,
+      "type": {
+        "name": "u32",
+        "attributes": null
+      },
+      "isArray": false,
+      "arrayCount": 0,
+      "arrayStride": 4,
+      "isStruct": false
+    },
+    {
+      "node": {
+        "name": "moo",
+        "type": {
+          "name": "InnerUniforms",
+          "attributes": null
+        },
+        "attributes": null
+      },
+      "name": "moo",
+      "offset": 4,
+      "size": 4,
+      "type": {
+        "name": "InnerUniforms",
+        "attributes": null
+      },
+      "isArray": false,
+      "arrayCount": 0,
+      "isStruct": true,
+      "members": [
+        {
+          "node": {
+            "name": "bar",
+            "type": {
+              "name": "u32",
+              "attributes": null
+            },
+            "attributes": null
+          },
+          "name": "bar",
+          "offset": 0,
+          "size": 4,
+          "type": {
+            "name": "u32",
+            "attributes": null
+          },
+          "isArray": false,
+          "arrayCount": 0,
+          "arrayStride": 4,
+          "isStruct": false
+        }
+      ]
+    }
+  ],
+  "arrayStride": 8,
+  "arrayCount": 5,
+  "group": 0,
+  "binding": 5
+}
+---------: foo6
+{
+  "align": 4,
+  "size": 240,
+  "name": "foo6",
+  "type": {
+    "name": "array",
+    "attributes": null,
+    "format": {
+      "name": "array",
+      "attributes": null,
+      "format": {
+        "name": "VSUniforms"
+      },
+      "count": 5
+    },
+    "count": 6
+  },
+  "isArray": true,
+  "isStruct": false,
+  "arrayStride": 40,
+  "arrayCount": 6,
+  "group": 0,
+  "binding": 6
+}
+---------: foo7
+{
+  "align": 4,
+  "size": 1680,
+  "name": "foo7",
+  "type": {
+    "name": "array",
+    "attributes": null,
+    "format": {
+      "name": "array",
+      "attributes": null,
+      "format": {
+        "name": "array",
+        "attributes": null,
+        "format": {
+          "name": "VSUniforms"
+        },
+        "count": 5
+      },
+      "count": 6
+    },
+    "count": 7
+  },
+  "isArray": true,
+  "isStruct": false,
+  "arrayStride": 240,
+  "arrayCount": 7,
+  "group": 0,
+  "binding": 7
+}
+--end--
+-->
