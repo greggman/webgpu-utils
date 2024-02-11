@@ -93,19 +93,19 @@ const texture = createTextureFromSource(device, someCanvasVideoImageBitmap, {
 
 ### Load 6 images as a cubemap (with mips)
 
+```js
 import { createTextureFromImage } from 'webgpu-utils';
 
-```js
-  const texture = await createTextureFromImages(device, [
-    'images/yokohama/posx.jpg',
-    'images/yokohama/negx.jpg',
-    'images/yokohama/posy.jpg',
-    'images/yokohama/negy.jpg',
-    'images/yokohama/posz.jpg',
-    'images/yokohama/negz.jpg',
-  ], {
-    mips: true,
-  });
+const texture = await createTextureFromImages(device, [
+  'images/yokohama/posx.jpg',
+  'images/yokohama/negx.jpg',
+  'images/yokohama/posy.jpg',
+  'images/yokohama/negy.jpg',
+  'images/yokohama/posz.jpg',
+  'images/yokohama/negz.jpg',
+], {
+  mips: true,
+});
 ```
 
 ### Load data as a texture
