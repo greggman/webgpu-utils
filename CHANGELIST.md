@@ -1,5 +1,13 @@
 # Change List
 
+### 1.5.1
+
+* handle empty bind groups.
+
+### 1.5.0
+
+* support other resource types, storageTextures, textures, samplers, externalTextures
+
 ### 1.4.0
 
 * Support `atomic`

@@ -1,4 +1,4 @@
-/* webgpu-utils@1.5.0, license MIT */
+/* webgpu-utils@1.5.1, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -4228,7 +4228,13 @@
                 visibility: resource.entry.visibility | (entry?.visibility || 0),
             });
         }
-        return bindGroupLayoutDescriptorsByGroupByBinding.map(v => ({ entries: [...v.values()].sort(byBinding) }));
+        const descriptors = bindGroupLayoutDescriptorsByGroupByBinding.map(v => ({ entries: [...v.values()].sort(byBinding) }));
+        for (let i = 0; i < descriptors.length; ++i) {
+            if (!descriptors[i]) {
+                descriptors[i] = { entries: [] };
+            }
+        }
+        return descriptors;
     }
     function getNamedVariables(reflect, variables) {
         return Object.fromEntries(variables.map(v => {

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- this file is auto-generated from README.md. Do not edited directly -->
 <!--
-@license webgpu-utils 1.5.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
+@license webgpu-utils 1.5.1 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/webgpu-utils for details
 -->
@@ -121,17 +121,18 @@ const texture = createTextureFromSource(device, someCanvasVideoImageBitmap, {
 });
 </code></pre>
 <h3>Load 6 images as a cubemap (with mips)</h3>
-<p>import { createTextureFromImage } from ‘webgpu-utils’;</p>
-<pre><code class="lang-js">  const texture = await createTextureFromImages(device, [
-    'images/yokohama/posx.jpg',
-    'images/yokohama/negx.jpg',
-    'images/yokohama/posy.jpg',
-    'images/yokohama/negy.jpg',
-    'images/yokohama/posz.jpg',
-    'images/yokohama/negz.jpg',
-  ], {
-    mips: true,
-  });
+<pre><code class="lang-js">import { createTextureFromImage } from 'webgpu-utils';
+
+const texture = await createTextureFromImages(device, [
+  'images/yokohama/posx.jpg',
+  'images/yokohama/negx.jpg',
+  'images/yokohama/posy.jpg',
+  'images/yokohama/negy.jpg',
+  'images/yokohama/posz.jpg',
+  'images/yokohama/negz.jpg',
+], {
+  mips: true,
+});
 </code></pre>
 <h3>Load data as a texture</h3>
 <pre><code class="lang-js">import { createTextureFromSource } from 'webgpu-utils';
