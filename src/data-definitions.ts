@@ -173,7 +173,13 @@ export function makeBindGroupLayoutDescriptors(
             visibility: resource.entry.visibility | (entry?.visibility || 0),
         });
     }
-    return bindGroupLayoutDescriptorsByGroupByBinding.map(v => ({entries: [...v.values()].sort(byBinding) }));
+    const descriptors = bindGroupLayoutDescriptorsByGroupByBinding.map(v => ({entries: [...v.values()].sort(byBinding) }));
+    for (let i = 0; i < descriptors.length; ++i) {
+        if (!descriptors[i]) {
+            descriptors[i] = { entries: [] };
+        }
+    }
+    return descriptors;
 }
 
 function getNamedVariables(reflect: WgslReflect, variables: VariableInfo[]): VariableDefinitions {

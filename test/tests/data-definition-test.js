@@ -655,7 +655,9 @@ describe('data-definition-tests', () => {
               },
             ],
           },
-          undefined,
+          {
+            entries: [],
+          },
           {
             entries: [
               {
@@ -737,7 +739,7 @@ describe('data-definition-tests', () => {
         assertDeepEqual(layouts, expected);
       });
 
-      it('handles merges stages', () => {
+      it('handles merged stages', () => {
         const code = `
         @group(0) @binding(1) var tex2d: texture_2d<f32>;
         @group(0) @binding(2) var samp: sampler;
@@ -783,6 +785,127 @@ describe('data-definition-tests', () => {
           },
         ];
         assertDeepEqual(layouts, expected);
+      });
+
+      it('handles empty groups', () => {
+        const code = `
+        @group(3) @binding(1) var<uniform> u: vec4f;
+        @compute fn cs() {
+          _ = u;
+        }
+        `;
+        const d = makeShaderDataDefinitions(code);
+        const layouts = makeBindGroupLayoutDescriptors(d, {
+          compute: {
+            entryPoint: 'cs',
+          },
+        });
+        const expected = [
+          {
+            entries: [],
+          },
+          {
+            entries: [],
+          },
+          {
+            entries: [],
+          },
+          {
+            entries: [
+              {
+                binding: 1,
+                visibility: 4,
+                buffer: {
+                },
+              },
+            ],
+          },
+        ];
+        assertDeepEqual(layouts, expected);
+      });
+
+      it('handles unnamed entrypoints', () => {
+        const code = `
+        @group(0) @binding(1) var tex2d: texture_2d<f32>;
+        @group(0) @binding(2) var samp: sampler;
+        @group(0) @binding(3) var<uniform> u1: vec4f;
+        @group(0) @binding(4) var<uniform> u2: vec4f;
+        @vertex fn vs() -> @builtin(position) vec4f {
+          _ = tex2d;
+          _ = samp;
+          _ = u1;
+        }
+        @fragment fn fs() -> @location(0) vec4f {
+          _ = tex2d;
+          _ = samp;
+          return vec4f(0);
+        }
+        @compute fn cs() {
+          _ = u1;
+          _ = u2;
+        }
+
+        `;
+        const d = makeShaderDataDefinitions(code);
+        {
+          const layouts = makeBindGroupLayoutDescriptors(d, {
+            compute: { },
+          });
+          const expected = [
+            {
+              entries: [
+                {
+                  binding: 3,
+                  visibility: 4,
+                  buffer: {
+                  },
+                },
+                {
+                  binding: 4,
+                  visibility: 4,
+                  buffer: {
+                  },
+                },
+              ],
+            },
+          ];
+          assertDeepEqual(layouts, expected);
+        }
+        {
+          const layouts = makeBindGroupLayoutDescriptors(d, {
+            vertex: { },
+            fragment: { },
+          });
+          const expected = [
+            {
+              entries: [
+                {
+                  binding: 1,
+                  visibility: 3,
+                  texture: {
+                    sampleType: 'float',
+                    viewDimension: '2d',
+                    multisampled: false,
+                  },
+                },
+                {
+                  binding: 2,
+                  visibility: 3,
+                  sampler: {
+                    type: 'filtering',
+                  },
+                },
+                {
+                  binding: 3,
+                  visibility: 1,
+                  buffer: {
+                  },
+                },
+              ],
+            },
+          ];
+          assertDeepEqual(layouts, expected);
+        }
       });
 
     });
