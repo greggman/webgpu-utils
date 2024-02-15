@@ -64,6 +64,6 @@
     "tslib": "^2.6.1",
     "typedoc": "^0.24.8",
     "typescript": "^5.1.6",
-    "wgsl_reflect": "github:greggman/wgsl_reflect#e24111a6674cc52e2c39801f416c89133e4fd279"
+    "wgsl_reflect": "github:greggman/wgsl_reflect#1424baa457668a7e89f0a591548cc8c853ec021c"
   }
 }
