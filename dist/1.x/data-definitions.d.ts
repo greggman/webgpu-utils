@@ -54,7 +54,11 @@ export type EntryPoint = {
 export type EntryPoints = {
     [x: string]: EntryPoint;
 };
-type ShaderDataDefinitions = {
+/**
+ * Warning: The properties of this type will probably be changed
+ * in a future version. Please consider this an opaque type.
+ */
+export type ShaderDataDefinitions = {
     uniforms: VariableDefinitions;
     storages: VariableDefinitions;
     samplers: VariableDefinitions;
@@ -134,4 +138,3 @@ export declare function makeBindGroupLayoutDescriptors(defs: ShaderDataDefinitio
  * @returns definitions of the structures by name. Useful for passing to {@link makeStructuredView}
  */
 export declare function makeShaderDataDefinitions(code: string): ShaderDataDefinitions;
-export {};

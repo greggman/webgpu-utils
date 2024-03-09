@@ -1,4 +1,4 @@
-/* webgpu-utils@1.5.1, license MIT */
+/* webgpu-utils@1.6.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
