@@ -248,7 +248,7 @@ describe('data-definition-tests', () => {
             "group": 0,
             "binding": 5,
             "size": 0,
-          }
+          },
         },
         "samplers": {
           "samp": {
@@ -298,7 +298,7 @@ describe('data-definition-tests', () => {
             "group": 1,
             "binding": 3,
             "size": 64,
-          }
+          },
         },
         "storageTextures": {
           "tsR": {
@@ -409,8 +409,8 @@ describe('data-definition-tests', () => {
                     "sampleType": "depth",
                     "viewDimension": "2d",
                     "multisampled": false,
-                  }
-                }
+                  },
+                },
               },
               {
                 "name": "samp",
