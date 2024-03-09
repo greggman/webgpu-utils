@@ -84,7 +84,11 @@ export type EntryPoints = {
     [x: string]: EntryPoint;
 }
 
-type ShaderDataDefinitions = {
+/**
+ * Warning: The properties of this type will probably be changed
+ * in a future version. Please consider this an opaque type.
+ */
+export type ShaderDataDefinitions = {
     uniforms: VariableDefinitions,
     storages: VariableDefinitions,
     samplers: VariableDefinitions,
