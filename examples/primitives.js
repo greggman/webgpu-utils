@@ -64,16 +64,24 @@ async function main() {
   }
   `;
 
+  function facet(arrays) {
+    const newArrays = wgh.primitives.deindex(arrays);
+    newArrays.normal = wgh.primitives.generateTriangleNormals(wgh.makeTypedArrayFromArrayUnion(newArrays.position, 'position'));
+    return newArrays;
+  }
+
   const numInstances = 1000;
   const geometries = [
     wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createSphereVertices()),
+    wgh.createBuffersAndAttributesFromArrays(device, facet(wgh.primitives.createSphereVertices({subdivisionsAxis: 6, subdivisionsHeight: 5}))),
     wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createTorusVertices()),
+    wgh.createBuffersAndAttributesFromArrays(device, facet(wgh.primitives.createTorusVertices({thickness: 0.5, radialSubdivisions: 8, bodySubdivisions: 8}))),
     wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createCubeVertices()),
     wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createCylinderVertices()),
-    ///wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createPlaneVertices()),
-    ///wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createDiscVertices()),
+    wgh.createBuffersAndAttributesFromArrays(device, facet(wgh.primitives.createCylinderVertices({radialSubdivisions: 7}))),
+    /////wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createPlaneVertices()),
+    /////wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createDiscVertices()),
     wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createTruncatedConeVertices()),
-    //wgh.createBuffersAndAttributesFromArrays(device, wgh.primitives.createCrescentVertices()),
   ];
 
   function r(min, max) {
@@ -236,8 +244,12 @@ async function main() {
 
       passEncoder.setBindGroup(0, bindGroup);
       passEncoder.setVertexBuffer(0, geometry.buffers[0]);
-      passEncoder.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat);
-      passEncoder.drawIndexed(geometry.numElements);
+      if (geometry.indexBuffer) {
+        passEncoder.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat);
+        passEncoder.drawIndexed(geometry.numElements);
+      } else {
+        passEncoder.draw(geometry.numElements);
+      }
     });
     passEncoder.end();
     device.queue.submit([commandEncoder.finish()]);
