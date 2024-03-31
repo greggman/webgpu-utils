@@ -21,7 +21,7 @@
  */
 
 import { isTypedArray, TypedArray, TypedArrayConstructor } from './typed-arrays.js';
-import { Arrays } from './attribute-utils.js';
+import { Arrays, getNumComponents, makeTypedArrayFromArrayUnion } from './attribute-utils.js';
 
 /**
  * A class to provide `push` on a typed array.
@@ -86,6 +86,14 @@ export class TypedArrayWrapper<T extends TypedArray> {
  */
 function createAugmentedTypedArray<T extends TypedArrayConstructor>(numComponents: number, numElements: number, Type: T) {
   return new TypedArrayWrapper(new Type(numComponents * numElements) as InstanceType<T>, numComponents);
+}
+
+// I couldn't figure out how to make this because TypedArrayWrapper wants a type
+// but this is explicity kind of type-less.
+function createAugmentedTypedArrayFromExisting(numComponents: number, numElements: number, existingArray: TypedArray) {
+  const Ctor = existingArray.constructor as Float32ArrayConstructor;
+  const array: Float32Array = new Ctor(numComponents * numElements) as unknown as Float32Array;
+  return new TypedArrayWrapper(array, numComponents);
 }
 
 /**
@@ -882,117 +890,6 @@ export function create3DFVertices() {
   return Object.fromEntries(Object.entries(arrays).map(([k, v]) => [k, v.typedArray]));
 }
 
-/**
- * Creates crescent vertices.
- *
- * @param params
- * @param params.verticalRadius The vertical radius of the crescent. Default = 2
- * @param params.outerRadius The outer radius of the crescent. Default = 1
- * @param params.innerRadius The inner radius of the crescent. Default = 0
- * @param params.thickness The thickness of the crescent. Default = 1
- * @param params.subdivisionsDown number of steps around the crescent. Default = 12
- * @param params.startOffset Where to start arc. Default 0. Default = 0
- * @param params.endOffset Where to end arg. Default 1. Default = 1
- * @return The created vertices.
- */
-export function createCrescentVertices({
-    verticalRadius = 2,
-    outerRadius = 1,
-    innerRadius = 0,
-    thickness = 1,
-    subdivisionsDown = 12,
-    startOffset = 0,
-    endOffset = 1,
-} = {}) {
-  if (subdivisionsDown <= 0) {
-    throw new Error('subdivisionDown must be > 0');
-  }
-
-  const subdivisionsThick = 2;
-
-  const offsetRange = endOffset - startOffset;
-  const numVertices = (subdivisionsDown + 1) * 2 * (2 + subdivisionsThick);
-  const positions   = createAugmentedTypedArray(3, numVertices, Float32Array);
-  const normals     = createAugmentedTypedArray(3, numVertices, Float32Array);
-  const texcoords   = createAugmentedTypedArray(2, numVertices, Float32Array);
-
-  function lerp(a: number, b: number, s: number) {
-    return a + (b - a) * s;
-  }
-
-  function vAdd(a: number[], b: number[]) {
-    return a.map((v, i) => v + b[i]);
-  }
-
-  function vMultiply(a: number[], b: number[]) {
-    return a.map((v, i) => v * b[i]);
-  }
-
-  function createArc(arcRadius: number, x: number, normalMult: number[], normalAdd: number[], uMult: number, uAdd: number) {
-    for (let z = 0; z <= subdivisionsDown; z++) {
-      const uBack = x / (subdivisionsThick - 1);
-      const v = z / subdivisionsDown;
-      const xBack = (uBack - 0.5) * 2;
-      const angle = (startOffset + (v * offsetRange)) * Math.PI;
-      const s = Math.sin(angle);
-      const c = Math.cos(angle);
-      const radius = lerp(verticalRadius, arcRadius, s);
-      const px = xBack * thickness;
-      const py = c * verticalRadius;
-      const pz = s * radius;
-      positions.push(px, py, pz);
-      const n = vAdd(vMultiply([0, s, c], normalMult), normalAdd);
-      normals.push(n);
-      texcoords.push(uBack * uMult + uAdd, v);
-    }
-  }
-
-  // Generate the individual vertices in our vertex buffer.
-  for (let x = 0; x < subdivisionsThick; x++) {
-    const uBack = (x / (subdivisionsThick - 1) - 0.5) * 2;
-    createArc(outerRadius, x, [1, 1, 1], [0,     0, 0], 1, 0);
-    createArc(outerRadius, x, [0, 0, 0], [uBack, 0, 0], 0, 0);
-    createArc(innerRadius, x, [1, 1, 1], [0,     0, 0], 1, 0);
-    createArc(innerRadius, x, [0, 0, 0], [uBack, 0, 0], 0, 1);
-  }
-
-  // Do outer surface.
-  const indices = createAugmentedTypedArray(3, (subdivisionsDown * 2) * (2 + subdivisionsThick), Uint16Array);
-
-  function createSurface(leftArcOffset: number, rightArcOffset: number) {
-    for (let z = 0; z < subdivisionsDown; ++z) {
-      // Make triangle 1 of quad.
-      indices.push(
-          leftArcOffset + z + 0,
-          leftArcOffset + z + 1,
-          rightArcOffset + z + 0);
-
-      // Make triangle 2 of quad.
-      indices.push(
-          leftArcOffset + z + 1,
-          rightArcOffset + z + 1,
-          rightArcOffset + z + 0);
-    }
-  }
-
-  const numVerticesDown = subdivisionsDown + 1;
-  // front
-  createSurface(numVerticesDown * 0, numVerticesDown * 4);
-  // right
-  createSurface(numVerticesDown * 5, numVerticesDown * 7);
-  // back
-  createSurface(numVerticesDown * 6, numVerticesDown * 2);
-  // left
-  createSurface(numVerticesDown * 3, numVerticesDown * 1);
-
-  return {
-    position: positions.typedArray,
-    normal:   normals.typedArray,
-    texcoord: texcoords.typedArray,
-    indices:  indices.typedArray,
-  };
-}
-
  /**
   * Creates cylinder vertices. The cylinder will be created around the origin
   * along the y-axis.
@@ -1191,3 +1088,85 @@ export function createDiscVertices({
     indices: indices.typedArray,
   };
 }
+
+function allButIndices(name: string) {
+  return name !== "indices";
+}
+
+/**
+ * Given indexed vertices creates a new set of vertices un-indexed by expanding the vertices by index.
+ */
+export function deindex(arrays: Arrays) {
+  const indicesP = arrays.indices;
+  const newVertices: Arrays = {};
+  const indices = makeTypedArrayFromArrayUnion(indicesP, 'indices');
+  const numElements = indices.length;
+
+  function expandToUnindexed(channel: string) {
+    const srcBuffer = makeTypedArrayFromArrayUnion(arrays[channel], channel);
+    const numComponents = getNumComponents(srcBuffer, channel);
+    const dstBuffer = createAugmentedTypedArrayFromExisting(numComponents, numElements, srcBuffer);
+    for (let ii = 0; ii < numElements; ++ii) {
+      const ndx = indices[ii];
+      const offset = ndx * numComponents;
+      for (let jj = 0; jj < numComponents; ++jj) {
+        dstBuffer.push(srcBuffer[offset + jj]);
+      }
+    }
+    newVertices[channel] = dstBuffer.typedArray;
+  }
+
+  Object.keys(arrays).filter(allButIndices).forEach(expandToUnindexed);
+
+  return newVertices;
+}
+
+// I don't want to pull in a whole math library
+const normalize = ([x, y, z]: Float32Array) => {
+  const len = x * x + y * y + z * z;
+  return new Float32Array([x / len, y / len, z / len]);
+};
+
+const subtract = (a: Float32Array, b: Float32Array) => {
+  const r = new Float32Array(a.length);
+  for (let i = 0; i < a.length; ++i) {
+    r[i] = a[i] - b[i];
+  }
+  return r;
+};
+
+const cross = (a: Float32Array, b: Float32Array) => {
+  const r = new Float32Array(a.length);
+
+  r[0] = a[1] * b[2] - a[2] * b[1];
+  r[1] = a[2] * b[0] - a[0] * b[2];
+  r[2] = a[0] * b[1] - a[1] * b[0];
+
+  return r;
+};
+
+/**
+ * Generate triangle normals from positions.
+ * Assumes every 3 values is a position and every 3 positions come from the same triangle
+ */
+export function generateTriangleNormals(positions: Float32Array) {
+  const normals = new Float32Array(positions.length);
+  for (let ii = 0; ii < positions.length; ii += 9) {
+    // pull out the 3 positions for this triangle
+    const p0 = positions.subarray(ii    , ii + 3);
+    const p1 = positions.subarray(ii + 3, ii + 6);
+    const p2 = positions.subarray(ii + 6, ii + 9);
+
+    const n0 = normalize(subtract(p0, p1));
+    const n1 = normalize(subtract(p0, p2));
+    const n = cross(n0, n1);
+
+    // copy them back in
+    normals.set(n, ii);
+    normals.set(n, ii + 3);
+    normals.set(n, ii + 6);
+  }
+
+  return normals;
+}
+

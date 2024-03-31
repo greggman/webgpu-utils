@@ -60,6 +60,8 @@ export type BuffersAndAttributes = {
     indexBuffer?: GPUBuffer;
     indexFormat?: GPUIndexFormat;
 };
+export declare function makeTypedArrayFromArrayUnion(array: ArrayUnion, name: string): TypedArray;
+export declare function getNumComponents(array: ArrayUnion, arrayName: string): number;
 type TypedArrayWithOffsetAndStride = {
     data: TypedArray;
     offset: number; /** In elements not bytes */

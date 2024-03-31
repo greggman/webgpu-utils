@@ -6,7 +6,7 @@
 
 ### 1.5.0
 
-* support other resource types, storageTextures, textures, samplers, externalTextures
+* Add support for storage textures, external textures, and samplers
 
 ### 1.4.0
 

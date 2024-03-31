@@ -161,33 +161,6 @@ export declare function create3DFVertices(): {
     [k: string]: Uint8Array | Uint16Array | Float32Array;
 };
 /**
- * Creates crescent vertices.
- *
- * @param params
- * @param params.verticalRadius The vertical radius of the crescent. Default = 2
- * @param params.outerRadius The outer radius of the crescent. Default = 1
- * @param params.innerRadius The inner radius of the crescent. Default = 0
- * @param params.thickness The thickness of the crescent. Default = 1
- * @param params.subdivisionsDown number of steps around the crescent. Default = 12
- * @param params.startOffset Where to start arc. Default 0. Default = 0
- * @param params.endOffset Where to end arg. Default 1. Default = 1
- * @return The created vertices.
- */
-export declare function createCrescentVertices({ verticalRadius, outerRadius, innerRadius, thickness, subdivisionsDown, startOffset, endOffset, }?: {
-    verticalRadius?: number | undefined;
-    outerRadius?: number | undefined;
-    innerRadius?: number | undefined;
-    thickness?: number | undefined;
-    subdivisionsDown?: number | undefined;
-    startOffset?: number | undefined;
-    endOffset?: number | undefined;
-}): {
-    position: Float32Array;
-    normal: Float32Array;
-    texcoord: Float32Array;
-    indices: Uint16Array;
-};
-/**
  * Creates cylinder vertices. The cylinder will be created around the origin
  * along the y-axis.
  *
@@ -275,3 +248,12 @@ export declare function createDiscVertices({ radius, divisions, stacks, innerRad
     texcoord: Float32Array;
     indices: Uint16Array;
 };
+/**
+ * Given indexed vertices creates a new set of vertices un-indexed by expanding the vertices by index.
+ */
+export declare function deindex(arrays: Arrays): Arrays;
+/**
+ * Generate triangle normals from positions.
+ * Assumes every 3 values is a position and every 3 positions come from the same triangle
+ */
+export declare function generateTriangleNormals(positions: Float32Array): Float32Array;
