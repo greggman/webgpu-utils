@@ -85,7 +85,7 @@ function isIndices(name: string) {
   return name === "indices";
 }
 
-function makeTypedArrayFromArrayUnion(array: ArrayUnion, name: string): TypedArray {
+export function makeTypedArrayFromArrayUnion(array: ArrayUnion, name: string): TypedArray {
   if (isTypedArray(array)) {
     return array as TypedArray;
   }
@@ -139,7 +139,7 @@ function guessNumComponentsFromName(name: string, length: number) {
   return numComponents;
 }
 
-function getNumComponents(array: ArrayUnion , arrayName: string) {
+export function getNumComponents(array: ArrayUnion , arrayName: string) {
   return (array as FullArraySpec).numComponents || guessNumComponentsFromName(arrayName, getArray(array).length);
 }
 
