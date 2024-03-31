@@ -206,7 +206,7 @@ pre.prettyprint, code.prettyprint {
 
 @media (prefers-color-scheme: dark) {
   #frame {
-      background-color: rgba(0, 0, 0, 0.7);
+      background-color: rgba(0, 0, 0, 0.9);
       color: #ddd;
   }
 
