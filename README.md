@@ -14,9 +14,6 @@ See [here](https://greggman.github.io/webgpu-utils/docs)
 As I do more WebGPU I find I need more and more helpers to make things
 less tedious. These are the result. I expect I'll add more over time.
 
-Note: At the moment, minified and gzipped this is only 9k! It's also
-possible to tree shake so you'll only get what you use.
-
 ### Easily set Uniforms (based on your WGSL structs/types)
 
 Example:

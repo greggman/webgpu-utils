@@ -177,7 +177,7 @@ async function main() {
 
     fsUniformValues.set({
       lightDirection: vec3.normalize([1, 8, -10]),
-      color: cssColorToRGBA(hsl(i / numObjects * 0.2 + 0.6, 1, .6)),
+      color: cssColorToRGBA(hsl(i / numObjects * 0.1 + 0.6, .8, .7)),
     });
 
     device.queue.writeBuffer(fsUniformBuffer, 0, fsUniformValues.arrayBuffer);
@@ -292,7 +292,7 @@ async function main() {
     const half = across * spacing * 0.5;
     const eye = [half, half, depth];
     const target = [half, half, 0];
-    const t = time * 0.01 + 0.2;
+    const t = time * 0.005 + 0.2;
     const up = [Math.sin(t), Math.cos(t), 0];
 
     const view = mat4.lookAt(eye, target, up);
@@ -345,7 +345,7 @@ async function main() {
       pass.setVertexBuffer(0, buffers[0]);
       pass.setIndexBuffer(indexBuffer, indexFormat);
 
-      const t = time * 0.025 + 0.5;
+      const t = time * 0.0125 + 0.5;
       objectInfos.forEach(({vsUniformBuffer, vsUniformValues, bindGroup}, i) => {
         const m = vsUniformValues.views.worldViewProjection;
         mat4.translation([i % across * spacing, (i / across | 0) * spacing, 0], m);

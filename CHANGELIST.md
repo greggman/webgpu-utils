@@ -1,5 +1,14 @@
 # Change List
 
+### 1.7.0
+
+* Add `primitives.deindex`
+* Add `primitives.generateTriangleNormals`
+
+### 1.6.0
+
+* Export `ShaderDataDefinitions`
+
 ### 1.5.1
 
 * handle empty bind groups.
