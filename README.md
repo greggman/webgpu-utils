@@ -437,6 +437,8 @@ import { createTextureFromImage } from 'webgpu-utils';
 * [cube-map](examples/cube-map.html)
 * [instancing](examples/instancing.html)
 * [primitives](examples/primitives.html)
+* [stencil](examples/stencil.html)
+* [stencil-cube](examples/stencil-cube.html)
 
 ## Development
 
