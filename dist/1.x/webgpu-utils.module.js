@@ -1,4 +1,4 @@
-/* webgpu-utils@1.7.1, license MIT */
+/* webgpu-utils@1.7.2, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);

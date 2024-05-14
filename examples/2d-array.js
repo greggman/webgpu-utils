@@ -257,10 +257,10 @@ async function main() {
 }
 
 function fail(msg) {
-  const elem = document.createElement('p');
-  elem.textContent = msg;
-  elem.style.color = 'red';
-  document.body.appendChild(elem);
+  const elem = document.querySelector('#fail');
+  elem.style.display = '';
+  elem.children[0].textContent = msg;
 }
+
 
 main();
