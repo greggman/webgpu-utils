@@ -177,7 +177,7 @@ export function copySourcesToTexture(
       if (texture.dimension === '3d') {
         tempTexture = tempTexture ?? device.createTexture({
           format: texture.format,
-          usage: texture.usage,
+          usage: texture.usage | GPUTextureUsage.COPY_SRC,
           size: [texture.width, texture.height, 1],
         });
         dstTexture = tempTexture;

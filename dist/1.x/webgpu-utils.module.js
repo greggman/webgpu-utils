@@ -1,4 +1,4 @@
-/* webgpu-utils@1.8.0, license MIT */
+/* webgpu-utils@1.8.1, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -5743,7 +5743,7 @@ function copySourcesToTexture(device, texture, sources, options = {}) {
             if (texture.dimension === '3d') {
                 tempTexture = tempTexture ?? device.createTexture({
                     format: texture.format,
-                    usage: texture.usage,
+                    usage: texture.usage | GPUTextureUsage.COPY_SRC,
                     size: [texture.width, texture.height, 1],
                 });
                 dstTexture = tempTexture;

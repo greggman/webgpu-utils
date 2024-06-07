@@ -1,4 +1,4 @@
-/* webgpu-utils@1.8.0, license MIT */
+/* webgpu-utils@1.8.1, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -5749,7 +5749,7 @@
                 if (texture.dimension === '3d') {
                     tempTexture = tempTexture ?? device.createTexture({
                         format: texture.format,
-                        usage: texture.usage,
+                        usage: texture.usage | GPUTextureUsage.COPY_SRC,
                         size: [texture.width, texture.height, 1],
                     });
                     dstTexture = tempTexture;
