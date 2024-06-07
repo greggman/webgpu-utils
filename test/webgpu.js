@@ -74,7 +74,7 @@ export function testWithDeviceAndDocument(fn) {
 }
 
 export const roundUp = (v, r) => Math.ceil(v / r) * r;
-export const mipValueSize = (v, mipLevel) => Math.floor(v / 2 ** mipLevel);
+export const mipValueSize = (v, mipLevel) => Math.max(1, Math.floor(v / 2 ** mipLevel));
 export const mipSize = (texture, mipLevel) => [
   mipValueSize(texture.width, mipLevel),
   mipValueSize(texture.height, mipLevel),
@@ -88,13 +88,13 @@ export async function readTexturePadded(device, texture, mipLevel = 0, layer = 0
   const size = mipSize(texture, mipLevel);
   const bytesPerRow = roundUp(size[0] * 4, 256);
   const buffer = device.createBuffer({
-    size: bytesPerRow * size[1],
+    size: bytesPerRow * size[1] * size[2],
     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
   });
   const encoder = device.createCommandEncoder();
   encoder.copyTextureToBuffer(
     { texture, mipLevel, origin: [0, 0, layer] },
-    { buffer, bytesPerRow },
+    { buffer, bytesPerRow, rowsPerImage: size[1] },
     size,
   );
   device.queue.submit([encoder.finish()]);
