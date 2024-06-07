@@ -139,7 +139,7 @@ function guessNumComponentsFromName(name: string, length: number) {
   return numComponents;
 }
 
-export function getNumComponents(array: ArrayUnion , arrayName: string) {
+export function getNumComponents(array: ArrayUnion , arrayName: string): number {
   return (array as FullArraySpec).numComponents || guessNumComponentsFromName(arrayName, getArray(array).length);
 }
 
@@ -209,7 +209,10 @@ type TypedArrayWithOffsetAndStride = {
  *
  * Note: If typed arrays are passed in the same typed arrays will come out (copies will not be made)
  */
-export function createBufferLayoutsFromArrays(arrays: Arrays, options: ArraysOptions = {}) {
+export function createBufferLayoutsFromArrays(arrays: Arrays, options: ArraysOptions = {}): {
+  bufferLayouts: GPUVertexBufferLayout[],
+  typedArrays: TypedArrayWithOffsetAndStride[],
+} {
   const interleave = options.interleave === undefined ? true : options.interleave;
   const stepMode = options.stepMode || 'vertex';
   const shaderLocations: number[] = options.shaderLocation
@@ -413,7 +416,7 @@ export function interleaveVertexData(
  * See {@link Arrays} for details on the various types of arrays.
  * Also see the cube and instancing examples.
  */
-export function createBuffersAndAttributesFromArrays(device: GPUDevice, arrays: Arrays, options: ArraysOptions = {}) {
+export function createBuffersAndAttributesFromArrays(device: GPUDevice, arrays: Arrays, options: ArraysOptions = {}): BuffersAndAttributes {
   const usage = (options.usage || 0);
 
   const {
