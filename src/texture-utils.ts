@@ -163,20 +163,49 @@ export function copySourcesToTexture(
     sources: TextureSource[],
     options: CopyTextureOptions = {},
 ) {
+  let tempTexture: GPUTexture | undefined;
   sources.forEach((source, layer) => {
     const origin = [0, 0, layer + (options.baseArrayLayer || 0)];
     if (isTextureRawDataSource(source)) {
       uploadDataToTexture(device, texture, source as TextureRawDataSource, { origin });
     } else {
       const s = source as GPUImageCopyExternalImage['source'];
+      // work around limit that you can't call copyExternalImageToTexture for 3d texture.
+      // sse https://github.com/gpuweb/gpuweb/issues/4697 for if we can remove this
+      let dstTexture = texture;
+      let copyOrigin = origin;
+      if (texture.dimension === '3d') {
+        tempTexture = tempTexture ?? device.createTexture({
+          format: texture.format,
+          usage: texture.usage,
+          size: [texture.width, texture.height, 1],
+        });
+        dstTexture = tempTexture;
+        copyOrigin = [0, 0, 0];
+      }
+
       const {flipY, premultipliedAlpha, colorSpace} = options;
       device.queue.copyExternalImageToTexture(
         { source: s, flipY, },
-        { texture, premultipliedAlpha, colorSpace, origin },
+        { texture: dstTexture, premultipliedAlpha, colorSpace, origin: copyOrigin },
         getSizeFromSource(s, options),
       );
+
+      if (tempTexture) {
+        const encoder = device.createCommandEncoder();
+        encoder.copyTextureToTexture(
+          { texture: tempTexture },
+          { texture, origin },
+          tempTexture,
+        );
+        device.queue.submit([encoder.finish()]);
+      }
     }
   });
+
+  if (tempTexture) {
+    tempTexture.destroy();
+  }
 
   if (texture.mipLevelCount > 1) {
     generateMipmap(device, texture);

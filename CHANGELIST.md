@@ -1,5 +1,9 @@
 # Change List
 
+### 1.8.0
+
+* Support creating 3d textures from images/canvases...
+
 ### 1.7.0
 
 * Add `primitives.deindex`
