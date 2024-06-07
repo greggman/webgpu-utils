@@ -5,7 +5,7 @@ import {
   createTextureFromSources,
   createTextureFromImage,
 } from '../../dist/1.x/webgpu-utils.module.js';
-import { assertArrayEqual, assertArrayEqualApproximately, assertEqual } from '../assert.js';
+import { assertArrayEqual, assertArrayEqualApproximately, assertEqual, assertFalsy } from '../assert.js';
 import { readTextureUnpadded, testWithDevice, testWithDeviceAndDocument } from '../webgpu.js';
 
 // prevent global document
@@ -140,6 +140,33 @@ describe('texture-utils tests', () => {
 
       const result = await readTextureUnpadded(device, texture, 0);
       assertArrayEqualApproximately(result, [255, 0, 0, 255, 0, 0, 255, 255], 0);
+    }));
+
+    it('canc create 3D texture from canvases without COPY_SRC', testWithDeviceAndDocument(async (device, document) => {
+      const createCanvas = color => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 1, 1);
+        return canvas;
+      };
+      const canvases = [
+        createCanvas('#f00'),
+        createCanvas('#00f'),
+      ];
+
+      createTextureFromSources(
+          device,
+          canvases,
+          {
+            usage: GPUTextureUsage.TEXTURE_BINDING |
+                   GPUTextureUsage.RENDER_ATTACHMENT |
+                   GPUTextureUsage.COPY_DST,
+            dimension: '3d',
+          }
+      );
     }));
 
     it('creates texture from image url with mips', testWithDevice(async device => {
