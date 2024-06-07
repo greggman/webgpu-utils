@@ -5,7 +5,7 @@ import {
   createTextureFromSources,
   createTextureFromImage,
 } from '../../dist/1.x/webgpu-utils.module.js';
-import { assertArrayEqual, assertArrayEqualApproximately, assertEqual, assertFalsy } from '../assert.js';
+import { assertArrayEqual, assertArrayEqualApproximately, assertEqual } from '../assert.js';
 import { readTextureUnpadded, testWithDevice, testWithDeviceAndDocument } from '../webgpu.js';
 
 // prevent global document
