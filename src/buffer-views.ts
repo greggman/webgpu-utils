@@ -30,7 +30,7 @@ import {
  * what you want.
  *
  * If you do want individual views then you'd call
- * `setIntrinsicsToView(['vec3f`])` and now you get
+ * `setIntrinsicsToView(['vec3f'])` and now you get
  * an array of 200 `Float32Array`s.
  *
  * Note: `setIntrinsicsToView` always sets ALL types. The list you
