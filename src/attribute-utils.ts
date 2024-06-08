@@ -158,10 +158,10 @@ function createTypedArrayOfSameType(typedArray: TypedArray, arrayBuffer: ArrayBu
   return new Ctor(arrayBuffer);
 }
 
-type TypedArrayWithOffsetAndStride = {
+export type TypedArrayWithOffsetAndStride = {
   data: TypedArray,
-  offset: number, /** In elements not bytes */
-  stride: number, /** In elements not bytes */
+  offset: number, /** In elements, not bytes */
+  stride: number, /** In elements, not bytes */
 };
 
 /**
