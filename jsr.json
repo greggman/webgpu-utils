@@ -1,0 +1,12 @@
+{
+  "name": "@greggman/webgpu-utils",
+  "version": "1.8.1",
+  "exports": "./src/webgpu-utils.ts",
+  "publish": {
+    "include": [
+      "LICENSE.md",
+      "README.md",
+      "src/**/*.ts"
+    ]
+  }
+}

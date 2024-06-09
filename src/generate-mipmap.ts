@@ -42,7 +42,7 @@ export function normalizeGPUExtent3D(size: GPUExtent3D): number[] {
  * @param size
  * @returns number of mip levels needed for the given size
  */
-export function numMipLevels(size: GPUExtent3D, dimension?: GPUTextureDimension) {
+export function numMipLevels(size: GPUExtent3D, dimension?: GPUTextureDimension): number {
    const sizes = normalizeGPUExtent3D(size);
    const maxSize = Math.max(...sizes.slice(0, dimension === '3d' ? 3 : 2));
    return 1 + Math.log2(maxSize) | 0;

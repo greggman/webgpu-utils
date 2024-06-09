@@ -45,7 +45,7 @@ export class TypedArrayWrapper<T extends TypedArray> {
     this.typedArray = arr;
     this.numComponents = numComponents;
   }
-  get numElements() {
+  get numElements(): number {
     return this.typedArray.length / this.numComponents;
   }
   push(...data: (number | Iterable<number>)[]) {
@@ -116,7 +116,7 @@ function createAugmentedTypedArrayFromExisting(numComponents: number, numElement
  */
 export function createXYQuadVertices({
     size: inSize = 2, xOffset = 0, yOffset = 0
-  } = {}) {
+  } = {}): Arrays {
   const size = inSize * 0.5;
   return {
     position: {
@@ -161,7 +161,7 @@ export function createPlaneVertices({
     depth = 1,
     subdivisionsWidth = 1,
     subdivisionsDepth = 1,
-} = {}) {
+} = {}): Arrays {
   const numVertices = (subdivisionsWidth + 1) * (subdivisionsDepth + 1);
   const positions = createAugmentedTypedArray(3, numVertices, Float32Array);
   const normals = createAugmentedTypedArray(3, numVertices, Float32Array);
@@ -235,7 +235,7 @@ export function createSphereVertices({
     endLatitudeInRadians = Math.PI,
     startLongitudeInRadians = 0,
     endLongitudeInRadians = Math.PI * 2,
-} = {}) {
+} = {}): Arrays {
   if (subdivisionsAxis <= 0 || subdivisionsHeight <= 0) {
     throw new Error('subdivisionAxis and subdivisionHeight must be > 0');
   }
@@ -319,7 +319,7 @@ const CUBE_FACE_INDICES = [
  * @param params.size width, height and depth of the cube. Default = 1
  * @return The created vertices.
  */
-export function createCubeVertices({size = 1} = {}) {
+export function createCubeVertices({size = 1} = {}): Arrays {
   const k = size / 2;
 
   const cornerVertices = [
@@ -409,7 +409,7 @@ export function createTruncatedConeVertices({
     verticalSubdivisions = 1,
     topCap = true,
     bottomCap = true,
-} = {}) {
+} = {}): Arrays {
   if (radialSubdivisions < 3) {
     throw new Error('radialSubdivisions must be 3 or greater');
   }
@@ -523,7 +523,7 @@ function expandRLEData(rleData: number[], padding: number[] = []) {
  *
  * @return The created vertices.
  */
-export function create3DFVertices() {
+export function create3DFVertices(): Arrays {
   const positions = [
     // left column front
     0,   0,  0,
@@ -910,7 +910,7 @@ export function createCylinderVertices({
     verticalSubdivisions = 1,
     topCap = true,
     bottomCap = true,
-} = {}) {
+} = {}): Arrays {
   return createTruncatedConeVertices({
       bottomRadius: radius,
       topRadius: radius,
@@ -941,7 +941,7 @@ export function createTorusVertices({
     bodySubdivisions = 12,
     startAngle = 0,
     endAngle = Math.PI * 2,
-} = {}) {
+} = {}): Arrays {
   if (radialSubdivisions < 3) {
     throw new Error('radialSubdivisions must be 3 or greater');
   }
@@ -1033,7 +1033,7 @@ export function createDiscVertices({
     stacks = 1,
     innerRadius = 0,
     stackPower = 1,
-} = {}) {
+} = {}): Arrays {
   if (divisions < 3) {
     throw new Error('divisions must be at least 3');
   }
@@ -1096,7 +1096,7 @@ function allButIndices(name: string) {
 /**
  * Given indexed vertices creates a new set of vertices un-indexed by expanding the vertices by index.
  */
-export function deindex(arrays: Arrays) {
+export function deindex(arrays: Arrays): Arrays {
   const indicesP = arrays.indices;
   const newVertices: Arrays = {};
   const indices = makeTypedArrayFromArrayUnion(indicesP, 'indices');
@@ -1149,7 +1149,7 @@ const cross = (a: Float32Array, b: Float32Array) => {
  * Generate triangle normals from positions.
  * Assumes every 3 values is a position and every 3 positions come from the same triangle
  */
-export function generateTriangleNormals(positions: Float32Array) {
+export function generateTriangleNormals(positions: Float32Array): Float32Array {
   const normals = new Float32Array(positions.length);
   for (let ii = 0; ii < positions.length; ii += 9) {
     // pull out the 3 positions for this triangle

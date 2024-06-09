@@ -1,19 +1,6 @@
 import { StructDefinition, TypeDefinition, VariableDefinition } from './data-definitions.js';
-import { TypedArrayConstructor, TypedArray } from './typed-arrays.js';
-type TypeDef = {
-    numElements: number;
-    align: number;
-    size: number;
-    type: string;
-    View: TypedArrayConstructor;
-    flatten?: boolean;
-    pad?: readonly number[];
-};
-declare const typeInfo: {
-    readonly [K: string]: TypeDef;
-};
-export type kType = Extract<keyof typeof typeInfo, string>;
-export declare const kTypes: readonly kType[];
+import { TypedArray } from './typed-arrays.js';
+import { WGSLType } from './wgsl-types.js';
 /**
  * Set which intrinsic types to make views for.
  *
@@ -27,7 +14,7 @@ export declare const kTypes: readonly kType[];
  * what you want.
  *
  * If you do want individual views then you'd call
- * `setIntrinsicsToView(['vec3f`])` and now you get
+ * `setIntrinsicsToView(['vec3f'])` and now you get
  * an array of 200 `Float32Array`s.
  *
  * Note: `setIntrinsicsToView` always sets ALL types. The list you
@@ -35,8 +22,8 @@ export declare const kTypes: readonly kType[];
  * will be reset to do the default. In other words
  *
  * ```js
- * setIntrinsicsToView(['vec3f`])
- * setIntrinsicsToView(['vec2f`])
+ * setIntrinsicsToView(['vec3f'])
+ * setIntrinsicsToView(['vec2f'])
  * ```
  *
  * Only `vec2f` will have views created. `vec3f` has been reset to the default by
@@ -52,7 +39,7 @@ export declare const kTypes: readonly kType[];
  * @param types array of types to make views for
  * @param flatten whether to flatten or expand the specified types.
  */
-export declare function setIntrinsicsToView(types?: readonly kType[], flatten?: boolean): void;
+export declare function setIntrinsicsToView(types?: readonly WGSLType[], flatten?: boolean): void;
 export type TypedArrayOrViews = TypedArray | Views | Views[];
 export interface Views {
     [x: string]: TypedArrayOrViews;
@@ -254,4 +241,3 @@ export declare function getSizeAndAlignmentOfUnsizedArrayElement(varDef: Variabl
     size: number;
     align: number;
 };
-export {};

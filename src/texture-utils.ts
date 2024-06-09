@@ -124,7 +124,7 @@ function getTextureFormatInfo(format: GPUTextureFormat) {
 /**
  * Gets the size of a mipLevel. Returns an array of 3 numbers [width, height, depthOrArrayLayers]
  */
-export function getSizeForMipFromTexture(texture: GPUTexture, mipLevel: number) {
+export function getSizeForMipFromTexture(texture: GPUTexture, mipLevel: number): number[] {
   return [
     texture.width,
     texture.height,
@@ -163,20 +163,49 @@ export function copySourcesToTexture(
     sources: TextureSource[],
     options: CopyTextureOptions = {},
 ) {
+  let tempTexture: GPUTexture | undefined;
   sources.forEach((source, layer) => {
     const origin = [0, 0, layer + (options.baseArrayLayer || 0)];
     if (isTextureRawDataSource(source)) {
       uploadDataToTexture(device, texture, source as TextureRawDataSource, { origin });
     } else {
       const s = source as GPUImageCopyExternalImage['source'];
+      // work around limit that you can't call copyExternalImageToTexture for 3d texture.
+      // sse https://github.com/gpuweb/gpuweb/issues/4697 for if we can remove this
+      let dstTexture = texture;
+      let copyOrigin = origin;
+      if (texture.dimension === '3d') {
+        tempTexture = tempTexture ?? device.createTexture({
+          format: texture.format,
+          usage: texture.usage | GPUTextureUsage.COPY_SRC,
+          size: [texture.width, texture.height, 1],
+        });
+        dstTexture = tempTexture;
+        copyOrigin = [0, 0, 0];
+      }
+
       const {flipY, premultipliedAlpha, colorSpace} = options;
       device.queue.copyExternalImageToTexture(
         { source: s, flipY, },
-        { texture, premultipliedAlpha, colorSpace, origin },
+        { texture: dstTexture, premultipliedAlpha, colorSpace, origin: copyOrigin },
         getSizeFromSource(s, options),
       );
+
+      if (tempTexture) {
+        const encoder = device.createCommandEncoder();
+        encoder.copyTextureToTexture(
+          { texture: tempTexture },
+          { texture, origin },
+          tempTexture,
+        );
+        device.queue.submit([encoder.finish()]);
+      }
     }
   });
+
+  if (tempTexture) {
+    tempTexture.destroy();
+  }
 
   if (texture.mipLevelCount > 1) {
     generateMipmap(device, texture);
@@ -213,7 +242,7 @@ export type CreateTextureOptions = CopyTextureOptions & {
  * Gets the size from a source. This is to smooth out the fact that different
  * sources have a different way to get their size.
  */
-export function getSizeFromSource(source: TextureSource, options: CreateTextureOptions) {
+export function getSizeFromSource(source: TextureSource, options: CreateTextureOptions): number[] {
   if (source instanceof HTMLVideoElement) {
     return [source.videoWidth, source.videoHeight, 1];
   } else {
@@ -262,7 +291,7 @@ export function getSizeFromSource(source: TextureSource, options: CreateTextureO
 export function createTextureFromSources(
     device: GPUDevice,
     sources: TextureSource[],
-    options: CreateTextureOptions = {}) {
+    options: CreateTextureOptions = {}): GPUTexture {
   // NOTE: We assume all the sizes are the same. If they are not you'll get
   // an error.
   const size = getSizeFromSource(sources[0], options);
@@ -309,7 +338,7 @@ export function createTextureFromSources(
 export function createTextureFromSource(
     device: GPUDevice,
     source: TextureSource,
-    options: CreateTextureOptions = {}) {
+    options: CreateTextureOptions = {}): GPUTexture {
   return createTextureFromSources(device, [source], options);
 }
 
@@ -321,7 +350,7 @@ export type CreateTextureFromBitmapOptions = CreateTextureOptions & ImageBitmapO
  * @param options
  * @returns the loaded ImageBitmap
  */
-export async function loadImageBitmap(url: string, options: ImageBitmapOptions = {}) {
+export async function loadImageBitmap(url: string, options: ImageBitmapOptions = {}): Promise<ImageBitmap> {
   const res = await fetch(url);
   const blob = await res.blob();
   const opt: ImageBitmapOptions = {
@@ -352,7 +381,7 @@ export async function loadImageBitmap(url: string, options: ImageBitmapOptions =
  * );
  * ```
  */
-export async function createTextureFromImages(device: GPUDevice, urls: string[], options: CreateTextureFromBitmapOptions = {}) {
+export async function createTextureFromImages(device: GPUDevice, urls: string[], options: CreateTextureFromBitmapOptions = {}): Promise<GPUTexture> {
   // TODO: start once we've loaded one?
   // We need at least 1 to know the size of the texture to create
   const imgBitmaps = await Promise.all(urls.map(url => loadImageBitmap(url)));
@@ -371,6 +400,6 @@ export async function createTextureFromImages(device: GPUDevice, urls: string[],
  * });
  * ```
  */
-export async function createTextureFromImage(device: GPUDevice, url: string, options: CreateTextureFromBitmapOptions = {}) {
+export async function createTextureFromImage(device: GPUDevice, url: string, options: CreateTextureFromBitmapOptions = {}): Promise<GPUTexture> {
   return createTextureFromImages(device, [url], options);
 }

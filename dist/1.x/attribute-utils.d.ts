@@ -62,10 +62,10 @@ export type BuffersAndAttributes = {
 };
 export declare function makeTypedArrayFromArrayUnion(array: ArrayUnion, name: string): TypedArray;
 export declare function getNumComponents(array: ArrayUnion, arrayName: string): number;
-type TypedArrayWithOffsetAndStride = {
+export type TypedArrayWithOffsetAndStride = {
     data: TypedArray;
-    offset: number; /** In elements not bytes */
-    stride: number; /** In elements not bytes */
+    offset: number; /** In elements, not bytes */
+    stride: number; /** In elements, not bytes */
 };
 /**
  * Given a set of named arrays, generates an array `GPUBufferLayout`s
@@ -228,4 +228,3 @@ export declare function setVertexAndIndexBuffers(passEncoder: GPURenderPassEncod
  * @param buffersAndAttributes As returned from {@link createBuffersAndAttributesFromArrays}
  */
 export declare function drawArrays(passEncoder: GPURenderPassEncoder, buffersAndAttributes: BuffersAndAttributes): void;
-export {};

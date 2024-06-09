@@ -1,4 +1,4 @@
-/* webgpu-utils@1.7.3, license MIT */
+/* webgpu-utils@1.8.2, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -38,7 +38,8 @@
     // TODO: fix better?
     const isTypedArray = (arr) => arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';
 
-    const b = {
+    const createTypeDefs = (defs) => defs;
+    const b = createTypeDefs({
         i32: { numElements: 1, align: 4, size: 4, type: 'i32', View: Int32Array },
         u32: { numElements: 1, align: 4, size: 4, type: 'u32', View: Uint32Array },
         f32: { numElements: 1, align: 4, size: 4, type: 'f32', View: Float32Array },
@@ -78,8 +79,8 @@
         // You can only create one in an internal struct. But, this code generates
         // views of structs and it needs to not fail if the struct has a bool
         bool: { numElements: 0, align: 1, size: 0, type: 'bool', View: Uint32Array },
-    };
-    const typeInfo = {
+    });
+    const kWGSLTypeInfo = createTypeDefs({
         ...b,
         'atomic<i32>': b.i32,
         'atomic<u32>': b.u32,
@@ -113,8 +114,9 @@
         'mat3x4<f16>': b.mat3x4h,
         'mat4x4<f32>': b.mat4x4f,
         'mat4x4<f16>': b.mat4x4h,
-    };
-    const kTypes = keysOf(typeInfo);
+    });
+    const kWGSLTypes = keysOf(kWGSLTypeInfo);
+
     /**
      * Set which intrinsic types to make views for.
      *
@@ -128,7 +130,7 @@
      * what you want.
      *
      * If you do want individual views then you'd call
-     * `setIntrinsicsToView(['vec3f`])` and now you get
+     * `setIntrinsicsToView(['vec3f'])` and now you get
      * an array of 200 `Float32Array`s.
      *
      * Note: `setIntrinsicsToView` always sets ALL types. The list you
@@ -136,8 +138,8 @@
      * will be reset to do the default. In other words
      *
      * ```js
-     * setIntrinsicsToView(['vec3f`])
-     * setIntrinsicsToView(['vec2f`])
+     * setIntrinsicsToView(['vec3f'])
+     * setIntrinsicsToView(['vec2f'])
      * ```
      *
      * Only `vec2f` will have views created. `vec3f` has been reset to the default by
@@ -157,8 +159,8 @@
         // we need to track what we've viewed because for example `vec3f` references
         // the same info as `vec3<f32>` so we'd set one and reset the other.
         const visited = new Set();
-        for (const type of kTypes) {
-            const info = typeInfo[type];
+        for (const type of kWGSLTypes) {
+            const info = kWGSLTypeInfo[type];
             if (!visited.has(info)) {
                 visited.add(info);
                 info.flatten = types.includes(type) ? flatten : !flatten;
@@ -190,7 +192,7 @@
             }
             else {
                 const asIntrinsicDef = typeDef;
-                const { align } = typeInfo[asIntrinsicDef.type];
+                const { align } = kWGSLTypeInfo[asIntrinsicDef.type];
                 return numElements > 1
                     ? roundUpToMultipleOf(typeDef.size, align) * numElements
                     : typeDef.size;
@@ -205,7 +207,7 @@
     function makeIntrinsicTypedArrayView(typeDef, buffer, baseOffset, numElements) {
         const { size, type } = typeDef;
         try {
-            const { View, align } = typeInfo[type];
+            const { View, align } = kWGSLTypeInfo[type];
             const isArray = numElements !== undefined;
             const sizeInBytes = isArray
                 ? roundUpToMultipleOf(size, align)
@@ -276,7 +278,7 @@
                 // On the other hand, if we have `array<mat4x4, 10>` the maybe we do want
                 // 10 `Float32Array(16)` views since you might want to do
                 // `mat4.perspective(fov, aspect, near, far, foo.bar.arrayOf10Mat4s[3])`;
-                if (isIntrinsic(elementType) && typeInfo[elementType.type].flatten) {
+                if (isIntrinsic(elementType) && kWGSLTypeInfo[elementType.type].flatten) {
                     return makeIntrinsicTypedArrayView(elementType, buffer, baseOffset, asArrayDef.numElements);
                 }
                 else {
@@ -428,7 +430,7 @@
     }
     function setIntrinsicFromArrayLikeOfNumber(typeDef, data, arrayBuffer, offset) {
         const asIntrinsicDefinition = typeDef;
-        const type = typeInfo[asIntrinsicDefinition.type];
+        const type = kWGSLTypeInfo[asIntrinsicDefinition.type];
         const view = getView(arrayBuffer, type.View);
         const index = offset / view.BYTES_PER_ELEMENT;
         if (typeof data === 'number') {
@@ -500,7 +502,7 @@
             return Object.values(fields).reduce((max, { type }) => Math.max(max, getAlignmentOfTypeDef(type)), 0);
         }
         const { type } = typeDef;
-        const { align } = typeInfo[type];
+        const { align } = kWGSLTypeInfo[type];
         return align;
     }
     function getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef) {
@@ -1015,6 +1017,20 @@
         }
     }
     /**
+     * @class Requires
+     * @extends Statement
+     * @category AST
+     */
+    class Requires extends Statement {
+        constructor(extensions) {
+            super();
+            this.extensions = extensions;
+        }
+        get astNodeType() {
+            return "requires";
+        }
+    }
+    /**
      * @class Diagnostic
      * @extends Statement
      * @category AST
@@ -1387,6 +1403,9 @@
         }
         search(callback) {
             callback(this);
+            if (this.postfix) {
+                this.postfix.search(callback);
+            }
         }
         evaluate(context) {
             const constant = context.constants.get(this.name);
@@ -1504,6 +1523,20 @@
         }
         search(callback) {
             this.searchBlock(this.contents, callback);
+        }
+    }
+    /**
+     * @class ArrayIndex
+     * @extends Expression
+     * @category AST
+     */
+    class ArrayIndex extends Expression {
+        constructor(index) {
+            super();
+            this.index = index;
+        }
+        search(callback) {
+            this.index.search(callback);
         }
     }
     /**
@@ -1823,10 +1856,10 @@
         continue: new TokenType("continue", TokenClass.keyword, "continue"),
         continuing: new TokenType("continuing", TokenClass.keyword, "continuing"),
         default: new TokenType("default", TokenClass.keyword, "default"),
+        diagnostic: new TokenType("diagnostic", TokenClass.keyword, "diagnostic"),
         discard: new TokenType("discard", TokenClass.keyword, "discard"),
         else: new TokenType("else", TokenClass.keyword, "else"),
         enable: new TokenType("enable", TokenClass.keyword, "enable"),
-        diagnostic: new TokenType("diagnostic", TokenClass.keyword, "diagnostic"),
         fallthrough: new TokenType("fallthrough", TokenClass.keyword, "fallthrough"),
         false: new TokenType("false", TokenClass.keyword, "false"),
         fn: new TokenType("fn", TokenClass.keyword, "fn"),
@@ -1841,6 +1874,7 @@
         read: new TokenType("read", TokenClass.keyword, "read"),
         read_write: new TokenType("read_write", TokenClass.keyword, "read_write"),
         return: new TokenType("return", TokenClass.keyword, "return"),
+        requires: new TokenType("requires", TokenClass.keyword, "requires"),
         storage: new TokenType("storage", TokenClass.keyword, "storage"),
         switch: new TokenType("switch", TokenClass.keyword, "switch"),
         true: new TokenType("true", TokenClass.keyword, "true"),
@@ -2549,6 +2583,11 @@
                 this._consume(TokenTypes.tokens.semicolon, "Expected ';'");
                 return directive;
             }
+            if (this._match(TokenTypes.keywords.requires)) {
+                const requires = this._requires_directive();
+                this._consume(TokenTypes.tokens.semicolon, "Expected ';'");
+                return requires;
+            }
             if (this._match(TokenTypes.keywords.enable)) {
                 const enable = this._enable_directive();
                 this._consume(TokenTypes.tokens.semicolon, "Expected ';'");
@@ -3183,8 +3222,9 @@
             // primary_expression postfix_expression ?
             const expr = this._primary_expression();
             const p = this._postfix_expression();
-            if (p)
+            if (p) {
                 expr.postfix = p;
+            }
             return expr;
         }
         _postfix_expression() {
@@ -3192,18 +3232,21 @@
             if (this._match(TokenTypes.tokens.bracket_left)) {
                 const expr = this._short_circuit_or_expression();
                 this._consume(TokenTypes.tokens.bracket_right, "Expected ']'.");
+                const arrayIndex = new ArrayIndex(expr);
                 const p = this._postfix_expression();
-                if (p)
-                    expr.postfix = p;
-                return expr;
+                if (p) {
+                    arrayIndex.postfix = p;
+                }
+                return arrayIndex;
             }
             // period ident postfix_expression?
             if (this._match(TokenTypes.tokens.period)) {
                 const name = this._consume(TokenTypes.tokens.ident, "Expected member name.");
                 const p = this._postfix_expression();
                 const expr = new StringExpr(name.lexeme);
-                if (p)
+                if (p) {
                     expr.postfix = p;
+                }
                 return expr;
             }
             return null;
@@ -3467,6 +3510,15 @@
             // enable ident semicolon
             const name = this._consume(TokenTypes.tokens.ident, "identity expected.");
             return new Enable(name.toString());
+        }
+        _requires_directive() {
+            // requires extension [, extension]* semicolon
+            const extensions = [this._consume(TokenTypes.tokens.ident, "identity expected.").toString()];
+            while (this._match(TokenTypes.tokens.comma)) {
+                const name = this._consume(TokenTypes.tokens.ident, "identity expected.");
+                extensions.push(name.toString());
+            }
+            return new Requires(extensions);
         }
         _type_alias() {
             // type ident equal type_decl
@@ -4967,7 +5019,7 @@
             // IntrinsicDefinition
             return {
                 size: typeInfo.size,
-                type,
+                type: type,
             };
         }
     }
@@ -5734,6 +5786,7 @@
      * to a texture and then optionally generates mip levels
      */
     function copySourcesToTexture(device, texture, sources, options = {}) {
+        let tempTexture;
         sources.forEach((source, layer) => {
             const origin = [0, 0, layer + (options.baseArrayLayer || 0)];
             if (isTextureRawDataSource(source)) {
@@ -5741,10 +5794,31 @@
             }
             else {
                 const s = source;
+                // work around limit that you can't call copyExternalImageToTexture for 3d texture.
+                // sse https://github.com/gpuweb/gpuweb/issues/4697 for if we can remove this
+                let dstTexture = texture;
+                let copyOrigin = origin;
+                if (texture.dimension === '3d') {
+                    tempTexture = tempTexture ?? device.createTexture({
+                        format: texture.format,
+                        usage: texture.usage | GPUTextureUsage.COPY_SRC,
+                        size: [texture.width, texture.height, 1],
+                    });
+                    dstTexture = tempTexture;
+                    copyOrigin = [0, 0, 0];
+                }
                 const { flipY, premultipliedAlpha, colorSpace } = options;
-                device.queue.copyExternalImageToTexture({ source: s, flipY, }, { texture, premultipliedAlpha, colorSpace, origin }, getSizeFromSource(s, options));
+                device.queue.copyExternalImageToTexture({ source: s, flipY, }, { texture: dstTexture, premultipliedAlpha, colorSpace, origin: copyOrigin }, getSizeFromSource(s, options));
+                if (tempTexture) {
+                    const encoder = device.createCommandEncoder();
+                    encoder.copyTextureToTexture({ texture: tempTexture }, { texture, origin }, tempTexture);
+                    device.queue.submit([encoder.finish()]);
+                }
             }
         });
+        if (tempTexture) {
+            tempTexture.destroy();
+        }
         if (texture.mipLevelCount > 1) {
             generateMipmap(device, texture);
         }
@@ -6917,7 +6991,6 @@
     exports.getSizeFromSource = getSizeFromSource;
     exports.interleaveVertexData = interleaveVertexData;
     exports.isTypedArray = isTypedArray;
-    exports.kTypes = kTypes;
     exports.loadImageBitmap = loadImageBitmap;
     exports.makeBindGroupLayoutDescriptors = makeBindGroupLayoutDescriptors;
     exports.makeShaderDataDefinitions = makeShaderDataDefinitions;

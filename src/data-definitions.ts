@@ -8,6 +8,9 @@ import {
     FunctionInfo,
     ResourceType,
 } from 'wgsl_reflect';
+import {
+    WGSLType,
+} from './wgsl-types.js';
 
 export type FieldDefinition = {
     offset: number;
@@ -33,8 +36,10 @@ export type StructDefinition = TypeDefinition & {
     size: number;
 };
 
+export { WGSLType };
+
 export type IntrinsicDefinition = TypeDefinition & {
-    type: string;
+    type: WGSLType;
     numElements?: number;
 };
 
@@ -512,7 +517,7 @@ function addType(reflect: WgslReflect, typeInfo: TypeInfo, offset: number):
         // IntrinsicDefinition
         return {
             size: typeInfo.size,
-            type,
+            type: type as WGSLType,
         };
     }
 }

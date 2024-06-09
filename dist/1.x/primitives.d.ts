@@ -62,12 +62,7 @@ export declare function createPlaneVertices({ width, depth, subdivisionsWidth, s
     depth?: number | undefined;
     subdivisionsWidth?: number | undefined;
     subdivisionsDepth?: number | undefined;
-}): {
-    position: Float32Array;
-    normal: Float32Array;
-    texcoord: Float32Array;
-    indices: Uint16Array;
-};
+}): Arrays;
 /**
  * Creates sphere vertices.
  *
@@ -95,12 +90,7 @@ export declare function createSphereVertices({ radius, subdivisionsAxis, subdivi
     endLatitudeInRadians?: number | undefined;
     startLongitudeInRadians?: number | undefined;
     endLongitudeInRadians?: number | undefined;
-}): {
-    position: Float32Array;
-    normal: Float32Array;
-    texcoord: Float32Array;
-    indices: Uint16Array;
-};
+}): Arrays;
 /**
  * Creates the vertices and indices for a cube.
  *
@@ -112,12 +102,7 @@ export declare function createSphereVertices({ radius, subdivisionsAxis, subdivi
  */
 export declare function createCubeVertices({ size }?: {
     size?: number | undefined;
-}): {
-    position: Float32Array;
-    normal: Float32Array;
-    texcoord: Float32Array;
-    indices: Uint16Array;
-};
+}): Arrays;
 /**
  * Creates vertices for a truncated cone, which is like a cylinder
  * except that it has different top and bottom radii. A truncated cone
@@ -144,12 +129,7 @@ export declare function createTruncatedConeVertices({ bottomRadius, topRadius, h
     verticalSubdivisions?: number | undefined;
     topCap?: boolean | undefined;
     bottomCap?: boolean | undefined;
-}): {
-    position: Float32Array;
-    normal: Float32Array;
-    texcoord: Float32Array;
-    indices: Uint16Array;
-};
+}): Arrays;
 /**
  * Creates 3D 'F' vertices.
  * An 'F' is useful because you can easily tell which way it is oriented.
@@ -157,9 +137,7 @@ export declare function createTruncatedConeVertices({ bottomRadius, topRadius, h
  *
  * @return The created vertices.
  */
-export declare function create3DFVertices(): {
-    [k: string]: Uint8Array | Uint16Array | Float32Array;
-};
+export declare function create3DFVertices(): Arrays;
 /**
  * Creates cylinder vertices. The cylinder will be created around the origin
  * along the y-axis.
@@ -180,12 +158,7 @@ export declare function createCylinderVertices({ radius, height, radialSubdivisi
     verticalSubdivisions?: number | undefined;
     topCap?: boolean | undefined;
     bottomCap?: boolean | undefined;
-}): {
-    position: Float32Array;
-    normal: Float32Array;
-    texcoord: Float32Array;
-    indices: Uint16Array;
-};
+}): Arrays;
 /**
  * Creates vertices for a torus
  *
@@ -205,12 +178,7 @@ export declare function createTorusVertices({ radius, thickness, radialSubdivisi
     bodySubdivisions?: number | undefined;
     startAngle?: number | undefined;
     endAngle?: number | undefined;
-}): {
-    position: Float32Array;
-    normal: Float32Array;
-    texcoord: Float32Array;
-    indices: Uint16Array;
-};
+}): Arrays;
 /**
  * Creates disc vertices. The disc will be in the xz plane, centered at
  * the origin. When creating, at least 3 divisions, or pie
@@ -242,12 +210,7 @@ export declare function createDiscVertices({ radius, divisions, stacks, innerRad
     stacks?: number | undefined;
     innerRadius?: number | undefined;
     stackPower?: number | undefined;
-}): {
-    position: Float32Array;
-    normal: Float32Array;
-    texcoord: Float32Array;
-    indices: Uint16Array;
-};
+}): Arrays;
 /**
  * Given indexed vertices creates a new set of vertices un-indexed by expanding the vertices by index.
  */

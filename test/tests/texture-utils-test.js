@@ -2,6 +2,7 @@
 import { describe, it } from '../mocha-support.js';
 import {
   createTextureFromSource,
+  createTextureFromSources,
   createTextureFromImage,
 } from '../../dist/1.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertArrayEqualApproximately, assertEqual } from '../assert.js';
@@ -108,6 +109,64 @@ describe('texture-utils tests', () => {
         const expected = premultipliedAlpha ? [0x80, 0, 0, 0x80] : [0xFF, 0, 0, 0x80];
         assertArrayEqualApproximately(result, expected, 1, `premultipliedAlpha: ${premultipliedAlpha}`);
       }
+    }));
+
+    it('creates 3D texture from canvases', testWithDeviceAndDocument(async (device, document) => {
+      const createCanvas = color => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 1, 1);
+        return canvas;
+      };
+      const canvases = [
+        createCanvas('#f00'),
+        createCanvas('#00f'),
+      ];
+
+      const texture = createTextureFromSources(
+          device,
+          canvases,
+          {
+            usage: GPUTextureUsage.TEXTURE_BINDING |
+                   GPUTextureUsage.RENDER_ATTACHMENT |
+                   GPUTextureUsage.COPY_DST |
+                   GPUTextureUsage.COPY_SRC,
+            dimension: '3d',
+          }
+      );
+
+      const result = await readTextureUnpadded(device, texture, 0);
+      assertArrayEqualApproximately(result, [255, 0, 0, 255, 0, 0, 255, 255], 0);
+    }));
+
+    it('canc create 3D texture from canvases without COPY_SRC', testWithDeviceAndDocument(async (device, document) => {
+      const createCanvas = color => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 1, 1);
+        return canvas;
+      };
+      const canvases = [
+        createCanvas('#f00'),
+        createCanvas('#00f'),
+      ];
+
+      createTextureFromSources(
+          device,
+          canvases,
+          {
+            usage: GPUTextureUsage.TEXTURE_BINDING |
+                   GPUTextureUsage.RENDER_ATTACHMENT |
+                   GPUTextureUsage.COPY_DST,
+            dimension: '3d',
+          }
+      );
     }));
 
     it('creates texture from image url with mips', testWithDevice(async device => {

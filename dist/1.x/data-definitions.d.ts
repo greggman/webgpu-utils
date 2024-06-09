@@ -1,4 +1,5 @@
 /// <reference types="dist" />
+import { WGSLType } from './wgsl-types.js';
 export type FieldDefinition = {
     offset: number;
     type: TypeDefinition;
@@ -13,8 +14,9 @@ export type StructDefinition = TypeDefinition & {
     fields: FieldDefinitions;
     size: number;
 };
+export { WGSLType };
 export type IntrinsicDefinition = TypeDefinition & {
-    type: string;
+    type: WGSLType;
     numElements?: number;
 };
 export type ArrayDefinition = TypeDefinition & {
