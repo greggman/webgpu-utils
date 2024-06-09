@@ -163,6 +163,14 @@ async function main() {
       });
       uniformView.views.color.set(hslToRGBA(hue + r(0.2), r(0.7, 1), r(0.5, 0.8)));
 
+      const matrix = uniformView.views.world;
+      const t = vec3.mulScalar(vec3.normalize([r(-1, 1), r(-1, 1), r(-1, 1)]), r(10));
+      mat4.translation(t, matrix);
+      mat4.rotateX(matrix, r(Math.PI * 2), matrix);
+      mat4.rotateY(matrix, r(Math.PI), matrix);
+      const s = r(0.25, 1);
+      mat4.scale(matrix, [s, s, s], matrix);
+
       device.queue.writeBuffer(uniformBuffer, 0, uniformView.arrayBuffer);
 
       const bindGroup = device.createBindGroup({

@@ -1,4 +1,4 @@
-/* webgpu-utils@1.8.1, license MIT */
+/* webgpu-utils@1.7.3, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -5734,7 +5734,6 @@
      * to a texture and then optionally generates mip levels
      */
     function copySourcesToTexture(device, texture, sources, options = {}) {
-        let tempTexture;
         sources.forEach((source, layer) => {
             const origin = [0, 0, layer + (options.baseArrayLayer || 0)];
             if (isTextureRawDataSource(source)) {
@@ -5742,31 +5741,10 @@
             }
             else {
                 const s = source;
-                // work around limit that you can't call copyExternalImageToTexture for 3d texture.
-                // sse https://github.com/gpuweb/gpuweb/issues/4697 for if we can remove this
-                let dstTexture = texture;
-                let copyOrigin = origin;
-                if (texture.dimension === '3d') {
-                    tempTexture = tempTexture ?? device.createTexture({
-                        format: texture.format,
-                        usage: texture.usage | GPUTextureUsage.COPY_SRC,
-                        size: [texture.width, texture.height, 1],
-                    });
-                    dstTexture = tempTexture;
-                    copyOrigin = [0, 0, 0];
-                }
                 const { flipY, premultipliedAlpha, colorSpace } = options;
-                device.queue.copyExternalImageToTexture({ source: s, flipY, }, { texture: dstTexture, premultipliedAlpha, colorSpace, origin: copyOrigin }, getSizeFromSource(s, options));
-                if (tempTexture) {
-                    const encoder = device.createCommandEncoder();
-                    encoder.copyTextureToTexture({ texture: tempTexture }, { texture, origin }, tempTexture);
-                    device.queue.submit([encoder.finish()]);
-                }
+                device.queue.copyExternalImageToTexture({ source: s, flipY, }, { texture, premultipliedAlpha, colorSpace, origin }, getSizeFromSource(s, options));
             }
         });
-        if (tempTexture) {
-            tempTexture.destroy();
-        }
         if (texture.mipLevelCount > 1) {
             generateMipmap(device, texture);
         }
@@ -6906,7 +6884,7 @@
         return normals;
     }
 
-    var primitives = /*#__PURE__*/Object.freeze({
+    var primitives = {
         __proto__: null,
         TypedArrayWrapper: TypedArrayWrapper,
         create3DFVertices: create3DFVertices,
@@ -6920,7 +6898,7 @@
         createXYQuadVertices: createXYQuadVertices,
         deindex: deindex,
         generateTriangleNormals: generateTriangleNormals
-    });
+    };
 
     exports.TypedArrayViewGenerator = TypedArrayViewGenerator;
     exports.copySourceToTexture = copySourceToTexture;
