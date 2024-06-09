@@ -37,6 +37,23 @@ export default [
         input: 'src/webgpu-utils.ts',
         output: [
             {
+                file: `${dist}/webgpu-utils.module.min.js`,
+                format: 'esm',
+                sourcemap: true,
+                freeze: false,
+                banner,
+            },
+        ],
+        plugins: [
+            ...plugins,
+            terser(),
+        ],
+        ...shared,
+    },
+    {
+        input: 'src/webgpu-utils.ts',
+        output: [
+            {
                 name: 'webgpuUtils',
                 file: `${dist}/webgpu-utils.js`,
                 format: 'umd',
