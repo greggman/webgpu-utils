@@ -1,5 +1,9 @@
 # Change List
 
+### 1.9.0
+
+* Support `minBindingSize` in bind group layouts.
+
 ### 1.8.0
 
 * Support creating 3d textures from images/canvases...

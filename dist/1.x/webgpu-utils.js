@@ -1,4 +1,4 @@
-/* webgpu-utils@1.8.2, license MIT */
+/* webgpu-utils@1.9.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -4799,7 +4799,9 @@
                 return {
                     binding,
                     visibility,
-                    buffer: {},
+                    buffer: {
+                        ...(resource.size && { minBindingSize: resource.size }),
+                    },
                 };
             case ResourceType.Storage:
                 return {
@@ -4807,6 +4809,7 @@
                     visibility,
                     buffer: {
                         type: (access === '' || access === 'read') ? 'read-only-storage' : 'storage',
+                        ...(resource.size && { minBindingSize: resource.size }),
                     },
                 };
             case ResourceType.Texture: {
@@ -6958,7 +6961,7 @@
         return normals;
     }
 
-    var primitives = {
+    var primitives = /*#__PURE__*/Object.freeze({
         __proto__: null,
         TypedArrayWrapper: TypedArrayWrapper,
         create3DFVertices: create3DFVertices,
@@ -6972,7 +6975,7 @@
         createXYQuadVertices: createXYQuadVertices,
         deindex: deindex,
         generateTriangleNormals: generateTriangleNormals
-    };
+    });
 
     exports.TypedArrayViewGenerator = TypedArrayViewGenerator;
     exports.copySourceToTexture = copySourceToTexture;

@@ -26,7 +26,6 @@ export default [
                 file: `${dist}/webgpu-utils.module.js`,
                 format: 'esm',
                 sourcemap: true,
-                freeze: false,
                 banner,
             },
         ],
@@ -37,28 +36,10 @@ export default [
         input: 'src/webgpu-utils.ts',
         output: [
             {
-                file: `${dist}/webgpu-utils.module.min.js`,
-                format: 'esm',
-                sourcemap: true,
-                freeze: false,
-                banner,
-            },
-        ],
-        plugins: [
-            ...plugins,
-            terser(),
-        ],
-        ...shared,
-    },
-    {
-        input: 'src/webgpu-utils.ts',
-        output: [
-            {
                 name: 'webgpuUtils',
                 file: `${dist}/webgpu-utils.js`,
                 format: 'umd',
                 sourcemap: true,
-                freeze: false,
                 banner,
             },
         ],
@@ -73,7 +54,6 @@ export default [
                 file: `${dist}/webgpu-utils.min.js`,
                 format: 'umd',
                 sourcemap: true,
-                freeze: false,
                 banner,
             },
         ],

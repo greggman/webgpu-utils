@@ -1,4 +1,4 @@
-/* webgpu-utils@1.8.2, license MIT */
+/* webgpu-utils@1.9.0, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -4793,7 +4793,9 @@ function getBindGroupLayoutEntry(resource, visibility) {
             return {
                 binding,
                 visibility,
-                buffer: {},
+                buffer: {
+                    ...(resource.size && { minBindingSize: resource.size }),
+                },
             };
         case ResourceType.Storage:
             return {
@@ -4801,6 +4803,7 @@ function getBindGroupLayoutEntry(resource, visibility) {
                 visibility,
                 buffer: {
                     type: (access === '' || access === 'read') ? 'read-only-storage' : 'storage',
+                    ...(resource.size && { minBindingSize: resource.size }),
                 },
             };
         case ResourceType.Texture: {
@@ -6952,7 +6955,7 @@ function generateTriangleNormals(positions) {
     return normals;
 }
 
-var primitives = {
+var primitives = /*#__PURE__*/Object.freeze({
     __proto__: null,
     TypedArrayWrapper: TypedArrayWrapper,
     create3DFVertices: create3DFVertices,
@@ -6966,7 +6969,7 @@ var primitives = {
     createXYQuadVertices: createXYQuadVertices,
     deindex: deindex,
     generateTriangleNormals: generateTriangleNormals
-};
+});
 
 export { TypedArrayViewGenerator, copySourceToTexture, copySourcesToTexture, createBufferLayoutsFromArrays, createBuffersAndAttributesFromArrays, createTextureFromImage, createTextureFromImages, createTextureFromSource, createTextureFromSources, drawArrays, generateMipmap, getNumComponents, getSizeAndAlignmentOfUnsizedArrayElement, getSizeForMipFromTexture, getSizeFromSource, interleaveVertexData, isTypedArray, loadImageBitmap, makeBindGroupLayoutDescriptors, makeShaderDataDefinitions, makeStructuredView, makeTypedArrayFromArrayUnion, makeTypedArrayViews, normalizeGPUExtent3D, numMipLevels, primitives, setIntrinsicsToView, setStructuredValues, setStructuredView, setTypedValues, setVertexAndIndexBuffers, subarray };
 //# sourceMappingURL=webgpu-utils.module.js.map
