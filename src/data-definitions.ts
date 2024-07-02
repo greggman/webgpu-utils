@@ -281,7 +281,9 @@ function getBindGroupLayoutEntry(resource: VariableInfo, visibility: GPUShaderSt
             return {
                 binding,
                 visibility,
-                buffer: { },
+                buffer: {
+                    ...(resource.size && { minBindingSize: resource.size }),
+                },
             };
         case ResourceType.Storage:
             return {
@@ -289,6 +291,7 @@ function getBindGroupLayoutEntry(resource: VariableInfo, visibility: GPUShaderSt
                 visibility,
                 buffer: {
                     type: (access === '' || access === 'read') ? 'read-only-storage' : 'storage',
+                    ...(resource.size && { minBindingSize: resource.size }),
                 },
             };
         case ResourceType.Texture: {
