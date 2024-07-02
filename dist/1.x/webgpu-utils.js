@@ -1,4 +1,4 @@
-/* webgpu-utils@1.9.0, license MIT */
+/* webgpu-utils@1.9.1, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -6961,7 +6961,7 @@
         return normals;
     }
 
-    var primitives = /*#__PURE__*/Object.freeze({
+    var primitives = {
         __proto__: null,
         TypedArrayWrapper: TypedArrayWrapper,
         create3DFVertices: create3DFVertices,
@@ -6975,7 +6975,7 @@
         createXYQuadVertices: createXYQuadVertices,
         deindex: deindex,
         generateTriangleNormals: generateTriangleNormals
-    });
+    };
 
     exports.TypedArrayViewGenerator = TypedArrayViewGenerator;
     exports.copySourceToTexture = copySourceToTexture;

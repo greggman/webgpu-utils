@@ -1,4 +1,4 @@
-/* webgpu-utils@1.9.0, license MIT */
+/* webgpu-utils@1.9.1, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -6955,7 +6955,7 @@ function generateTriangleNormals(positions) {
     return normals;
 }
 
-var primitives = /*#__PURE__*/Object.freeze({
+var primitives = {
     __proto__: null,
     TypedArrayWrapper: TypedArrayWrapper,
     create3DFVertices: create3DFVertices,
@@ -6969,7 +6969,7 @@ var primitives = /*#__PURE__*/Object.freeze({
     createXYQuadVertices: createXYQuadVertices,
     deindex: deindex,
     generateTriangleNormals: generateTriangleNormals
-});
+};
 
 export { TypedArrayViewGenerator, copySourceToTexture, copySourcesToTexture, createBufferLayoutsFromArrays, createBuffersAndAttributesFromArrays, createTextureFromImage, createTextureFromImages, createTextureFromSource, createTextureFromSources, drawArrays, generateMipmap, getNumComponents, getSizeAndAlignmentOfUnsizedArrayElement, getSizeForMipFromTexture, getSizeFromSource, interleaveVertexData, isTypedArray, loadImageBitmap, makeBindGroupLayoutDescriptors, makeShaderDataDefinitions, makeStructuredView, makeTypedArrayFromArrayUnion, makeTypedArrayViews, normalizeGPUExtent3D, numMipLevels, primitives, setIntrinsicsToView, setStructuredValues, setStructuredView, setTypedValues, setVertexAndIndexBuffers, subarray };
 //# sourceMappingURL=webgpu-utils.module.js.map
