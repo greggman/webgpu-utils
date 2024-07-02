@@ -75,9 +75,9 @@ async function test(port) {
   for (const {url, js, screenshot} of testPages) {
     waitingPromiseInfo = makePromiseInfo();
     console.log(`===== [ ${url} ] =====`);
-    if (js) {
-      await page.evaluateOnNewDocument(js);
-    }
+    const id = js
+      ? await page.evaluateOnNewDocument(js)
+      : undefined;
     await page.goto(url);
     await page.waitForNetworkIdle();
     if (js) {
@@ -94,6 +94,9 @@ async function test(port) {
       const name = /\/([a-z0-9_-]+).html/.exec(url)[1];
       const path = `${dir}/${name}.png`;
       await page.screenshot({path});
+    }
+    if (js) {
+      await page.removeScriptToEvaluateOnNewDocument(id.identifier);
     }
   }
 
