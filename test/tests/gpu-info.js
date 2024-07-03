@@ -10,8 +10,10 @@ function objLikeToObj(objLike) {
 
 export async function getInfo() {
   const adapter = await navigator.gpu.requestAdapter();
-  const info = adapter?.info || await adapter?.requestAdapterInfo() || {error: 'no info'};
-  const title = JSON.stringify(objLikeToObj(info), null, 2);
+  const title = JSON.stringify({
+    gpu: objLikeToObj(adapter?.info || await adapter?.requestAdapterInfo() || { webgpuError: 'no info' }),
+    userAgentData: JSON.parse(JSON.stringify(navigator.userAgentData || { userAgentData: 'none' })),
+  }, null, 2);
 
   describe('gpu info', () => {
     it(title, () => {});
