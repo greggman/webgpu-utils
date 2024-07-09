@@ -32,6 +32,7 @@ function getExamples(port) {
       .map(f => ({
         url: `http://localhost:${port}/examples/${f}`,
         js: exampleInjectJS,
+        screenshot: true,
       }));
 }
 
@@ -71,12 +72,12 @@ async function test(port) {
     ...getExamples(port),
   ];
 
-  for (const {url, js} of testPages) {
+  for (const {url, js, screenshot} of testPages) {
     waitingPromiseInfo = makePromiseInfo();
     console.log(`===== [ ${url} ] =====`);
-    if (js) {
-      await page.evaluateOnNewDocument(js);
-    }
+    const id = js
+      ? await page.evaluateOnNewDocument(js)
+      : undefined;
     await page.goto(url);
     await page.waitForNetworkIdle();
     if (js) {
@@ -87,8 +88,17 @@ async function test(port) {
       });
     }
     await waitingPromiseInfo.promise;
+    if (screenshot) {
+      const dir = 'screenshots';
+      fs.mkdirSync(dir, { recursive: true });
+      const name = /\/([a-z0-9_-]+).html/.exec(url)[1];
+      const path = `${dir}/${name}.png`;
+      await page.screenshot({path});
+    }
+    if (js) {
+      await page.removeScriptToEvaluateOnNewDocument(id.identifier);
+    }
   }
-
 
   await browser.close();
   server.close();
