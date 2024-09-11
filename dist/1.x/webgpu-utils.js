@@ -1,4 +1,4 @@
-/* webgpu-utils@1.9.2, license MIT */
+/* webgpu-utils@1.9.3, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -389,11 +389,146 @@
     }
     /**
      * Given a VariableDefinition, create matching TypedArray views
+     *
      * @param varDef A VariableDefinition as returned from {@link makeShaderDataDefinitions}
      * @param arrayBuffer Optional ArrayBuffer for the views
      * @param offset Optional offset into the ArrayBuffer for the views
      * @returns TypedArray views for the various named fields of the structure as well
      *    as a `set` function to make them easy to set, and the arrayBuffer
+     *
+     * ```js
+     * const code = `
+     * struct HSL {
+     *   hue: f32,
+     *   sat: f32,
+     *   lum: f32,
+     * };
+     * struct MyStorage {
+     *    colors: array<HSL, 4>,
+     *    brightness: f32,
+     *    kernel: array<f32, 9>,
+     * };
+     * @group(0) @binding(0) var<storage> myStorage: MyStorage;
+     * `;
+     * const defs = makeShaderDataDefinitions(code);
+     * const myUniformValues = makeStructuredView(defs.storages.myStorage);
+     *
+     * myUniformValues.set({
+     *   colors: [
+     *     ,
+     *     ,
+     *     { hue: 0.5, sat: 1.0, lum: 0.5 },  // only set the 3rd color
+     *   ],
+     *   brightness: 0.8,
+     *   kernel: [
+     *      1, 0, -1,
+     *      2, 0, -2,
+     *      1, 0, -1,
+     *   ],
+     * });
+     * ```
+     *
+     * data definition can come from `
+     *
+     * What this function does:
+     *
+     * 1. It creates an `ArrayBuffer` of the size equal to the definition passed in (unless you pass in an existing ArrayBuffer)
+     *
+     * 2. It makes `TypedArray` views of to match the definition.
+     *
+     * 3. It returns an object with the the `ArrayBuffer`, the TypedArray views, and a `set` function which is just a wrapper
+     *    for `setStructView` that passes in the views.
+     *
+     * For example: Given a data definition created by makeShaderDataDefinitions for this WGSL
+     *
+     * ```wgsl
+     * struct Light {
+     *   lightWorldPosition: vec3f,
+     *   shininess: f32,
+     *   lightDirection: vec3f,
+     *   innerLimit: f32,
+     *   outerLimit: f32,
+     * };
+     * struct Uniforms {
+     *   normalMatrix: mat3x3f,
+     *   worldViewProjection: mat4x4f,
+     *   world: mat4x4f,
+     *   color: vec4f,
+     *   viewWorldPosition: vec3f,
+     *   lights: array<Light, 3>,
+     * };
+     * @group(0) @binding(0) var<uniform> myUniforms: Uniforms;
+     * ```
+     *
+     * `makeStructuredView(defs.uniforms.myUniforms)` would return this
+     *
+     * ```js
+     * const arrayBuffer = new ArrayBuffer(368)
+     * const views = {
+     *   normalMatrix: new Float32Array(arrayBuffer, 0, 12),
+     *   worldViewProjection: new Float32Array(arrayBuffer, 48, 16),
+     *   world: new Float32Array(arrayBuffer, 112, 16),
+     *   color: new Float32Array(arrayBuffer, 176, 4),
+     *   viewWorldPosition: new Float32Array(arrayBuffer, 192, 3),
+     *   lights: [
+     *     {
+     *       lightWorldPosition: new Float32Array(arrayBuffer, 208, 3),
+     *       shininess: new Float32Array(arrayBuffer, 220, 1),
+     *       lightDirection: new Float32Array(arrayBuffer, 224, 3),
+     *       innerLimit: new Float32Array(arrayBuffer, 236, 1),
+     *       outerLimit: new Float32Array(arrayBuffer, 240, 1),
+     *     },
+     *     {
+     *       lightWorldPosition: new Float32Array(arrayBuffer, 256, 3),
+     *       shininess: new Float32Array(arrayBuffer, 268, 1),
+     *       lightDirection: new Float32Array(arrayBuffer, 272, 3),
+     *       innerLimit: new Float32Array(arrayBuffer, 284, 1),
+     *       outerLimit: new Float32Array(arrayBuffer, 288, 1),
+     *     },
+     *     {
+     *       lightWorldPosition: new Float32Array(arrayBuffer, 304, 3),
+     *       shininess: new Float32Array(arrayBuffer, 316, 1),
+     *       lightDirection: new Float32Array(arrayBuffer, 320, 3),
+     *       innerLimit: new Float32Array(arrayBuffer, 332, 1),
+     *       outerLimit: new Float32Array(arrayBuffer, 336, 1),
+     *     },
+     *   ],
+     *   mode: new Uint32Array(UniformsValues, 352, 1),
+     * };
+     * result = {
+     *   arrayBuffer,
+     *   views,
+     *   set(data: any) {
+     *     setStructuredView(data, views.views);
+     *   },
+     * }
+     * ```
+     *
+     * From this, you can see you can set the value in the array buffer for any field/member/property
+     * directly. Example
+     *
+     * ```js
+     * result.views.lights[2].lightDirection.set([7, 8, 9]);
+     * result.views.lights[2].innerLimit[0] = 4;
+     * ```
+     *
+     * `set` just takes a JS object and matches property names to the view names.
+     *
+     * ```js
+     * result.set({
+     *   color: [1, 1, 0, 1],
+     *   viewWorldPosition: [12, 34, 56],
+     *   mode: 8,
+     * });
+     * ```
+     *
+     * Is equivalent to
+     *
+     * ```js
+     * result.views.color.set([1, 1, 0, 1]);
+     * result.views.worldViewPosition.set([12, 34, 56]);
+     * result.views.mode[0] = 8;
+     * ```
      */
     function makeStructuredView(varDef, arrayBuffer, offset = 0) {
         const asVarDef = varDef;

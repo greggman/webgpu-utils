@@ -66,6 +66,8 @@ mat4.perspective(
 device.queue.writeBuffer(uniformBuffer, 0, myUniformValues.arrayBuffer);
 ```
 
+See [makeStructuredView](https://greggman.github.io/webgpu-utils/docs/functions/makeStructuredView.html) for details.
+
 ### Load an image URL as a texture (with mips)
 
 ```js

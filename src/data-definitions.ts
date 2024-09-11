@@ -90,17 +90,40 @@ export type EntryPoints = {
 }
 
 /**
- * Warning: The properties of this type will probably be changed
- * in a future version. Please consider this an opaque type.
+ * The data definitions and other reflection data from some WGSL shader source.
  */
 export type ShaderDataDefinitions = {
+    /**
+     * definitions for uniform bindings by name
+     */
     uniforms: VariableDefinitions,
+    /**
+     * definitions for storage bindings by name
+     */
     storages: VariableDefinitions,
+    /**
+     * definitions for sampler bindings by name
+     */
     samplers: VariableDefinitions,
+    /**
+     * definitions for texture bindings by name
+     */
     textures: VariableDefinitions,
+    /**
+     * definitions for storage texture bindings by name
+     */
     storageTextures: VariableDefinitions,
+    /**
+     * definitions for external texture bindings by name
+     */
     externalTextures: VariableDefinitions,
+    /**
+     * definitions for structures by name
+     */
     structs: StructDefinitions,
+    /**
+     * Entry points by name.
+     */
     entryPoints: EntryPoints,
 };
 

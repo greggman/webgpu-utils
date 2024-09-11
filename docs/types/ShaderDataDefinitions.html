@@ -16,28 +16,51 @@
 <li><a href="ShaderDataDefinitions.html">ShaderDataDefinitions</a></li></ul>
 <h1>Type alias ShaderDataDefinitions</h1></div>
 <div class="tsd-signature"><span class="tsd-kind-type-alias">Shader<wbr/>Data<wbr/>Definitions</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">entryPoints</span><span class="tsd-signature-symbol">: </span><a href="EntryPoints.html" class="tsd-signature-type tsd-kind-type-alias">EntryPoints</a><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">externalTextures</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">samplers</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">storageTextures</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">storages</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">structs</span><span class="tsd-signature-symbol">: </span><a href="StructDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">StructDefinitions</a><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">textures</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">uniforms</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></div>
-<div class="tsd-comment tsd-typography"><p>Warning: The properties of this type will probably be changed
-in a future version. Please consider this an opaque type.</p>
+<div class="tsd-comment tsd-typography"><p>The data definitions and other reflection data from some WGSL shader source.</p>
 </div>
 <div class="tsd-type-declaration">
 <h4>Type declaration</h4>
 <ul class="tsd-parameters">
 <li class="tsd-parameter">
-<h5><span class="tsd-kind-property">entry<wbr/>Points</span><span class="tsd-signature-symbol">: </span><a href="EntryPoints.html" class="tsd-signature-type tsd-kind-type-alias">EntryPoints</a></h5></li>
+<h5><span class="tsd-kind-property">entry<wbr/>Points</span><span class="tsd-signature-symbol">: </span><a href="EntryPoints.html" class="tsd-signature-type tsd-kind-type-alias">EntryPoints</a></h5>
+<div class="tsd-comment tsd-typography"><p>Entry points by name.</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
 <li class="tsd-parameter">
-<h5><span class="tsd-kind-property">external<wbr/>Textures</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5></li>
+<h5><span class="tsd-kind-property">external<wbr/>Textures</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5>
+<div class="tsd-comment tsd-typography"><p>definitions for external texture bindings by name</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
 <li class="tsd-parameter">
-<h5><span class="tsd-kind-property">samplers</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5></li>
+<h5><span class="tsd-kind-property">samplers</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5>
+<div class="tsd-comment tsd-typography"><p>definitions for sampler bindings by name</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
 <li class="tsd-parameter">
-<h5><span class="tsd-kind-property">storage<wbr/>Textures</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5></li>
+<h5><span class="tsd-kind-property">storage<wbr/>Textures</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5>
+<div class="tsd-comment tsd-typography"><p>definitions for storage texture bindings by name</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
 <li class="tsd-parameter">
-<h5><span class="tsd-kind-property">storages</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5></li>
+<h5><span class="tsd-kind-property">storages</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5>
+<div class="tsd-comment tsd-typography"><p>definitions for storage bindings by name</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
 <li class="tsd-parameter">
-<h5><span class="tsd-kind-property">structs</span><span class="tsd-signature-symbol">: </span><a href="StructDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">StructDefinitions</a></h5></li>
+<h5><span class="tsd-kind-property">structs</span><span class="tsd-signature-symbol">: </span><a href="StructDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">StructDefinitions</a></h5>
+<div class="tsd-comment tsd-typography"><p>definitions for structures by name</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
 <li class="tsd-parameter">
-<h5><span class="tsd-kind-property">textures</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5></li>
+<h5><span class="tsd-kind-property">textures</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5>
+<div class="tsd-comment tsd-typography"><p>definitions for texture bindings by name</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li>
 <li class="tsd-parameter">
-<h5><span class="tsd-kind-property">uniforms</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5></li></ul></div>
+<h5><span class="tsd-kind-property">uniforms</span><span class="tsd-signature-symbol">: </span><a href="VariableDefinitions.html" class="tsd-signature-type tsd-kind-type-alias">VariableDefinitions</a></h5>
+<div class="tsd-comment tsd-typography"><p>definitions for uniform bindings by name</p>
+</div>
+<div class="tsd-comment tsd-typography"></div></li></ul></div>
 <div class="tsd-comment tsd-typography"></div></div>
 <div class="col-sidebar">
 <div class="page-menu">
