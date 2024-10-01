@@ -378,7 +378,8 @@ export type StructuredView = ArrayBufferViews & {
  * });
  * ```
  *
- * data definition can come from `
+ * data definition can come from `defs.uniforms.<nameOfUniform>`, `defs.storages.<nameOfStorage>`
+ * and `defs.structs.<nameOfStruct>`.
  *
  * What this function does:
  *
@@ -478,6 +479,21 @@ export type StructuredView = ArrayBufferViews & {
  * result.views.color.set([1, 1, 0, 1]);
  * result.views.worldViewPosition.set([12, 34, 56]);
  * result.views.mode[0] = 8;
+ * ```
+ *
+ * Further, `set` is just a short cut for `setStructuredView` passing in the root
+ * `result'views`.
+ *
+ * So, for example, if you want to set the light at index 2, this would work.
+ *
+ * ```js
+ * setStructuredView({
+ *   lightWorldPosition: [1, 2, 3],
+ *   shininess: 4,
+ *   lightDirection: [5, 6, 7],
+ *   innerLimit: 8,
+ *   outerLimit: 9,
+ * }, result.views.lights[2]);
  * ```
  */
 export function makeStructuredView(varDef: VariableDefinition | StructDefinition, arrayBuffer?: ArrayBuffer, offset = 0): StructuredView {
