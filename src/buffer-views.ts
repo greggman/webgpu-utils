@@ -293,7 +293,7 @@ export function setStructuredView(data: any, views: TypedArrayOrViews): void {
     }
 }
 
-export type StructuredView = ArrayBufferViews & {
+export type StructuredView<ViewType extends TypeDefinition> = ArrayBufferViews & {
     /**
      * Sets the contents of the TypedArrays based on the data passed in
      * Note: The data may be sparse
@@ -334,7 +334,7 @@ export type StructuredView = ArrayBufferViews & {
      *
      * @param data
      */
-    set(data: any): void;
+    set(data: ViewType extends StructDefinition ? Partial<Record<keyof ViewType['fields'],any>> : any): void;
 }
 
 /**
@@ -496,13 +496,13 @@ export type StructuredView = ArrayBufferViews & {
  * }, result.views.lights[2]);
  * ```
  */
-export function makeStructuredView(varDef: VariableDefinition | StructDefinition, arrayBuffer?: ArrayBuffer, offset = 0): StructuredView {
+export function makeStructuredView<InputType extends VariableDefinition | StructDefinition, ViewType extends TypeDefinition = InputType extends VariableDefinition ? InputType['typeDefinition'] : InputType>(varDef: InputType, arrayBuffer?: ArrayBuffer, offset = 0): StructuredView<ViewType> {
     const asVarDef = varDef as VariableDefinition;
-    const typeDef = asVarDef.group === undefined ? varDef as StructDefinition : asVarDef.typeDefinition;
+    const typeDef = asVarDef.group === undefined ? varDef as unknown as ViewType : asVarDef.typeDefinition as ViewType;
     const views = makeTypedArrayViews(typeDef, arrayBuffer, offset);
     return {
         ...views,
-        set(data: any) {
+        set(data) {
             setStructuredView(data, views.views);
         },
     };
