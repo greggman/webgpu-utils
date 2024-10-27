@@ -170,7 +170,7 @@ function isIntrinsic(typeDef: TypeDefinition) {
  * };
  * ```
  *
- * You can use the views directly or you can use @link {setStructuredView}
+ * You can use the views directly or you can use {@link setStructuredView}
  *
  * @param typeDef Definition of the various types of views.
  * @param arrayBuffer Optional ArrayBuffer to use (if one provided one will be created)
@@ -251,7 +251,7 @@ export function makeTypedArrayViews(typeDef: TypeDefinition, arrayBuffer?: Array
  * The code above will set the various views, which all point to different
  * locations within the same array buffer.
  *
- * See @link {makeTypedArrayViews}.
+ * See {@link makeTypedArrayViews}.
  *
  * @param data The new values
  * @param views TypedArray views as returned from {@link makeTypedArrayViews}
@@ -549,7 +549,7 @@ function setIntrinsicFromArrayLikeOfNumber(typeDef: IntrinsicDefinition, data: a
 
 /**
  * Sets values on an existing array buffer from a TypeDefinition
- * @param typeDef A type definition provided by @link {makeShaderDataDefinitions}
+ * @param typeDef A type definition provided by {@link makeShaderDataDefinitions}
  * @param data The source data
  * @param arrayBuffer The arrayBuffer who's data to set.
  * @param offset An offset in the arrayBuffer to start at.
@@ -589,8 +589,8 @@ export function setTypedValues(typeDef: TypeDefinition, data: any, arrayBuffer: 
 }
 
 /**
- * Same as @link {setTypedValues} except it takes a @link {VariableDefinition}.
- * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
+ * Same as {@link setTypedValues} except it takes a {@link VariableDefinition}.
+ * @param varDef A variable definition provided by {@link makeShaderDataDefinitions}
  * @param data The source data
  * @param arrayBuffer The arrayBuffer who's data to set.
  * @param offset An offset in the arrayBuffer to start at.
@@ -692,7 +692,7 @@ function getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef: TypeDefiniti
  *    new ArrayBuffer(defs.storages.f.size + size * numElements));
  * ```
  *
- * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
+ * @param varDef A variable definition provided by {@link makeShaderDataDefinitions}
  * @returns the size, align, and unalignedSize in bytes of the unsized array element in this type definition.
  *   If there is no unsized array, size = 0.
  */
