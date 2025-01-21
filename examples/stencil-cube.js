@@ -228,7 +228,7 @@ async function main() {
       const world = uniformView.views.world;
       mat4.identity(world);
       mat4.rotateX(world, time * 0.25, world);
-      mat4.rotateY(world, time * 0.25, world);
+      mat4.rotateY(world, time * 0.15, world);
       mat4.rotateX(world, rotation[0] * Math.PI, world);
       mat4.rotateZ(world, rotation[2] * Math.PI, world);
       mat4.scale(world, [10, 10, 10], world);
