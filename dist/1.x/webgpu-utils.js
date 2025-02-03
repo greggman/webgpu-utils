@@ -1,4 +1,4 @@
-/* webgpu-utils@1.9.3, license MIT */
+/* webgpu-utils@1.9.4, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -258,7 +258,7 @@
      * };
      * ```
      *
-     * You can use the views directly or you can use @link {setStructuredView}
+     * You can use the views directly or you can use {@link setStructuredView}
      *
      * @param typeDef Definition of the various types of views.
      * @param arrayBuffer Optional ArrayBuffer to use (if one provided one will be created)
@@ -341,7 +341,7 @@
      * The code above will set the various views, which all point to different
      * locations within the same array buffer.
      *
-     * See @link {makeTypedArrayViews}.
+     * See {@link makeTypedArrayViews}.
      *
      * @param data The new values
      * @param views TypedArray views as returned from {@link makeTypedArrayViews}
@@ -428,7 +428,8 @@
      * });
      * ```
      *
-     * data definition can come from `
+     * data definition can come from `defs.uniforms.<nameOfUniform>`, `defs.storages.<nameOfStorage>`
+     * and `defs.structs.<nameOfStruct>`.
      *
      * What this function does:
      *
@@ -529,6 +530,21 @@
      * result.views.worldViewPosition.set([12, 34, 56]);
      * result.views.mode[0] = 8;
      * ```
+     *
+     * Further, `set` is just a short cut for `setStructuredView` passing in the root
+     * `result'views`.
+     *
+     * So, for example, if you want to set the light at index 2, this would work.
+     *
+     * ```js
+     * setStructuredView({
+     *   lightWorldPosition: [1, 2, 3],
+     *   shininess: 4,
+     *   lightDirection: [5, 6, 7],
+     *   innerLimit: 8,
+     *   outerLimit: 9,
+     * }, result.views.lights[2]);
+     * ```
      */
     function makeStructuredView(varDef, arrayBuffer, offset = 0) {
         const asVarDef = varDef;
@@ -577,7 +593,7 @@
     }
     /**
      * Sets values on an existing array buffer from a TypeDefinition
-     * @param typeDef A type definition provided by @link {makeShaderDataDefinitions}
+     * @param typeDef A type definition provided by {@link makeShaderDataDefinitions}
      * @param data The source data
      * @param arrayBuffer The arrayBuffer who's data to set.
      * @param offset An offset in the arrayBuffer to start at.
@@ -616,8 +632,8 @@
         }
     }
     /**
-     * Same as @link {setTypedValues} except it takes a @link {VariableDefinition}.
-     * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
+     * Same as {@link setTypedValues} except it takes a {@link VariableDefinition}.
+     * @param varDef A variable definition provided by {@link makeShaderDataDefinitions}
      * @param data The source data
      * @param arrayBuffer The arrayBuffer who's data to set.
      * @param offset An offset in the arrayBuffer to start at.
@@ -706,7 +722,7 @@
      *    new ArrayBuffer(defs.storages.f.size + size * numElements));
      * ```
      *
-     * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
+     * @param varDef A variable definition provided by {@link makeShaderDataDefinitions}
      * @returns the size, align, and unalignedSize in bytes of the unsized array element in this type definition.
      *   If there is no unsized array, size = 0.
      */
@@ -1392,9 +1408,14 @@
         }
         search(callback) {
             callback(this);
-            for (const node of this.args) {
-                node.search(callback);
+            if (this.args) {
+                for (const node of this.args) {
+                    node.search(callback);
+                }
             }
+        }
+        evaluate(context) {
+            return this.args[0].evaluate(context);
         }
     }
     /**
@@ -1572,11 +1593,13 @@
                 const type = (_b = this.initializer.type) === null || _b === void 0 ? void 0 : _b.name;
                 const struct = context.structs.get(type);
                 const memberIndex = struct === null || struct === void 0 ? void 0 : struct.getMemberIndex(property);
-                if (memberIndex != -1) {
+                if (memberIndex !== undefined && memberIndex != -1) {
                     const value = this.initializer.args[memberIndex].evaluate(context);
                     return value;
                 }
-                console.log(memberIndex);
+                else {
+                    return this.initializer.evaluate(context);
+                }
             }
             return this.initializer.evaluate(context);
         }
@@ -1617,27 +1640,6 @@
         }
         search(callback) {
             this.value.search(callback);
-        }
-    }
-    /**
-     * @class TypecastExpr
-     * @extends Expression
-     * @category AST
-     */
-    class TypecastExpr extends Expression {
-        constructor(type, args) {
-            super();
-            this.type = type;
-            this.args = args;
-        }
-        get astNodeType() {
-            return "typecastExpr";
-        }
-        evaluate(context) {
-            return this.args[0].evaluate(context);
-        }
-        search(callback) {
-            this.searchBlock(this.args, callback);
         }
     }
     /**
@@ -2073,8 +2075,6 @@
         and_and: new TokenType("and_and", TokenClass.token, "&&"),
         arrow: new TokenType("arrow ", TokenClass.token, "->"),
         attr: new TokenType("attr", TokenClass.token, "@"),
-        attr_left: new TokenType("attr_left", TokenClass.token, "[["),
-        attr_right: new TokenType("attr_right", TokenClass.token, "]]"),
         forward_slash: new TokenType("forward_slash", TokenClass.token, "/"),
         bang: new TokenType("bang", TokenClass.token, "!"),
         bracket_left: new TokenType("bracket_left", TokenClass.token, "["),
@@ -2132,8 +2132,6 @@
         "&": _a.tokens.and,
         "&&": _a.tokens.and_and,
         "->": _a.tokens.arrow,
-        "[[": _a.tokens.attr_left,
-        "]]": _a.tokens.attr_right,
         "/": _a.tokens.forward_slash,
         "!": _a.tokens.bang,
         "[": _a.tokens.bracket_left,
@@ -2455,16 +2453,41 @@
                 // and one to close the array).
                 // Another ambiguity is '>='. In the case of vec2<i32>=vec2(1,2),
                 // it's a greather_than and an equal, not a greater_than_equal.
+                // Another ambiguity is '-'. In the case of a-2, it's a minus; in the case of a*-2, it's a -2;
+                // in the case of foo()->int, it's a ->; in the case of foo-- or --foo, it's a -- decrement.
                 // WGSL requires context sensitive parsing to resolve these ambiguities. Both of these cases
                 // are predicated on it the > either closing a template, or being part of an operator.
                 // The solution here is to check if there was a less_than up to some number of tokens
                 // previously, and the token prior to that is a keyword that requires a '<', then it will be
                 // split into two operators; otherwise it's a single operator.
                 const nextLexeme = this._peekAhead();
+                if (lexeme == "-" && this._tokens.length > 0) {
+                    if (nextLexeme == "=") {
+                        this._current++;
+                        lexeme += nextLexeme;
+                        this._addToken(TokenTypes.tokens.minus_equal);
+                        return true;
+                    }
+                    if (nextLexeme == "-") {
+                        this._current++;
+                        lexeme += nextLexeme;
+                        this._addToken(TokenTypes.tokens.minus_minus);
+                        return true;
+                    }
+                    const ti = this._tokens.length - 1;
+                    const isIdentOrLiteral = TokenTypes.literal_or_ident.indexOf(this._tokens[ti].type) != -1;
+                    if ((isIdentOrLiteral || this._tokens[ti].type == TokenTypes.tokens.paren_right) && nextLexeme != ">") {
+                        this._addToken(matchedType);
+                        return true;
+                    }
+                }
                 if (lexeme == ">" && (nextLexeme == ">" || nextLexeme == "=")) {
                     let foundLessThan = false;
                     let ti = this._tokens.length - 1;
                     for (let count = 0; count < 5 && ti >= 0; ++count, --ti) {
+                        if (TokenTypes.assignment_operators.indexOf(this._tokens[ti].type) !== -1) {
+                            break;
+                        }
                         if (this._tokens[ti].type === TokenTypes.tokens.less_than) {
                             if (ti > 0 && this._tokens[ti - 1].isArrayOrTemplateType()) {
                                 foundLessThan = true;
@@ -3434,7 +3457,7 @@
             // type_decl argument_expression_list
             const type = this._type_decl();
             const args = this._argument_expression_list();
-            return new TypecastExpr(type, args);
+            return new CreateExpr(type, args);
         }
         _argument_expression_list() {
             // paren_left ((short_circuit_or_expression comma)* short_circuit_or_expression comma?)? paren_right
@@ -3575,21 +3598,7 @@
         _const_expression() {
             // type_decl paren_left ((const_expression comma)* const_expression comma?)? paren_right
             // const_literal
-            if (this._match(TokenTypes.const_literal)) {
-                return new StringExpr(this._previous().toString());
-            }
-            const type = this._type_decl();
-            this._consume(TokenTypes.tokens.paren_left, "Expected '('.");
-            let args = [];
-            while (!this._check(TokenTypes.tokens.paren_right)) {
-                args.push(this._const_expression());
-                if (!this._check(TokenTypes.tokens.comma)) {
-                    break;
-                }
-                this._advance();
-            }
-            this._consume(TokenTypes.tokens.paren_right, "Expected ')'.");
-            return new CreateExpr(type, args);
+            return this._short_circuit_or_expression();
         }
         _variable_decl() {
             // var variable_qualifier? (ident variable_ident_decl)
@@ -3837,33 +3846,6 @@
                 }
                 attributes.push(attr);
             }
-            // Deprecated:
-            // attr_left (attribute comma)* attribute attr_right
-            while (this._match(TokenTypes.tokens.attr_left)) {
-                if (!this._check(TokenTypes.tokens.attr_right)) {
-                    do {
-                        const name = this._consume(TokenTypes.attribute_name, "Expected attribute name");
-                        const attr = new Attribute(name.toString(), null);
-                        if (this._match(TokenTypes.tokens.paren_left)) {
-                            // literal_or_ident
-                            attr.value = [
-                                this._consume(TokenTypes.literal_or_ident, "Expected attribute value").toString(),
-                            ];
-                            if (this._check(TokenTypes.tokens.comma)) {
-                                this._advance();
-                                do {
-                                    const v = this._consume(TokenTypes.literal_or_ident, "Expected attribute value").toString();
-                                    attr.value.push(v);
-                                } while (this._match(TokenTypes.tokens.comma));
-                            }
-                            this._consume(TokenTypes.tokens.paren_right, "Expected ')'");
-                        }
-                        attributes.push(attr);
-                    } while (this._match(TokenTypes.tokens.comma));
-                }
-                // Consume ]]
-                this._consume(TokenTypes.tokens.attr_right, "Expected ']]' after attribute declarations");
-            }
             if (attributes.length == 0) {
                 return null;
             }
@@ -4039,12 +4021,29 @@
             this.location = location;
         }
     }
+    class OverrideInfo {
+        constructor(name, type, attributes, id) {
+            this.name = name;
+            this.type = type;
+            this.attributes = attributes;
+            this.id = id;
+        }
+    }
+    class ArgumentInfo {
+        constructor(name, type) {
+            this.name = name;
+            this.type = type;
+        }
+    }
     class FunctionInfo {
         constructor(name, stage = null) {
             this.stage = null;
             this.inputs = [];
             this.outputs = [];
+            this.arguments = [];
+            this.returnType = null;
             this.resources = [];
+            this.overrides = [];
             this.startLine = -1;
             this.endLine = -1;
             this.inUse = false;
@@ -4058,14 +4057,6 @@
             this.vertex = [];
             this.fragment = [];
             this.compute = [];
-        }
-    }
-    class OverrideInfo {
-        constructor(name, type, attributes, id) {
-            this.name = name;
-            this.type = type;
-            this.attributes = attributes;
-            this.id = id;
         }
     }
     class _FunctionResources {
@@ -4197,6 +4188,12 @@
                         fn.outputs = this._getOutputs(node.returnType);
                         this.entry[stage.name].push(fn);
                     }
+                    else {
+                        fn.arguments = node.args.map((arg) => new ArgumentInfo(arg.name, this._getTypeInfo(arg.type, arg.attributes)));
+                        fn.returnType = node.returnType
+                            ? this._getTypeInfo(node.returnType, node.attributes)
+                            : null;
+                    }
                     continue;
                 }
             }
@@ -4206,6 +4203,19 @@
                     this._addCalls(fn.node, fn.info.calls);
                 }
             }
+            for (const fn of this._functions.values()) {
+                fn.node.search((node) => {
+                    var _a;
+                    if (node.astNodeType === "varExpr") {
+                        const v = node;
+                        for (const override of this.overrides) {
+                            if (v.name == override.name) {
+                                (_a = fn.info) === null || _a === void 0 ? void 0 : _a.overrides.push(override);
+                            }
+                        }
+                    }
+                });
+            }
             for (const u of this.uniforms) {
                 this._markStructsInUse(u.type);
             }
@@ -4214,17 +4224,24 @@
             }
         }
         _markStructsInUse(type) {
+            if (!type) {
+                return;
+            }
             if (type.isStruct) {
                 type.inUse = true;
-                for (const m of type.members) {
-                    this._markStructsInUse(m.type);
+                if (type.members) {
+                    for (const m of type.members) {
+                        this._markStructsInUse(m.type);
+                    }
                 }
             }
             else if (type.isArray) {
                 this._markStructsInUse(type.format);
             }
             else if (type.isTemplate) {
-                this._markStructsInUse(type.format);
+                if (type.format) {
+                    this._markStructsInUse(type.format);
+                }
             }
             else {
                 const alias = this._getAlias(type.name);
@@ -4526,7 +4543,7 @@
             }
             if (type instanceof ArrayType) {
                 const a = type;
-                const t = this._getTypeInfo(a.format, a.attributes);
+                const t = a.format ? this._getTypeInfo(a.format, a.attributes) : null;
                 const info = new ArrayInfo(a.name, attributes);
                 info.format = t;
                 info.count = a.count;
@@ -4578,9 +4595,11 @@
             const typeSize = this._getTypeSize(type);
             type.size = (_a = typeSize === null || typeSize === void 0 ? void 0 : typeSize.size) !== null && _a !== void 0 ? _a : 0;
             if (type instanceof ArrayInfo) {
-                const formatInfo = this._getTypeSize(type["format"]);
-                type.stride = (_b = formatInfo === null || formatInfo === void 0 ? void 0 : formatInfo.size) !== null && _b !== void 0 ? _b : 0;
-                this._updateTypeInfo(type["format"]);
+                if (type["format"]) {
+                    const formatInfo = this._getTypeSize(type["format"]);
+                    type.stride = (_b = formatInfo === null || formatInfo === void 0 ? void 0 : formatInfo.size) !== null && _b !== void 0 ? _b : 0;
+                    this._updateTypeInfo(type["format"]);
+                }
             }
             if (type instanceof StructInfo) {
                 this._updateStructInfo(type);
@@ -4613,7 +4632,7 @@
             struct.align = structAlign;
         }
         _getTypeSize(type) {
-            var _a;
+            var _a, _b;
             if (type === null || type === undefined) {
                 return null;
             }
@@ -4631,7 +4650,7 @@
             {
                 const info = WgslReflect._typeInfo[type.name];
                 if (info !== undefined) {
-                    const divisor = type["format"] === "f16" ? 2 : 1;
+                    const divisor = ((_a = type["format"]) === null || _a === void 0 ? void 0 : _a.name) === "f16" ? 2 : 1;
                     return new _TypeSize(Math.max(explicitAlign, info.align / divisor), Math.max(explicitSize, info.size / divisor));
                 }
             }
@@ -4662,7 +4681,7 @@
                     align = E.align;
                 }
                 const N = arrayType.count;
-                const stride = this._getAttributeNum((_a = type === null || type === void 0 ? void 0 : type.attributes) !== null && _a !== void 0 ? _a : null, "stride", this._roundUp(align, size));
+                const stride = this._getAttributeNum((_b = type === null || type === void 0 ? void 0 : type.attributes) !== null && _b !== void 0 ? _b : null, "stride", this._roundUp(align, size));
                 size = N * stride;
                 if (explicitSize) {
                     size = explicitSize;
@@ -4815,7 +4834,7 @@
      * MAINTENANCE_TODO: Add example
      *
      * @param defs ShaderDataDefinitions or an array of ShaderDataDefinitions as
-     *    returned from @link {makeShaderDataDefinitions}. If an array more than 1
+     *    returned from {@link makeShaderDataDefinitions}. If an array more than 1
      *    definition it's assumed the vertex shader is in the first and the fragment
      *    shader in the second.
      * @param desc A PipelineDescriptor. You should be able to pass in the same object you passed
@@ -5878,7 +5897,7 @@
         '32unorm': Uint32Array,
         '32sint': Int32Array,
         '32uint': Uint32Array,
-        '16float': Uint16Array,
+        '16float': Uint16Array, // TODO: change to Float16Array
         '32float': Float32Array,
     };
     const kTextureFormatRE = /([a-z]+)(\d+)([a-z]+)/;
@@ -6371,11 +6390,11 @@
      * Array of the indices of corners of each face of a cube.
      */
     const CUBE_FACE_INDICES = [
-        [3, 7, 5, 1],
-        [6, 2, 0, 4],
-        [6, 7, 3, 2],
-        [0, 1, 5, 4],
-        [7, 6, 4, 5],
+        [3, 7, 5, 1], // right
+        [6, 2, 0, 4], // left
+        [6, 7, 3, 2], // ??
+        [0, 1, 5, 4], // ??
+        [7, 6, 4, 5], // front
         [2, 3, 1, 0], // back
     ];
     /**
@@ -6449,15 +6468,16 @@
      * truncated cone will be created centered about the origin, with the
      * y axis as its vertical axis. .
      *
-     * @param bottomRadius Bottom radius of truncated cone. Default = 1
-     * @param topRadius Top radius of truncated cone. Default = 0
-     * @param height Height of truncated cone. Default = 1
-     * @param radialSubdivisions The number of subdivisions around the
+     * @param params
+     * @param params.bottomRadius Bottom radius of truncated cone. Default = 1
+     * @param params.topRadius Top radius of truncated cone. Default = 0
+     * @param params.height Height of truncated cone. Default = 1
+     * @param params.radialSubdivisions The number of subdivisions around the
      *     truncated cone. Default = 24
-     * @param verticalSubdivisions The number of subdivisions down the
+     * @param params.verticalSubdivisions The number of subdivisions down the
      *     truncated cone. Default = 1
-     * @param topCap Create top cap. Default = true.
-     * @param bottomCap Create bottom cap. Default = true.
+     * @param params.topCap Create top cap. Default = true.
+     * @param params.bottomCap Create bottom cap. Default = true.
      * @return The created cone vertices.
      */
     function createTruncatedConeVertices({ bottomRadius = 1, topRadius = 0, height = 1, radialSubdivisions = 24, verticalSubdivisions = 1, topCap = true, bottomCap = true, } = {}) {

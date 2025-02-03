@@ -390,15 +390,16 @@ export function createCubeVertices({size = 1} = {}): Arrays {
  * truncated cone will be created centered about the origin, with the
  * y axis as its vertical axis. .
  *
- * @param bottomRadius Bottom radius of truncated cone. Default = 1
- * @param topRadius Top radius of truncated cone. Default = 0
- * @param height Height of truncated cone. Default = 1
- * @param radialSubdivisions The number of subdivisions around the
+ * @param params
+ * @param params.bottomRadius Bottom radius of truncated cone. Default = 1
+ * @param params.topRadius Top radius of truncated cone. Default = 0
+ * @param params.height Height of truncated cone. Default = 1
+ * @param params.radialSubdivisions The number of subdivisions around the
  *     truncated cone. Default = 24
- * @param verticalSubdivisions The number of subdivisions down the
+ * @param params.verticalSubdivisions The number of subdivisions down the
  *     truncated cone. Default = 1
- * @param topCap Create top cap. Default = true.
- * @param bottomCap Create bottom cap. Default = true.
+ * @param params.topCap Create top cap. Default = true.
+ * @param params.bottomCap Create bottom cap. Default = true.
  * @return The created cone vertices.
  */
 export function createTruncatedConeVertices({

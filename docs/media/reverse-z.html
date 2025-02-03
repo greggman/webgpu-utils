@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>webgpu-utils - reverse-z</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="examples.css">
+    <style>
+      #center {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: stretch;
+      }
+      .divider {
+        height: 3px;
+        background-color: black;
+      }
+      .top, .bottom {
+        margin: 2em;
+        display: inline-block;
+        padding: 0.5em;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas></canvas>
+    <div id="center">
+      <div>
+        <div class="top">reverse-z perspective projection infinite z</div>
+        <div class="divider"></div>
+        <div class="bottom">standard perspective</div>
+      </div>
+    </div>
+    <div id="b"><a href="https://github.com/greggman/webgpu-utils.org">webgpu-utils</a> - primitives reverse-z</div>
+    <div id="fail" style="display: none;"><div id="fail-msg"></div></div>
+    <script type="module" src="reverse-z.js"></script>
+  </body>
+</html> 

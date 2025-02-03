@@ -78,7 +78,7 @@ export type ArrayBufferViews = {
  * };
  * ```
  *
- * You can use the views directly or you can use @link {setStructuredView}
+ * You can use the views directly or you can use {@link setStructuredView}
  *
  * @param typeDef Definition of the various types of views.
  * @param arrayBuffer Optional ArrayBuffer to use (if one provided one will be created)
@@ -119,7 +119,7 @@ export declare function makeTypedArrayViews(typeDef: TypeDefinition, arrayBuffer
  * The code above will set the various views, which all point to different
  * locations within the same array buffer.
  *
- * See @link {makeTypedArrayViews}.
+ * See {@link makeTypedArrayViews}.
  *
  * @param data The new values
  * @param views TypedArray views as returned from {@link makeTypedArrayViews}
@@ -209,7 +209,8 @@ export type StructuredView = ArrayBufferViews & {
  * });
  * ```
  *
- * data definition can come from `
+ * data definition can come from `defs.uniforms.<nameOfUniform>`, `defs.storages.<nameOfStorage>`
+ * and `defs.structs.<nameOfStruct>`.
  *
  * What this function does:
  *
@@ -310,19 +311,34 @@ export type StructuredView = ArrayBufferViews & {
  * result.views.worldViewPosition.set([12, 34, 56]);
  * result.views.mode[0] = 8;
  * ```
+ *
+ * Further, `set` is just a short cut for `setStructuredView` passing in the root
+ * `result'views`.
+ *
+ * So, for example, if you want to set the light at index 2, this would work.
+ *
+ * ```js
+ * setStructuredView({
+ *   lightWorldPosition: [1, 2, 3],
+ *   shininess: 4,
+ *   lightDirection: [5, 6, 7],
+ *   innerLimit: 8,
+ *   outerLimit: 9,
+ * }, result.views.lights[2]);
+ * ```
  */
 export declare function makeStructuredView(varDef: VariableDefinition | StructDefinition, arrayBuffer?: ArrayBuffer, offset?: number): StructuredView;
 /**
  * Sets values on an existing array buffer from a TypeDefinition
- * @param typeDef A type definition provided by @link {makeShaderDataDefinitions}
+ * @param typeDef A type definition provided by {@link makeShaderDataDefinitions}
  * @param data The source data
  * @param arrayBuffer The arrayBuffer who's data to set.
  * @param offset An offset in the arrayBuffer to start at.
  */
 export declare function setTypedValues(typeDef: TypeDefinition, data: any, arrayBuffer: ArrayBuffer, offset?: number): void;
 /**
- * Same as @link {setTypedValues} except it takes a @link {VariableDefinition}.
- * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
+ * Same as {@link setTypedValues} except it takes a {@link VariableDefinition}.
+ * @param varDef A variable definition provided by {@link makeShaderDataDefinitions}
  * @param data The source data
  * @param arrayBuffer The arrayBuffer who's data to set.
  * @param offset An offset in the arrayBuffer to start at.
@@ -368,7 +384,7 @@ export declare function setStructuredValues(varDef: VariableDefinition, data: an
  *    new ArrayBuffer(defs.storages.f.size + size * numElements));
  * ```
  *
- * @param varDef A variable definition provided by @link {makeShaderDataDefinitions}
+ * @param varDef A variable definition provided by {@link makeShaderDataDefinitions}
  * @returns the size, align, and unalignedSize in bytes of the unsized array element in this type definition.
  *   If there is no unsized array, size = 0.
  */

@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { TypedArray, TypedArrayConstructor } from './typed-arrays.js';
 /**
  * See {@link Arrays} for details

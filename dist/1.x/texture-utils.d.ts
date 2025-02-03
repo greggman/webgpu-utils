@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { TypedArray } from './typed-arrays.js';
 export type CopyTextureOptions = {
     flipY?: boolean;

@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 /**
  * Converts a `GPUExtent3D` into an array of numbers
  *

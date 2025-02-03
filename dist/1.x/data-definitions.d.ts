@@ -1,4 +1,3 @@
-/// <reference types="dist" />
 import { WGSLType } from './wgsl-types.js';
 export type FieldDefinition = {
     offset: number;
@@ -119,7 +118,7 @@ export type PipelineDescriptor = {
  * MAINTENANCE_TODO: Add example
  *
  * @param defs ShaderDataDefinitions or an array of ShaderDataDefinitions as
- *    returned from @link {makeShaderDataDefinitions}. If an array more than 1
+ *    returned from {@link makeShaderDataDefinitions}. If an array more than 1
  *    definition it's assumed the vertex shader is in the first and the fragment
  *    shader in the second.
  * @param desc A PipelineDescriptor. You should be able to pass in the same object you passed
