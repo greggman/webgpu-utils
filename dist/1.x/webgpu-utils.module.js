@@ -1,4 +1,4 @@
-/* webgpu-utils@1.9.4, license MIT */
+/* webgpu-utils@1.9.5, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -880,9 +880,9 @@ class For extends Statement {
     }
     search(callback) {
         var _a, _b, _c;
-        (_a = this.init) === null || _a === void 0 ? void 0 : _a.search(callback);
-        (_b = this.condition) === null || _b === void 0 ? void 0 : _b.search(callback);
-        (_c = this.increment) === null || _c === void 0 ? void 0 : _c.search(callback);
+        (_a = this.init) === null || _a === undefined ? undefined : _a.search(callback);
+        (_b = this.condition) === null || _b === undefined ? undefined : _b.search(callback);
+        (_c = this.increment) === null || _c === undefined ? undefined : _c.search(callback);
         this.searchBlock(this.body, callback);
     }
 }
@@ -906,7 +906,7 @@ class Var extends Statement {
     search(callback) {
         var _a;
         callback(this);
-        (_a = this.value) === null || _a === void 0 ? void 0 : _a.search(callback);
+        (_a = this.value) === null || _a === undefined ? undefined : _a.search(callback);
     }
 }
 /**
@@ -926,7 +926,7 @@ class Override extends Statement {
     }
     search(callback) {
         var _a;
-        (_a = this.value) === null || _a === void 0 ? void 0 : _a.search(callback);
+        (_a = this.value) === null || _a === undefined ? undefined : _a.search(callback);
     }
 }
 /**
@@ -949,7 +949,7 @@ class Let extends Statement {
     search(callback) {
         var _a;
         callback(this);
-        (_a = this.value) === null || _a === void 0 ? void 0 : _a.search(callback);
+        (_a = this.value) === null || _a === undefined ? undefined : _a.search(callback);
     }
 }
 /**
@@ -975,7 +975,7 @@ class Const extends Statement {
     search(callback) {
         var _a;
         callback(this);
-        (_a = this.value) === null || _a === void 0 ? void 0 : _a.search(callback);
+        (_a = this.value) === null || _a === undefined ? undefined : _a.search(callback);
     }
 }
 var IncrementOperator;
@@ -1144,7 +1144,7 @@ class Return extends Statement {
     }
     search(callback) {
         var _a;
-        (_a = this.value) === null || _a === void 0 ? void 0 : _a.search(callback);
+        (_a = this.value) === null || _a === undefined ? undefined : _a.search(callback);
     }
 }
 /**
@@ -1583,10 +1583,10 @@ class ConstExpr extends Expression {
         var _a, _b;
         if (this.initializer instanceof CreateExpr) {
             // This is a struct constant
-            const property = (_a = this.postfix) === null || _a === void 0 ? void 0 : _a.evaluateString(context);
-            const type = (_b = this.initializer.type) === null || _b === void 0 ? void 0 : _b.name;
+            const property = (_a = this.postfix) === null || _a === undefined ? undefined : _a.evaluateString(context);
+            const type = (_b = this.initializer.type) === null || _b === undefined ? undefined : _b.name;
             const struct = context.structs.get(type);
-            const memberIndex = struct === null || struct === void 0 ? void 0 : struct.getMemberIndex(property);
+            const memberIndex = struct === null || struct === undefined ? undefined : struct.getMemberIndex(property);
             if (memberIndex !== undefined && memberIndex != -1) {
                 const value = this.initializer.args[memberIndex].evaluate(context);
                 return value;
@@ -2060,7 +2060,7 @@ TokenTypes.keywords = {
         pointer: new TokenType("ptr", TokenClass.keyword, "ptr"),*/
 };
 TokenTypes.tokens = {
-    decimal_float_literal: new TokenType("decimal_float_literal", TokenClass.token, /((-?[0-9]*\.[0-9]+|-?[0-9]+\.[0-9]*)((e|E)(\+|-)?[0-9]+)?f?)|(-?[0-9]+(e|E)(\+|-)?[0-9]+f?)|([0-9]+f)/),
+    decimal_float_literal: new TokenType("decimal_float_literal", TokenClass.token, /((-?[0-9]*\.[0-9]+|-?[0-9]+\.[0-9]*)((e|E)(\+|-)?[0-9]+)?f?)|(-?[0-9]+(e|E)(\+|-)?[0-9]+f?)|(-?[0-9]+f)/),
     hex_float_literal: new TokenType("hex_float_literal", TokenClass.token, /-?0x((([0-9a-fA-F]*\.[0-9a-fA-F]+|[0-9a-fA-F]+\.[0-9a-fA-F]*)((p|P)(\+|-)?[0-9]+f?)?)|([0-9a-fA-F]+(p|P)(\+|-)?[0-9]+f?))/),
     int_literal: new TokenType("int_literal", TokenClass.token, /-?0x[0-9a-fA-F]+|0i?|-?[1-9][0-9]*i?/),
     uint_literal: new TokenType("uint_literal", TokenClass.token, /0x[0-9a-fA-F]+u|0u|[1-9][0-9]*u/),
@@ -2339,7 +2339,7 @@ class WgslScanner {
         this._start = 0;
         this._current = 0;
         this._line = 1;
-        this._source = source !== null && source !== void 0 ? source : "";
+        this._source = source !== null && source !== undefined ? source : "";
     }
     /// Scan all tokens from the source.
     scanTokens() {
@@ -2702,7 +2702,7 @@ class WgslParser {
     }
     _advance() {
         var _a, _b;
-        this._currentLine = (_b = (_a = this._peek()) === null || _a === void 0 ? void 0 : _a.line) !== null && _b !== void 0 ? _b : -1;
+        this._currentLine = (_b = (_a = this._peek()) === null || _a === undefined ? undefined : _a.line) !== null && _b !== undefined ? _b : -1;
         if (!this._isAtEnd()) {
             this._current++;
         }
@@ -4169,7 +4169,7 @@ class WgslReflect {
                 const fragmentStage = this._getAttribute(node, "fragment");
                 const computeStage = this._getAttribute(node, "compute");
                 const stage = vertexStage || fragmentStage || computeStage;
-                const fn = new FunctionInfo(node.name, stage === null || stage === void 0 ? void 0 : stage.name);
+                const fn = new FunctionInfo(node.name, stage === null || stage === undefined ? undefined : stage.name);
                 fn.startLine = node.startLine;
                 fn.endLine = node.endLine;
                 this.functions.push(fn);
@@ -4182,12 +4182,10 @@ class WgslReflect {
                     fn.outputs = this._getOutputs(node.returnType);
                     this.entry[stage.name].push(fn);
                 }
-                else {
-                    fn.arguments = node.args.map((arg) => new ArgumentInfo(arg.name, this._getTypeInfo(arg.type, arg.attributes)));
-                    fn.returnType = node.returnType
-                        ? this._getTypeInfo(node.returnType, node.attributes)
-                        : null;
-                }
+                fn.arguments = node.args.map((arg) => new ArgumentInfo(arg.name, this._getTypeInfo(arg.type, arg.attributes)));
+                fn.returnType = node.returnType
+                    ? this._getTypeInfo(node.returnType, node.attributes)
+                    : null;
                 continue;
             }
         }
@@ -4204,7 +4202,7 @@ class WgslReflect {
                     const v = node;
                     for (const override of this.overrides) {
                         if (v.name == override.name) {
-                            (_a = fn.info) === null || _a === void 0 ? void 0 : _a.overrides.push(override);
+                            (_a = fn.info) === null || _a === undefined ? undefined : _a.overrides.push(override);
                         }
                     }
                 }
@@ -4247,7 +4245,7 @@ class WgslReflect {
     _addCalls(fn, calls) {
         var _a;
         for (const call of fn.calls) {
-            const info = (_a = this._functions.get(call.name)) === null || _a === void 0 ? void 0 : _a.info;
+            const info = (_a = this._functions.get(call.name)) === null || _a === undefined ? undefined : _a.info;
             if (info) {
                 calls.add(info);
             }
@@ -4587,11 +4585,11 @@ class WgslReflect {
     _updateTypeInfo(type) {
         var _a, _b;
         const typeSize = this._getTypeSize(type);
-        type.size = (_a = typeSize === null || typeSize === void 0 ? void 0 : typeSize.size) !== null && _a !== void 0 ? _a : 0;
+        type.size = (_a = typeSize === null || typeSize === undefined ? undefined : typeSize.size) !== null && _a !== undefined ? _a : 0;
         if (type instanceof ArrayInfo) {
             if (type["format"]) {
                 const formatInfo = this._getTypeSize(type["format"]);
-                type.stride = (_b = formatInfo === null || formatInfo === void 0 ? void 0 : formatInfo.size) !== null && _b !== void 0 ? _b : 0;
+                type.stride = (_b = formatInfo === null || formatInfo === undefined ? undefined : formatInfo.size) !== null && _b !== undefined ? _b : 0;
                 this._updateTypeInfo(type["format"]);
             }
         }
@@ -4611,7 +4609,7 @@ class WgslReflect {
             if (!sizeInfo) {
                 continue;
             }
-            (_a = this._getAlias(member.type.name)) !== null && _a !== void 0 ? _a : member.type;
+            (_a = this._getAlias(member.type.name)) !== null && _a !== undefined ? _a : member.type;
             const align = sizeInfo.align;
             const size = sizeInfo.size;
             offset = this._roundUp(align, offset + lastSize);
@@ -4644,7 +4642,7 @@ class WgslReflect {
         {
             const info = WgslReflect._typeInfo[type.name];
             if (info !== undefined) {
-                const divisor = ((_a = type["format"]) === null || _a === void 0 ? void 0 : _a.name) === "f16" ? 2 : 1;
+                const divisor = ((_a = type["format"]) === null || _a === undefined ? undefined : _a.name) === "f16" ? 2 : 1;
                 return new _TypeSize(Math.max(explicitAlign, info.align / divisor), Math.max(explicitSize, info.size / divisor));
             }
         }
@@ -4675,7 +4673,7 @@ class WgslReflect {
                 align = E.align;
             }
             const N = arrayType.count;
-            const stride = this._getAttributeNum((_b = type === null || type === void 0 ? void 0 : type.attributes) !== null && _b !== void 0 ? _b : null, "stride", this._roundUp(align, size));
+            const stride = this._getAttributeNum((_b = type === null || type === undefined ? undefined : type.attributes) !== null && _b !== undefined ? _b : null, "stride", this._roundUp(align, size));
             size = N * stride;
             if (explicitSize) {
                 size = explicitSize;
@@ -6413,12 +6411,12 @@ function createCubeVertices({ size = 1 } = {}) {
         [+k, +k, +k],
     ];
     const faceNormals = [
-        [+1, +0, +0],
-        [-1, +0, +0],
-        [+0, +1, +0],
-        [+0, -1, +0],
-        [+0, +0, +1],
-        [+0, +0, -1],
+        [1, 0, 0],
+        [-1, 0, 0],
+        [0, 1, 0],
+        [0, -1, 0],
+        [0, 0, 1],
+        [0, 0, -1],
     ];
     const uvCoords = [
         [1, 0],
