@@ -4,8 +4,18 @@ import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/2.x/wgpu-matrix.module.
 import * as wgh from '../dist/1.x/webgpu-utils.module.js';
 
 async function main() {
-  const adapter = await navigator.gpu?.requestAdapter();
-  const device = await adapter?.requestDevice();
+  const adapter = await navigator.gpu?.requestAdapter({
+    featureLevel: 'compatibility',
+  });
+  if (adapter?.limits.maxStorageBuffersInVertexStage < 2) {
+    fail('your device does not support support the needed functionality for this example');
+    return;
+  }
+  const device = await adapter?.requestDevice({
+    requiredLimits: {
+      maxStorageBuffersInVertexStage: 2,
+    },
+  });
   if (!device) {
     fail('need a browser that supports WebGPU');
     return;
@@ -170,6 +180,8 @@ async function main() {
     },
     depthStencil: {
       depthWriteEnabled: true,
+      depthBias: 1,
+      depthBiasSlopeScale: 0.5,
       depthCompare: 'less',
       format: 'depth24plus',
     },
@@ -226,7 +238,6 @@ async function main() {
     strideView.views.set([geometry.bufferLayouts[0].arrayStride / 4]);
 
     device.queue.writeBuffer(strideBuffer, 0, strideView.arrayBuffer);
-
 
     const bindGroup = device.createBindGroup({
       layout: pipeline.getBindGroupLayout(0),

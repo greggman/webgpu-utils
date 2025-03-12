@@ -5,7 +5,9 @@ import * as wgh from '../dist/1.x/webgpu-utils.module.js';
 
 // note: There is nothing special about webgpu-utils with relation to stencils
 async function main() {
-  const adapter = await navigator.gpu?.requestAdapter();
+  const adapter = await navigator.gpu?.requestAdapter({
+    featureLevel: 'compatibility',
+  });
   const device = await adapter?.requestDevice();
   if (!device) {
     fail('need a browser that supports WebGPU');
