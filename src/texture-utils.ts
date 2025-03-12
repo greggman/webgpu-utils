@@ -6,6 +6,7 @@ import {
 import {
   generateMipmap,
   numMipLevels,
+  guessTextureBindingViewDimensionForTexture,
 } from './generate-mipmap.js';
 
 export type CopyTextureOptions = {
@@ -13,6 +14,7 @@ export type CopyTextureOptions = {
   premultipliedAlpha?: boolean,
   colorSpace?: PredefinedColorSpace;
   dimension?: GPUTextureViewDimension;
+  viewDimension?: GPUTextureViewDimension;
   baseArrayLayer?: number;
 };
 
@@ -25,7 +27,7 @@ export type TextureCreationData = TextureData & {
 };
 
 export type TextureRawDataSource = TextureCreationData | TypedArray | number[];
-export type TextureSource = GPUImageCopyExternalImage['source'] | TextureRawDataSource;
+export type TextureSource = GPUCopyExternalImageSourceInfo['source'] | TextureRawDataSource;
 
 function isTextureData(source: TextureSource) {
   const src = source as TextureData;
@@ -169,7 +171,7 @@ export function copySourcesToTexture(
     if (isTextureRawDataSource(source)) {
       uploadDataToTexture(device, texture, source as TextureRawDataSource, { origin });
     } else {
-      const s = source as GPUImageCopyExternalImage['source'];
+      const s = source as GPUCopyExternalImageSourceInfo['source'];
       // work around limit that you can't call copyExternalImageToTexture for 3d texture.
       // sse https://github.com/gpuweb/gpuweb/issues/4697 for if we can remove this
       let dstTexture = texture;
@@ -208,7 +210,9 @@ export function copySourcesToTexture(
   }
 
   if (texture.mipLevelCount > 1) {
-    generateMipmap(device, texture);
+    const viewDimension =  guessTextureBindingViewDimensionForTexture(
+      options.viewDimension, texture.depthOrArrayLayers);
+    generateMipmap(device, texture, viewDimension);
   }
 }
 
@@ -287,6 +291,30 @@ export function getSizeFromSource(source: TextureSource, options: CreateTextureO
  *     }
  * );
  * ```
+ *
+ * Note: If you are supporting compatibility mode you will need to pass in your
+ * intended view dimension for cubemaps. Example:
+ *
+ * ```js
+ * const texture = createTextureFromSource(
+ *     device,
+ *     [
+ *        someCanvasOrVideoOrImageImageBitmapPosX,
+ *        someCanvasOrVideoOrImageImageBitmapNegY,
+ *        someCanvasOrVideoOrImageImageBitmapPosY,
+ *        someCanvasOrVideoOrImageImageBitmapNegY,
+ *        someCanvasOrVideoOrImageImageBitmapPosZ,
+ *        someCanvasOrVideoOrImageImageBitmapNegZ,
+ *     ],
+ *     {
+ *       usage: GPUTextureUsage.TEXTURE_BINDING |
+ *              GPUTextureUsage.RENDER_ATTACHMENT |
+ *              GPUTextureUsage.COPY_DST,
+ *       mips: true,
+ *       viewDimension: 'cube', // <=- Required for compatibility mode
+ *     }
+ * );
+ * ```
  */
 export function createTextureFromSources(
     device: GPUDevice,
@@ -297,8 +325,13 @@ export function createTextureFromSources(
   const size = getSizeFromSource(sources[0], options);
   size[2] = size[2] > 1 ? size[2] : sources.length;
 
+  const viewDimension =  guessTextureBindingViewDimensionForTexture(
+    options.viewDimension ?? options.dimension, size[2]);
+  const dimension = textureViewDimensionToDimension(viewDimension);
+
   const texture = device.createTexture({
-    dimension: textureViewDimensionToDimension(options.dimension),
+    dimension,
+    textureBindingViewDimension: viewDimension,
     format: options.format || 'rgba8unorm',
     mipLevelCount: options.mipLevelCount
         ? options.mipLevelCount
