@@ -13,7 +13,7 @@ export type CopyTextureOptions = {
   flipY?: boolean,
   premultipliedAlpha?: boolean,
   colorSpace?: PredefinedColorSpace;
-  dimension?: GPUTextureViewDimension;
+  dimension?: GPUTextureDimension;
   viewDimension?: GPUTextureViewDimension;
   baseArrayLayer?: number;
 };
@@ -210,8 +210,8 @@ export function copySourcesToTexture(
   }
 
   if (texture.mipLevelCount > 1) {
-    const viewDimension =  guessTextureBindingViewDimensionForTexture(
-      options.viewDimension, texture.depthOrArrayLayers);
+    const viewDimension =  options.viewDimension ?? guessTextureBindingViewDimensionForTexture(
+      texture.dimension, texture.depthOrArrayLayers);
     generateMipmap(device, texture, viewDimension);
   }
 }
@@ -325,8 +325,8 @@ export function createTextureFromSources(
   const size = getSizeFromSource(sources[0], options);
   size[2] = size[2] > 1 ? size[2] : sources.length;
 
-  const viewDimension =  guessTextureBindingViewDimensionForTexture(
-    options.viewDimension ?? options.dimension, size[2]);
+  const viewDimension = options.viewDimension ?? guessTextureBindingViewDimensionForTexture(
+    options.dimension, size[2]);
   const dimension = textureViewDimensionToDimension(viewDimension);
 
   const texture = device.createTexture({

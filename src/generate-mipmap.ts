@@ -3,10 +3,14 @@ import {
 } from './typed-arrays.js';
 
 export function guessTextureBindingViewDimensionForTexture(
-    dimension: GPUTextureViewDimension | undefined,
+    dimension: GPUTextureDimension | undefined,
     depthOrArrayLayers: number,
 ): GPUTextureViewDimension {
-  return dimension ?? (depthOrArrayLayers > 1 ? '2d-array' : '2d');
+  switch (dimension) {
+    case '1d': return '1d';
+    case '3d': return '3d';
+    default: return depthOrArrayLayers > 1 ? '2d-array' : '2d';
+  }
 }
 
 function normalizeGPUExtent3Dict(size: GPUExtent3DDict) {
@@ -76,10 +80,11 @@ export function generateMipmap(
   const {
     pipelineByFormatAndViewDimension,
   } = perDeviceInfo;
-  textureBindingViewDimension =
-    textureBindingViewDimension ??
-    guessTextureBindingViewDimensionForTexture(
-      texture.dimension, texture.depthOrArrayLayers);
+  textureBindingViewDimension = device.features.has('core-features-and-limits')
+    ? '2d-array'
+    : textureBindingViewDimension ?? guessTextureBindingViewDimensionForTexture(
+        texture.dimension, texture.depthOrArrayLayers
+      );
   if (!module) {
     module = device.createShaderModule({
       label: `mip level generation for ${textureBindingViewDimension}`,
