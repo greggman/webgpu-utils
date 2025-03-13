@@ -1,4 +1,4 @@
-/* webgpu-utils@1.9.7, license MIT */
+/* webgpu-utils@1.10.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -1109,15 +1109,11 @@
         }
     }
 
-    function guessTextureBindingViewDimensionForTexture(texture) {
-        switch (texture.dimension) {
-            case '1d':
-                return '1d';
-            case '3d':
-                return '3d';
-            default: // to shut up TS
-            case '2d':
-                return texture.depthOrArrayLayers > 1 ? '2d-array' : '2d';
+    function guessTextureBindingViewDimensionForTexture(dimension, depthOrArrayLayers) {
+        switch (dimension) {
+            case '1d': return '1d';
+            case '3d': return '3d';
+            default: return depthOrArrayLayers > 1 ? '2d-array' : '2d';
         }
     }
     function normalizeGPUExtent3Dict(size) {
@@ -1151,43 +1147,37 @@
         const maxSize = Math.max(...sizes.slice(0, dimension === '3d' ? 3 : 2));
         return 1 + Math.log2(maxSize) | 0;
     }
-    function getMipmapGenerationWGSL(textureBindingViewDimension) {
-        let textureSnippet;
-        let sampleSnippet;
-        switch (textureBindingViewDimension) {
-            case '2d':
-                textureSnippet = 'texture_2d<f32>';
-                sampleSnippet = 'textureSample(ourTexture, ourSampler, fsInput.texcoord)';
-                break;
-            case '2d-array':
-                textureSnippet = 'texture_2d_array<f32>';
-                sampleSnippet = `
-          textureSample(
-              ourTexture,
-              ourSampler,
-              fsInput.texcoord,
-              fsInput.baseArrayLayer)`;
-                break;
-            case 'cube':
-                textureSnippet = 'texture_cube<f32>';
-                sampleSnippet = `
-          textureSample(
-              ourTexture,
-              ourSampler,
-              faceMat[fsInput.baseArrayLayer] * vec3f(fract(fsInput.texcoord), 1))`;
-                break;
-            case 'cube-array':
-                textureSnippet = 'texture_cube_array<f32>';
-                sampleSnippet = `
-          textureSample(
-              ourTexture,
-              ourSampler,
-              faceMat[uni.layer] * vec3f(fract(fsInput.texcoord), 1), fsInput.baseArrayLayer)`;
-                break;
-            default:
-                throw new Error(`unsupported view: ${textureBindingViewDimension}`);
+    // Use a WeakMap so the device can be destroyed and/or lost
+    const byDevice = new WeakMap();
+    /**
+     * Generates mip levels from level 0 to the last mip for an existing texture
+     *
+     * The texture must have been created with TEXTURE_BINDING and RENDER_ATTACHMENT
+     * and been created with mip levels
+     *
+     * @param device A GPUDevice
+     * @param texture The texture to create mips for
+     * @param textureBindingViewDimension This is only needed in compatibility mode
+     *   and it is only needed when the texture is going to be used as a cube map.
+     */
+    function generateMipmap(device, texture, textureBindingViewDimension) {
+        let perDeviceInfo = byDevice.get(device);
+        if (!perDeviceInfo) {
+            perDeviceInfo = {
+                pipelineByFormatAndViewDimension: {},
+                moduleByViewDimension: {},
+            };
+            byDevice.set(device, perDeviceInfo);
         }
-        return `
+        let { sampler, module, } = perDeviceInfo;
+        const { pipelineByFormatAndViewDimension, } = perDeviceInfo;
+        textureBindingViewDimension = device.features.has('core-features-and-limits')
+            ? '2d-array'
+            : textureBindingViewDimension ?? guessTextureBindingViewDimensionForTexture(texture.dimension, texture.depthOrArrayLayers);
+        if (!module) {
+            module = device.createShaderModule({
+                label: `mip level generation for ${textureBindingViewDimension}`,
+                code: `
         const faceMat = array(
           mat3x3f( 0,  0,  -2,  0, -2,   0,  1,  1,   1),   // pos-x
           mat3x3f( 0,  0,   2,  0, -2,   0, -1,  1,  -1),   // neg-x
@@ -1220,71 +1210,57 @@
           return vsOutput;
         }
 
-        struct Uniforms {
-          layer: u32,
-        };
-
         @group(0) @binding(0) var ourSampler: sampler;
-        @group(0) @binding(1) var ourTexture: ${textureSnippet};
 
-        @fragment fn fs(fsInput: VSOutput) -> @location(0) vec4f {
-          return ${sampleSnippet};
+        @group(0) @binding(1) var ourTexture2d: texture_2d<f32>;
+        @fragment fn fs2d(fsInput: VSOutput) -> @location(0) vec4f {
+          return textureSample(ourTexture2d, ourSampler, fsInput.texcoord);
         }
-      `;
-    }
-    // Use a WeakMap so the device can be destroyed and/or lost
-    const byDevice = new WeakMap();
-    /**
-     * Generates mip levels from level 0 to the last mip for an existing texture
-     *
-     * The texture must have been created with TEXTURE_BINDING and RENDER_ATTACHMENT
-     * and been created with mip levels
-     *
-     * @param device A GPUDevice
-     * @param texture The texture to create mips for
-     * @param textureBindingViewDimension This is only needed in compatibility mode
-     *   and it is only needed when the texture is going to be used as a cube map.
-     */
-    function generateMipmap(device, texture, textureBindingViewDimension) {
-        let perDeviceInfo = byDevice.get(device);
-        if (!perDeviceInfo) {
-            perDeviceInfo = {
-                pipelineByFormatAndViewDimension: {},
-                moduleByViewDimension: {},
-            };
-            byDevice.set(device, perDeviceInfo);
+
+        @group(0) @binding(1) var ourTexture2dArray: texture_2d_array<f32>;
+        @fragment fn fs2darray(fsInput: VSOutput) -> @location(0) vec4f {
+          return textureSample(
+            ourTexture2dArray,
+            ourSampler,
+            fsInput.texcoord,
+            fsInput.baseArrayLayer);
         }
-        let { sampler, } = perDeviceInfo;
-        const { pipelineByFormatAndViewDimension, moduleByViewDimension, } = perDeviceInfo;
-        textureBindingViewDimension = textureBindingViewDimension || guessTextureBindingViewDimensionForTexture(texture);
-        let module = moduleByViewDimension[textureBindingViewDimension];
-        if (!module) {
-            const code = getMipmapGenerationWGSL(textureBindingViewDimension);
-            module = device.createShaderModule({
-                label: `mip level generation for ${textureBindingViewDimension}`,
-                code,
+
+        @group(0) @binding(1) var ourTextureCube: texture_cube<f32>;
+        @fragment fn fscube(fsInput: VSOutput) -> @location(0) vec4f {
+          return textureSample(
+            ourTextureCube,
+            ourSampler,
+            faceMat[fsInput.baseArrayLayer] * vec3f(fract(fsInput.texcoord), 1));
+        }
+
+        @group(0) @binding(1) var ourTextureCubeArray: texture_cube_array<f32>;
+        @fragment fn fscubearray(fsInput: VSOutput) -> @location(0) vec4f {
+          return textureSample(
+            ourTextureCubeArray,
+            ourSampler,
+            faceMat[fsInput.baseArrayLayer] * vec3f(fract(fsInput.texcoord), 1), fsInput.baseArrayLayer);
+        }
+      `,
             });
-            moduleByViewDimension[textureBindingViewDimension] = module;
-        }
-        if (!sampler) {
             sampler = device.createSampler({
                 minFilter: 'linear',
                 magFilter: 'linear',
             });
-            Object.assign(perDeviceInfo, { sampler });
+            Object.assign(perDeviceInfo, { sampler, module });
         }
         const id = `${texture.format}.${textureBindingViewDimension}`;
         if (!pipelineByFormatAndViewDimension[id]) {
+            const entryPoint = `fs${textureBindingViewDimension.replace(/[\W]/, '')}`;
             pipelineByFormatAndViewDimension[id] = device.createRenderPipeline({
                 label: `mip level generator pipeline for ${textureBindingViewDimension}`,
                 layout: 'auto',
                 vertex: {
                     module,
-                    entryPoint: 'vs',
                 },
                 fragment: {
                     module,
-                    entryPoint: 'fs',
+                    entryPoint,
                     targets: [{ format: texture.format }],
                 },
             });
@@ -1898,7 +1874,8 @@
             tempTexture.destroy();
         }
         if (texture.mipLevelCount > 1) {
-            generateMipmap(device, texture);
+            const viewDimension = options.viewDimension ?? guessTextureBindingViewDimensionForTexture(texture.dimension, texture.depthOrArrayLayers);
+            generateMipmap(device, texture, viewDimension);
         }
     }
     /**
@@ -1957,14 +1934,41 @@
      *     }
      * );
      * ```
+     *
+     * Note: If you are supporting compatibility mode you will need to pass in your
+     * intended view dimension for cubemaps. Example:
+     *
+     * ```js
+     * const texture = createTextureFromSource(
+     *     device,
+     *     [
+     *        someCanvasOrVideoOrImageImageBitmapPosX,
+     *        someCanvasOrVideoOrImageImageBitmapNegY,
+     *        someCanvasOrVideoOrImageImageBitmapPosY,
+     *        someCanvasOrVideoOrImageImageBitmapNegY,
+     *        someCanvasOrVideoOrImageImageBitmapPosZ,
+     *        someCanvasOrVideoOrImageImageBitmapNegZ,
+     *     ],
+     *     {
+     *       usage: GPUTextureUsage.TEXTURE_BINDING |
+     *              GPUTextureUsage.RENDER_ATTACHMENT |
+     *              GPUTextureUsage.COPY_DST,
+     *       mips: true,
+     *       viewDimension: 'cube', // <=- Required for compatibility mode
+     *     }
+     * );
+     * ```
      */
     function createTextureFromSources(device, sources, options = {}) {
         // NOTE: We assume all the sizes are the same. If they are not you'll get
         // an error.
         const size = getSizeFromSource(sources[0], options);
         size[2] = size[2] > 1 ? size[2] : sources.length;
+        const viewDimension = options.viewDimension ?? guessTextureBindingViewDimensionForTexture(options.dimension, size[2]);
+        const dimension = textureViewDimensionToDimension(viewDimension);
         const texture = device.createTexture({
-            dimension: textureViewDimensionToDimension(options.dimension),
+            dimension,
+            textureBindingViewDimension: viewDimension,
             format: options.format || 'rgba8unorm',
             mipLevelCount: options.mipLevelCount
                 ? options.mipLevelCount
@@ -3068,6 +3072,7 @@
     exports.getSizeAndAlignmentOfUnsizedArrayElement = getSizeAndAlignmentOfUnsizedArrayElement;
     exports.getSizeForMipFromTexture = getSizeForMipFromTexture;
     exports.getSizeFromSource = getSizeFromSource;
+    exports.guessTextureBindingViewDimensionForTexture = guessTextureBindingViewDimensionForTexture;
     exports.interleaveVertexData = interleaveVertexData;
     exports.isTypedArray = isTypedArray;
     exports.loadImageBitmap = loadImageBitmap;

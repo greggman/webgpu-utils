@@ -3,7 +3,8 @@ export type CopyTextureOptions = {
     flipY?: boolean;
     premultipliedAlpha?: boolean;
     colorSpace?: PredefinedColorSpace;
-    dimension?: GPUTextureViewDimension;
+    dimension?: GPUTextureDimension;
+    viewDimension?: GPUTextureViewDimension;
     baseArrayLayer?: number;
 };
 export type TextureData = {
@@ -14,7 +15,7 @@ export type TextureCreationData = TextureData & {
     height?: number;
 };
 export type TextureRawDataSource = TextureCreationData | TypedArray | number[];
-export type TextureSource = GPUImageCopyExternalImage['source'] | TextureRawDataSource;
+export type TextureSource = GPUCopyExternalImageSourceInfo['source'] | TextureRawDataSource;
 /**
  * Gets the size of a mipLevel. Returns an array of 3 numbers [width, height, depthOrArrayLayers]
  */
@@ -65,6 +66,30 @@ export declare function getSizeFromSource(source: TextureSource, options: Create
  *              GPUTextureUsage.RENDER_ATTACHMENT |
  *              GPUTextureUsage.COPY_DST,
  *       mips: true,
+ *     }
+ * );
+ * ```
+ *
+ * Note: If you are supporting compatibility mode you will need to pass in your
+ * intended view dimension for cubemaps. Example:
+ *
+ * ```js
+ * const texture = createTextureFromSource(
+ *     device,
+ *     [
+ *        someCanvasOrVideoOrImageImageBitmapPosX,
+ *        someCanvasOrVideoOrImageImageBitmapNegY,
+ *        someCanvasOrVideoOrImageImageBitmapPosY,
+ *        someCanvasOrVideoOrImageImageBitmapNegY,
+ *        someCanvasOrVideoOrImageImageBitmapPosZ,
+ *        someCanvasOrVideoOrImageImageBitmapNegZ,
+ *     ],
+ *     {
+ *       usage: GPUTextureUsage.TEXTURE_BINDING |
+ *              GPUTextureUsage.RENDER_ATTACHMENT |
+ *              GPUTextureUsage.COPY_DST,
+ *       mips: true,
+ *       viewDimension: 'cube', // <=- Required for compatibility mode
  *     }
  * );
  * ```

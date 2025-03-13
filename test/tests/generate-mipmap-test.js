@@ -66,9 +66,9 @@ describe('generate-mipmap tests', () => {
   });
 
   function test(compatibilityMode) {
-    const options = {
-      compatibilityMode,
-    };
+    const options = compatibilityMode ? {
+      featureLevel: 'compatibility',
+    } : {};
 
     describe(compatibilityMode ? 'test compatibility mode' : 'test normal WebGPU', () => {
 
@@ -178,15 +178,15 @@ describe('generate-mipmap tests', () => {
       }));
 
       it('generates mipmaps 6 layers (cube)', testWithDeviceWithOptions(options, async device => {
-        await testGenerateMipmap(device, layerData.slice(0, 6), { textureBindingViewDimension: 'cube' });
+        await testGenerateMipmap(device, layerData.slice(0, 6), compatibilityMode ? { textureBindingViewDimension: 'cube' } : {});
       }));
 
       it('generates mipmaps 6 layers (2d-array)', testWithDeviceWithOptions(options, async device => {
-        await testGenerateMipmap(device, layerData.slice(0, 6), { textureBindingViewDimension: '2d-array' });
+        await testGenerateMipmap(device, layerData.slice(0, 6));
       }));
 
       it('generates mipmaps 12 layers (cube-array)', testWithDeviceWithOptions(options, async device => {
-        if (options.compatibilityMode) {
+        if (!device.features.has('core-features-and-limits')) {
           // no cube-array in compat
           return;
         }

@@ -1,3 +1,4 @@
+export declare function guessTextureBindingViewDimensionForTexture(dimension: GPUTextureDimension | undefined, depthOrArrayLayers: number): GPUTextureViewDimension;
 /**
  * Converts a `GPUExtent3D` into an array of numbers
  *

@@ -4,7 +4,9 @@ import * as wgh from '../dist/1.x/webgpu-utils.module.js';
 import GUI from './3rdparty/muigui-0.x.module.js';
 
 async function main() {
-  const adapter = await navigator.gpu?.requestAdapter();
+  const adapter = await navigator.gpu?.requestAdapter({
+    featureLevel: 'compatibility',
+  });
   const device = await adapter?.requestDevice();
   if (!device) {
     fail('need a browser that supports WebGPU');
@@ -106,6 +108,7 @@ async function main() {
     // 'images/yokohama/negz.jpg',
   ], {
     mips: true,
+    viewDimension: 'cube',
   });
 
   const defs = wgh.makeShaderDataDefinitions(code);
