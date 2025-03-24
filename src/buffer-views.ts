@@ -116,11 +116,11 @@ function getSizeOfTypeDef(typeDef: TypeDefinition): number {
 function makeIntrinsicTypedArrayView(typeDef: TypeDefinition, buffer: ArrayBuffer, baseOffset: number, numElements?: number): TypedArray {
     const { size, type } = typeDef as IntrinsicDefinition;
     try {
-        const { View, align } = kWGSLTypeInfo[type];
+        const { View, align, size: intrinsicSize } = kWGSLTypeInfo[type];
         const isArray = numElements !== undefined;
         const sizeInBytes = isArray
             ? roundUpToMultipleOf(size, align)
-            : size;
+            : intrinsicSize;
         const baseNumElements = sizeInBytes / View.BYTES_PER_ELEMENT;
         const effectiveNumElements = isArray
            ? (numElements === 0
