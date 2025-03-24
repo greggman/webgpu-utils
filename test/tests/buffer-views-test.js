@@ -1032,6 +1032,28 @@ describe('buffer-views-tests', () => {
         assertEqual(views.c.byteOffset, 4);
     });
 
+    it('handles @size for padding', () => {
+        const shader = `
+        struct Test {
+            @size(16) a: u32,
+            @size(16) b: u32,
+            @size(16) c: vec2u,
+            @size(16) d: array<u32, 2>,
+        }
+        `;
+        const defs = makeShaderDataDefinitions(shader).structs;
+        const {views, arrayBuffer} = makeStructuredView(defs.Test);
+        assertEqual(arrayBuffer.byteLength, 64);
+        assertEqual(views.a.byteOffset, 0);
+        assertEqual(views.b.byteOffset, 16);
+        assertEqual(views.c.byteOffset, 32);
+        assertEqual(views.d.byteOffset, 48);
+        assertEqual(views.a.length, 1);
+        assertEqual(views.b.length, 1);
+        assertEqual(views.c.length, 2);
+        assertEqual(views.d.length, 2);
+    });
+
     describe('expand arrays of intrinsics', () => {
         it('expands arrays of intrinsics', () => {
             setIntrinsicsToView(['vec3f', 'vec3<f32>']);

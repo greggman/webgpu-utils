@@ -371,7 +371,7 @@ const buf1 = makeStructuredView(defs.storages.buf1, new ArrayBuffer(4 * 16));
 ```
 
 Note: If you have a complex array element type you can call
-`getSizeOfUnsizedArrayElement` to get its size. Example:
+`getSizeAndAlignmentOfUnsizedArrayElement` to get its size. Example:
 
 ```js
 const code = `
@@ -382,7 +382,7 @@ struct Light {
 @group(0) @binding(7) var<storage> lights: array<Light>;
 `;
 const defs = makeShaderDataDefinitions(code);
-const {size} = getSizeOfUnsizedArrayElement(defs.storages.lights);
+const {size} = getSizeAndAlignmentOfUnsizedArrayElement(defs.storages.lights);
 const numLights = 4;
 const buf1 = makeStructuredView(
     defs.storages.lights, new ArrayBuffer(numLights * size));
@@ -400,7 +400,7 @@ struct Kernel {
 @group(0) @binding(7) var<storage> conv: Kernel;
 `;
 const defs = makeShaderDataDefinitions(code);
-const {size: elemSize} = getSizeOfUnsizedArrayElement(defs.storages.conv);
+const {size: elemSize} = getSizeAndAlignmentOfUnsizedArrayElement(defs.storages.conv);
 const numKernelEntries = 4;
 const size = defs.storages.conv.size + numKernelEntries * elemSize;
 const buf1 = makeStructuredView(

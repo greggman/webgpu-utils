@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- this file is auto-generated from README.md. Do not edited directly -->
 <!--
-@license webgpu-utils 1.10.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
+@license webgpu-utils 1.10.1 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/webgpu-utils for details
 -->
@@ -357,7 +357,7 @@ const buf1 = makeStructuredView(defs.storages.buf1, new ArrayBuffer(4 * 16));
 // buf1.views will be a Float32Array representing 4 vec3fs
 </code></pre>
 <p>Note: If you have a complex array element type you can call
-<code>getSizeOfUnsizedArrayElement</code> to get its size. Example:</p>
+<code>getSizeAndAlignmentOfUnsizedArrayElement</code> to get its size. Example:</p>
 <pre><code class="lang-js">const code = `
 struct Light {
   intensity: f32,
@@ -366,7 +366,7 @@ struct Light {
 @group(0) @binding(7) var&lt;storage&gt; lights: array&lt;Light&gt;;
 `;
 const defs = makeShaderDataDefinitions(code);
-const {size} = getSizeOfUnsizedArrayElement(defs.storages.lights);
+const {size} = getSizeAndAlignmentOfUnsizedArrayElement(defs.storages.lights);
 const numLights = 4;
 const buf1 = makeStructuredView(
     defs.storages.lights, new ArrayBuffer(numLights * size));
@@ -381,7 +381,7 @@ struct Kernel {
 @group(0) @binding(7) var&lt;storage&gt; conv: Kernel;
 `;
 const defs = makeShaderDataDefinitions(code);
-const {size: elemSize} = getSizeOfUnsizedArrayElement(defs.storages.conv);
+const {size: elemSize} = getSizeAndAlignmentOfUnsizedArrayElement(defs.storages.conv);
 const numKernelEntries = 4;
 const size = defs.storages.conv.size + numKernelEntries * elemSize;
 const buf1 = makeStructuredView(

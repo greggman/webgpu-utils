@@ -1,4 +1,4 @@
-/* webgpu-utils@1.10.0, license MIT */
+/* webgpu-utils@1.10.1, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -201,11 +201,11 @@ function getSizeOfTypeDef(typeDef) {
 function makeIntrinsicTypedArrayView(typeDef, buffer, baseOffset, numElements) {
     const { size, type } = typeDef;
     try {
-        const { View, align } = kWGSLTypeInfo[type];
+        const { View, align, size: intrinsicSize } = kWGSLTypeInfo[type];
         const isArray = numElements !== undefined;
         const sizeInBytes = isArray
             ? roundUpToMultipleOf(size, align)
-            : size;
+            : intrinsicSize;
         const baseNumElements = sizeInBytes / View.BYTES_PER_ELEMENT;
         const effectiveNumElements = isArray
             ? (numElements === 0

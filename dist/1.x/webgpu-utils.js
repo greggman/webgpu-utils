@@ -1,4 +1,4 @@
-/* webgpu-utils@1.10.0, license MIT */
+/* webgpu-utils@1.10.1, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -207,11 +207,11 @@
     function makeIntrinsicTypedArrayView(typeDef, buffer, baseOffset, numElements) {
         const { size, type } = typeDef;
         try {
-            const { View, align } = kWGSLTypeInfo[type];
+            const { View, align, size: intrinsicSize } = kWGSLTypeInfo[type];
             const isArray = numElements !== undefined;
             const sizeInBytes = isArray
                 ? roundUpToMultipleOf(size, align)
-                : size;
+                : intrinsicSize;
             const baseNumElements = sizeInBytes / View.BYTES_PER_ELEMENT;
             const effectiveNumElements = isArray
                 ? (numElements === 0
