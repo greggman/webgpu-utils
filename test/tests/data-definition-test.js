@@ -970,32 +970,31 @@ describe('data-definition-tests', () => {
           });
           const expected = [
             {
-            entries: [
-              {
-                binding: 0,
-                visibility: 1,
-                buffer: {
-                  type: "uniform",
-                  minBufferSize: 64,
+              entries: [
+                {
+                  binding: 0,
+                  visibility: 1,
+                  buffer: {
+                    minBindingSize: 64,
+                  },
                 },
-              },
-              {
-                binding: 1,
-                visibility: 2,
-                sampler: {
-                  type: "filtering",
+                {
+                  binding: 1,
+                  visibility: 2,
+                  sampler: {
+                    type: "filtering",
+                  },
                 },
-              },
-              {
-                binding: 2,
-                visibility: 2,
-                texture: {
-                  sampleType: "depth",
-                  viewDimension: "2d",
-                  multisampled: false,
+                {
+                  binding: 2,
+                  visibility: 2,
+                  texture: {
+                    sampleType: "depth",
+                    viewDimension: "2d",
+                    multisampled: false,
+                  },
                 },
-              },
-            ],
+              ],
             },
           ];
           assertDeepEqual(layouts, expected);
