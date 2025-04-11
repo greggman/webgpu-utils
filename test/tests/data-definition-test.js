@@ -715,6 +715,7 @@ describe('data-definition-tests', () => {
         @group(0) @binding(2) var samp: sampler;
         @vertex fn vs() -> @builtin(position) vec4f {
           _ = tex2d;
+          return vec4f(1);
         }
         @fragment fn fs() -> @location(0) vec4f {
           _ = samp;
@@ -762,6 +763,7 @@ describe('data-definition-tests', () => {
         @vertex fn vs() -> @builtin(position) vec4f {
           _ = tex2d;
           _ = samp;
+          return vec4f(0);
         }
         @fragment fn fs() -> @location(0) vec4f {
           _ = tex2d;
@@ -851,6 +853,7 @@ describe('data-definition-tests', () => {
           _ = tex2d;
           _ = samp;
           _ = u1;
+          return vec4f(0);
         }
         @fragment fn fs() -> @location(0) vec4f {
           _ = tex2d;
@@ -919,6 +922,76 @@ describe('data-definition-tests', () => {
                   visibility: 1,
                   buffer: {
                     minBindingSize: 16,
+                  },
+                },
+              ],
+            },
+          ];
+          assertDeepEqual(layouts, expected);
+        }
+      });
+
+      it('handles some case that was failing 001', () => {
+        const code = `
+          struct Uniforms {
+            matrix: mat4x4f,
+          };
+
+          struct MyVSOutput {
+            @builtin(position) position: vec4f,
+            @location(1) texcoord: vec2f,
+          };
+
+          @vertex
+          fn myVSMain(@builtin(vertex_index) vNdx: u32) -> MyVSOutput {
+            let points = array(vec2f(0, 0), vec2f(0, 1), vec2f(1, 0), vec2f(1, 1));
+            var vsOut: MyVSOutput;
+            let p = points[vNdx];
+            vsOut.position = uni.matrix * vec4f(p, 0, 1);
+            vsOut.texcoord = p;
+            return vsOut;
+          }
+
+          @group(0) @binding(0) var<uniform> uni: Uniforms;
+          @group(0) @binding(1) var diffuseSampler: sampler;
+          @group(0) @binding(2) var diffuseTexture: texture_depth_2d;
+
+          @fragment
+          fn myFSMain(v: MyVSOutput) -> @location(0) vec4f {
+            let d = textureSample(diffuseTexture, diffuseSampler, v.texcoord);
+            return vec4f(d, d, d, 1);
+          }
+        `;
+        const d = makeShaderDataDefinitions(code);
+        {
+          const layouts = makeBindGroupLayoutDescriptors(d, {
+            vertex: { },
+            fragment: { },
+          });
+          const expected = [
+            {
+              entries: [
+                {
+                  binding: 0,
+                  visibility: 1,
+                  buffer: {
+                    minBindingSize: 64,
+                  },
+                },
+                {
+                  binding: 1,
+                  visibility: 2,
+                  sampler: {
+                    type: "filtering",
+                  },
+                },
+                {
+                  binding: 2,
+                  visibility: 2,
+                  texture: {
+                    sampleType: "depth",
+                    viewDimension: "2d",
+                    multisampled: false,
                   },
                 },
               ],

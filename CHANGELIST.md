@@ -1,5 +1,13 @@
 # Change List
 
+### 1.10.1
+
+* Fix so `@size` doesn't increase size of intrinsic view.
+
+### 1.10.0
+
+* Support compatibility mode - eg mip generation
+
 ### 1.9.0
 
 * Support `minBindingSize` in bind group layouts.
