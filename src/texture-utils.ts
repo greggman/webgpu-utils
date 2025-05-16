@@ -247,7 +247,7 @@ export type CreateTextureOptions = CopyTextureOptions & {
  * sources have a different way to get their size.
  */
 export function getSizeFromSource(source: TextureSource, options: CreateTextureOptions): number[] {
-  if (source instanceof HTMLVideoElement) {
+  if ('videoWidth' in source  && 'videoHeight' in source) {
     return [source.videoWidth, source.videoHeight, 1];
   } else {
     const maybeHasWidthAndHeight = source as { width: number, height: number };

@@ -1,5 +1,9 @@
 # Change List
 
+### 1.10.3
+
+* Fix so can use in worker
+
 ### 1.10.1
 
 * Fix so `@size` doesn't increase size of intrinsic view.

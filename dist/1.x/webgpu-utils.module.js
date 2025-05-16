@@ -1,4 +1,4 @@
-/* webgpu-utils@1.10.2, license MIT */
+/* webgpu-utils@1.10.3, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -1884,7 +1884,7 @@ function copySourceToTexture(device, texture, source, options = {}) {
  * sources have a different way to get their size.
  */
 function getSizeFromSource(source, options) {
-    if (source instanceof HTMLVideoElement) {
+    if ('videoWidth' in source && 'videoHeight' in source) {
         return [source.videoWidth, source.videoHeight, 1];
     }
     else {

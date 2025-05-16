@@ -1,4 +1,4 @@
-/* webgpu-utils@1.10.2, license MIT */
+/* webgpu-utils@1.10.3, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -1890,7 +1890,7 @@
      * sources have a different way to get their size.
      */
     function getSizeFromSource(source, options) {
-        if (source instanceof HTMLVideoElement) {
+        if ('videoWidth' in source && 'videoHeight' in source) {
             return [source.videoWidth, source.videoHeight, 1];
         }
         else {
