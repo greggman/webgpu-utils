@@ -14,6 +14,7 @@ async function main() {
   await Promise.all([
     import('./tests/buffer-views-test.js'),
     import('./tests/data-definition-test.js'),
+    import('./tests/flat-views-test.js'),
     import('./tests/generate-mipmap-test.js'),
     import('./tests/attribute-utils-test.js'),
     import('./tests/texture-utils-test.js'),

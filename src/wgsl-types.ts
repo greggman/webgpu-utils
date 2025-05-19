@@ -5,11 +5,12 @@ import {
     TypedArrayConstructor,
 } from './typed-arrays.js';
 
+export type ViewType = 'i32' | 'u32' | 'f32' | 'f16' | 'u16' | 'bool';
 export type TypeDef = {
     numElements: number;
     align: number;
     size: number;
-    type: string;
+    type: ViewType;
     View: TypedArrayConstructor;
     flatten?: boolean,
     pad?: readonly number[];

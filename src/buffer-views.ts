@@ -15,6 +15,7 @@ import {
     WGSLType,
     kWGSLTypes,
     kWGSLTypeInfo,
+    ViewType,
 } from './wgsl-types.js';
 
 /**
@@ -138,6 +139,13 @@ function makeIntrinsicTypedArrayView(typeDef: TypeDefinition, buffer: ArrayBuffe
 function isIntrinsic(typeDef: TypeDefinition) {
     return !(typeDef as StructDefinition).fields &&
            !(typeDef as ArrayDefinition).elementType;
+}
+
+function getViewForIntrinsicType(views: TypedViews, typeDef: TypeDefinition) {
+    const { type } = typeDef as IntrinsicDefinition;
+    const { type: baseType } = kWGSLTypeInfo[type];
+    const v = views as unknown as ({[key in ViewType]: TypedArray});
+    return v[baseType] as TypedArray;
 }
 
 /**
@@ -700,4 +708,68 @@ export function getSizeAndAlignmentOfUnsizedArrayElement(varDef: VariableDefinit
     const asVarDef = varDef as VariableDefinition;
     const typeDef = asVarDef.group === undefined ? varDef as StructDefinition : asVarDef.typeDefinition;
     return getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef);
+}
+
+type TypedViews = {
+    f32: Float32Array,
+    i32: Int32Array,
+    u32: Uint32Array,
+    f16: Uint16Array,
+};
+type FlatView = TypedViews & {
+    typeDef: TypeDefinition,
+    arrayBuffer: ArrayBuffer
+};
+
+function setFlatPart(typeDef: TypeDefinition, views: TypedViews, baseOffset: number, data: any) {
+    const asArrayDef = typeDef as ArrayDefinition;
+    const elementType = asArrayDef.elementType;
+    if (elementType) {
+        if (isIntrinsic(elementType) && kWGSLTypeInfo[(elementType as IntrinsicDefinition).type].flatten) {
+            const view = getViewForIntrinsicType(views, elementType);
+            view.set(data, baseOffset / view.BYTES_PER_ELEMENT);
+        } else {
+            const {size} = getSizeAndAlignmentOfUnsizedArrayElementOfTypeDef(typeDef);
+            for (let i = 0; i < data.length; ++i) {
+                setFlatPart(elementType, views, baseOffset + size * i, data[i]);
+            }
+        }
+    } else if (typeof typeDef === 'string') {
+        throw Error('unreachable');
+    } else {
+        const fields = (typeDef as StructDefinition).fields;
+        if (fields) {
+            for (const [name, subData] of Object.entries(data)) {
+                const {type, offset} = fields[name];
+                setFlatPart(type, views, baseOffset + offset, subData);
+            }
+        } else {
+            const view = getViewForIntrinsicType(views, typeDef);
+            if (isArrayLikeOfNumber(data)) {
+                view.set(data, baseOffset / view.BYTES_PER_ELEMENT);
+            } else {
+                view[baseOffset / view.BYTES_PER_ELEMENT] = data;
+            }
+        }
+    }
+}
+
+export function setFlatView(view: FlatView, data: any) {
+    const { typeDef } = view;
+    setFlatPart(typeDef, view, 0, data);
+}
+
+export function makeFlatView(varDef: VariableDefinition | StructDefinition, arrayBuffer?: ArrayBuffer, offset = 0): FlatView {
+    const asVarDef = varDef as VariableDefinition;
+    const typeDef = asVarDef.group === undefined ? varDef as StructDefinition : asVarDef.typeDefinition;
+    const baseOffset = offset ?? 0;
+    const buffer = arrayBuffer ?? new ArrayBuffer(getSizeOfTypeDef(typeDef));
+    return {
+        typeDef,
+        arrayBuffer: buffer,
+        f32: new Float32Array(buffer, baseOffset / 4),
+        i32: new Int32Array(buffer, baseOffset / 4),
+        u32: new Uint32Array(buffer, baseOffset / 4),
+        f16: new Uint16Array(buffer, baseOffset / 2),
+    };
 }
