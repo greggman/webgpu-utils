@@ -47,8 +47,8 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.2",
     "@tsconfig/recommended": "^1.0.8",
-    "@typescript-eslint/eslint-plugin": "^8.22.0",
-    "@typescript-eslint/parser": "^8.22.0",
+    "@typescript-eslint/eslint-plugin": "^8.34.0",
+    "@typescript-eslint/parser": "^8.34.0",
     "@webgpu/types": "^0.1.60",
     "eslint": "^8.57.1",
     "eslint-plugin-html": "^7.1.0",
@@ -58,12 +58,12 @@
     "express": "^4.21.2",
     "markdown-it": "^14.1.0",
     "mocha": "^11.1.0",
-    "puppeteer": "^24.8.2",
+    "puppeteer": "^24.10.0",
     "rollup": "^4.34.1",
     "servez": "^2.3.0",
     "tslib": "^2.8.1",
-    "typedoc": "^0.27.6",
-    "typescript": "^5.6.3",
+    "typedoc": "^0.28.5",
+    "typescript": "^5.8.3",
     "wgsl_reflect": "github:brendan-duncan/wgsl_reflect#7ea42bc30920f0244ade6b0d1ab7fc7ab6f2e95b"
   }
 }
