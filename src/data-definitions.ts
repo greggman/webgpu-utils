@@ -267,11 +267,6 @@ export function makeBindGroupLayoutDescriptors(
         });
     }
     const descriptors = bindGroupLayoutDescriptorsByGroupByBinding.map(v => ({entries: [...v.values()].sort(byBinding) }));
-    for (let i = 0; i < descriptors.length; ++i) {
-        if (!descriptors[i]) {
-            descriptors[i] = { entries: [] };
-        }
-    }
     return descriptors;
 }
 

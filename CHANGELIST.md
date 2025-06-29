@@ -1,5 +1,9 @@
 # Change List
 
+### 1.11.0
+
+* Switch to undefined bindGroupLayouts instead of empty bindGroupLayouts
+
 ### 1.10.3
 
 * Fix so can use in worker

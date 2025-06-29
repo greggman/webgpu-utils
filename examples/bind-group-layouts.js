@@ -27,7 +27,7 @@ async function main() {
     worldViewProjection: mat4x4f,
     worldInverseTranspose: mat4x4f,
   };
-  @group(0) @binding(0) var<uniform> vsUniforms: VSUniforms;
+  @group(2) @binding(0) var<uniform> vsUniforms: VSUniforms;
 
   struct MyVSInput {
       @location(0) position: vec4f,
@@ -54,9 +54,9 @@ async function main() {
     lightDirection: vec3f,
   };
 
-  @group(0) @binding(1) var<uniform> fsUniforms: FSUniforms;
-  @group(0) @binding(2) var diffuseSampler: sampler;
-  @group(0) @binding(3) var diffuseTexture: texture_2d<f32>;
+  @group(0) @binding(0) var<uniform> fsUniforms: FSUniforms;
+  @group(0) @binding(1) var diffuseSampler: sampler;
+  @group(0) @binding(2) var diffuseTexture: texture_2d<f32>;
 
   @fragment
   fn myFSMain(v: MyVSOutput) -> @location(0) vec4f {
@@ -147,13 +147,19 @@ async function main() {
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
 
-  const bindGroup = device.createBindGroup({
-    layout: pipeline.getBindGroupLayout(0),
+  const bindGroup0 = device.createBindGroup({
+    layout: bindGroupLayouts[0],
+    entries: [
+      { binding: 0, resource: { buffer: fsUniformBuffer } },
+      { binding: 1, resource: sampler },
+      { binding: 2, resource: texture.createView() },
+    ],
+  });
+
+  const bindGroup2 = device.createBindGroup({
+    layout: bindGroupLayouts[2],
     entries: [
       { binding: 0, resource: { buffer: vsUniformBuffer } },
-      { binding: 1, resource: { buffer: fsUniformBuffer } },
-      { binding: 2, resource: sampler },
-      { binding: 3, resource: texture.createView() },
     ],
   });
 
@@ -219,7 +225,8 @@ async function main() {
     const commandEncoder = device.createCommandEncoder();
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
     passEncoder.setPipeline(pipeline);
-    passEncoder.setBindGroup(0, bindGroup);
+    passEncoder.setBindGroup(0, bindGroup0);
+    passEncoder.setBindGroup(2, bindGroup2);
     passEncoder.setVertexBuffer(0, buffers[0]);
     passEncoder.setIndexBuffer(indexBuffer, indexFormat);
     passEncoder.drawIndexed(numElements);

@@ -1,4 +1,4 @@
-/* webgpu-utils@1.10.4, license MIT */
+/* webgpu-utils@1.11.0, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -851,11 +851,6 @@
             });
         }
         const descriptors = bindGroupLayoutDescriptorsByGroupByBinding.map(v => ({ entries: [...v.values()].sort(byBinding) }));
-        for (let i = 0; i < descriptors.length; ++i) {
-            if (!descriptors[i]) {
-                descriptors[i] = { entries: [] };
-            }
-        }
         return descriptors;
     }
     function getNamedVariables(reflect, variables) {

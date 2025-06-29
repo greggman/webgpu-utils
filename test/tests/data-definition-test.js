@@ -671,9 +671,7 @@ describe('data-definition-tests', () => {
               },
             ],
           },
-          {
-            entries: [],
-          },
+          undefined,
           {
             entries: [
               {
@@ -819,15 +817,9 @@ describe('data-definition-tests', () => {
           },
         });
         const expected = [
-          {
-            entries: [],
-          },
-          {
-            entries: [],
-          },
-          {
-            entries: [],
-          },
+          undefined,
+          undefined,
+          undefined,
           {
             entries: [
               {
