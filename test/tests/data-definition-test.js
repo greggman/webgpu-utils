@@ -1001,6 +1001,75 @@ describe('data-definition-tests', () => {
         }
       });
 
+      it('handles 2 modules', () => {
+        const code1 = `
+        @group(0) @binding(1) var tex2d: texture_2d<f32>;
+        @group(0) @binding(2) var samp: sampler;
+        @group(0) @binding(3) var<uniform> u1: vec4f;
+        @vertex fn vs() -> @builtin(position) vec4f {
+          _ = tex2d;
+          _ = samp;
+          _ = u1;
+          return vec4f(0);
+        }
+        `;
+        const code2 = `
+        @group(0) @binding(1) var tex2d: texture_2d<f32>;
+        @group(0) @binding(2) var samp: sampler;
+        @group(0) @binding(4) var<uniform> u2: vec4f;
+        @fragment fn fs() -> @location(0) vec4f {
+          _ = tex2d;
+          _ = samp;
+          _ = u2;
+          return vec4f(0);
+        }
+        `;
+        const d1 = makeShaderDataDefinitions(code1);
+        const d2 = makeShaderDataDefinitions(code2);
+        {
+          const layouts = makeBindGroupLayoutDescriptors([d1, d2], {
+            vertex: { },
+            fragment: { },
+          });
+          const expected = [
+            {
+              entries: [
+                {
+                  binding: 1,
+                  visibility: 3,
+                  texture: {
+                    sampleType: 'float',
+                    viewDimension: '2d',
+                    multisampled: false,
+                  },
+                },
+                {
+                  binding: 2,
+                  visibility: 3,
+                  sampler: {
+                    type: 'filtering',
+                  },
+                },
+                {
+                  binding: 3,
+                  visibility: 1,
+                  buffer: {
+                    minBindingSize: 16,
+                  },
+                },
+                {
+                  binding: 4,
+                  visibility: 2,
+                  buffer: {
+                    minBindingSize: 16,
+                  },
+                },
+              ],
+            },
+          ];
+          assertDeepEqual(layouts, expected);
+        }
+      });
     });
 
 });
