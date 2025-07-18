@@ -130,7 +130,7 @@ const data4x1 = {
   data: [ r, g, b, y ].flat();
   width: 4,
 };
-const texture4x1 = createTextureFromSource(device, data2x2, {
+const texture4x1 = createTextureFromSource(device, data4x1, {
   mips: true,
 });
 ```
