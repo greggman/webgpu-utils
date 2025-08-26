@@ -4,6 +4,7 @@ import {
   createTextureFromSource,
   createTextureFromSources,
   createTextureFromImage,
+  copySourcesToTexture,
 } from '../../dist/1.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertArrayEqualApproximately, assertEqual } from '../assert.js';
 import { readTextureUnpadded, testWithDevice, testWithDeviceAndDocument } from '../webgpu.js';
@@ -11,6 +12,7 @@ import { readTextureUnpadded, testWithDevice, testWithDeviceAndDocument } from '
 // prevent global document
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const document = undefined;
+/* global GPUBufferUsage */
 /* global GPUTextureUsage */
 
 describe('texture-utils tests', () => {
@@ -142,7 +144,7 @@ describe('texture-utils tests', () => {
       assertArrayEqualApproximately(result, [255, 0, 0, 255, 0, 0, 255, 255], 0);
     }));
 
-    it('canc create 3D texture from canvases without COPY_SRC', testWithDeviceAndDocument(async (device, document) => {
+    it('can create 3D texture from canvases without COPY_SRC', testWithDeviceAndDocument(async (device, document) => {
       const createCanvas = color => {
         const canvas = document.createElement('canvas');
         canvas.width = 1;
@@ -184,6 +186,88 @@ describe('texture-utils tests', () => {
       );
       const result = await readTextureUnpadded(device, texture, 2);
       assertArrayEqualApproximately(result, [128, 0, 128, 255], 1);
+    }));
+
+    it('copies to layers, one layer at a time', testWithDevice(async device => {
+      const testDiffTextureContent0 = [].concat([100, 101, 102], [110, 111, 112], [120, 121, 122]);
+      const testDiffTextureContent1 = [].concat([200, 201, 202], [210, 211, 212], [220, 221, 222]);
+      const testDiffTextureContent2 = [].concat([300, 301, 302], [310, 311, 312], [320, 321, 322]);
+      const floatData = [testDiffTextureContent0, testDiffTextureContent1, testDiffTextureContent2].map(layer => new Float32Array(layer));
+      const texture = device.createTexture({
+        label: 'refinement test diff',
+        size: [3, 3, 3],
+        dimension: '2d',
+        mipLevelCount: 1,
+        format: 'r32float',
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING
+      });
+
+      copySourcesToTexture(device, texture, floatData);
+      const result0 = await readTextureUnpadded(device, texture, 0, 0);
+      const result1 = await readTextureUnpadded(device, texture, 0, 1);
+      const result2 = await readTextureUnpadded(device, texture, 0, 2);
+      assertArrayEqual(result0, testDiffTextureContent0, 'texture layer 0 matches expected');
+      assertArrayEqual(result1, testDiffTextureContent1, 'texture layer 1 matches expected');
+      assertArrayEqual(result2, testDiffTextureContent2, 'texture layer 2 matches expected');
+    }));
+
+    it('copies to layers, n layers at a time', testWithDevice(async device => {
+      const testDiffTextureContent0 = [].concat([100, 101, 102], [110, 111, 112], [120, 121, 122]);
+      const testDiffTextureContent1 = [].concat([200, 201, 202], [210, 211, 212], [220, 221, 222]);
+      const testDiffTextureContent2 = [].concat([300, 301, 302], [310, 311, 312], [320, 321, 322]);
+      const floatData = [...testDiffTextureContent0, ...testDiffTextureContent1, ...testDiffTextureContent2];
+      const texture = device.createTexture({
+        label: 'refinement test diff',
+        size: [3, 3, 3],
+        dimension: '2d',
+        mipLevelCount: 1,
+        format: 'r32float',
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING
+      });
+
+      copySourcesToTexture(device, texture, [floatData]);
+      const result0 = await readTextureUnpadded(device, texture, 0, 0);
+      const result1 = await readTextureUnpadded(device, texture, 0, 1);
+      const result2 = await readTextureUnpadded(device, texture, 0, 2);
+      assertArrayEqual(result0, testDiffTextureContent0, 'texture layer 0 matches expected');
+      assertArrayEqual(result1, testDiffTextureContent1, 'texture layer 1 matches expected');
+      assertArrayEqual(result2, testDiffTextureContent2, 'texture layer 2 matches expected');
+    }));
+
+    it('copies to layers, mips then layers at a time', testWithDevice(async device => {
+      const layer0m0 = [].concat([100, 101, 102], [110, 111, 112], [120, 121, 122]);
+      const layer1m0 = [].concat([200, 201, 202], [210, 211, 212], [220, 221, 222]);
+      const layer2m0 = [].concat([300, 301, 302], [310, 311, 312], [320, 321, 322]);
+      const layer0m1 = [1000];
+      const layer1m1 = [2000];
+      const layer2m1 = [3000];
+      const floatData = [
+        [...layer0m0, ...layer0m1],
+        [...layer1m0, ...layer1m1],
+        [...layer2m0, ...layer2m1],
+      ];
+      const texture = device.createTexture({
+        label: 'refinement test diff',
+        size: [3, 3, 3],
+        dimension: '2d',
+        mipLevelCount: 2,
+        format: 'r32float',
+        usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.COPY_SRC | GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING
+      });
+
+      copySourcesToTexture(device, texture, floatData);
+      const result0m0 = await readTextureUnpadded(device, texture, 0, 0);
+      const result1m0 = await readTextureUnpadded(device, texture, 0, 1);
+      const result2m0 = await readTextureUnpadded(device, texture, 0, 2);
+      const result0m1 = await readTextureUnpadded(device, texture, 1, 0);
+      const result1m1 = await readTextureUnpadded(device, texture, 1, 1);
+      const result2m1 = await readTextureUnpadded(device, texture, 1, 2);
+      assertArrayEqual(result0m0, layer0m0, 'texture layer 0 mip level 0 matches expected');
+      assertArrayEqual(result1m0, layer1m0, 'texture layer 1 mip level 0 matches expected');
+      assertArrayEqual(result2m0, layer2m0, 'texture layer 2 mip level 0 matches expected');
+      assertArrayEqual(result0m1, layer0m1, 'texture layer 0 mip level 1 matches expected');
+      assertArrayEqual(result1m1, layer1m1, 'texture layer 1 mip level 1 matches expected');
+      assertArrayEqual(result2m1, layer2m1, 'texture layer 2 mip level 1 matches expected');
     }));
 
     [

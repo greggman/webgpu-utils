@@ -8,14 +8,20 @@ import {
   numMipLevels,
   guessTextureBindingViewDimensionForTexture,
 } from './generate-mipmap.js';
+import {
+  getTextureFormatInfo,
+} from './format-info.js';
+import { addOrigin3D } from './utils.js';
 
 export type CopyTextureOptions = {
   flipY?: boolean,
+  mips?: boolean,
   premultipliedAlpha?: boolean,
   colorSpace?: PredefinedColorSpace;
   dimension?: GPUTextureDimension;
   viewDimension?: GPUTextureViewDimension;
   baseArrayLayer?: number;
+  mipLevel?: number;
 };
 
 export type TextureData = {
@@ -85,44 +91,6 @@ function textureViewDimensionToDimension(viewDimension: GPUTextureViewDimension 
   }
 }
 
-const kFormatToTypedArray: {[key: string]: TypedArrayConstructor} = {
-  '8snorm': Int8Array,
-  '8unorm': Uint8Array,
-  '8sint': Int8Array,
-  '8uint': Uint8Array,
-  '16snorm': Int16Array,
-  '16unorm': Uint16Array,
-  '16sint': Int16Array,
-  '16uint': Uint16Array,
-  '32snorm': Int32Array,
-  '32unorm': Uint32Array,
-  '32sint': Int32Array,
-  '32uint': Uint32Array,
-  '16float': Uint16Array,  // TODO: change to Float16Array
-  '32float': Float32Array,
-};
-
-const kTextureFormatRE = /([a-z]+)(\d+)([a-z]+)/;
-
-function getTextureFormatInfo(format: GPUTextureFormat) {
-  // this is a hack! It will only work for common formats
-  const [, channels, bits, typeName] = kTextureFormatRE.exec(format)!;
-  // TODO: if the regex fails, use table for other formats?
-  const numChannels = channels.length;
-  const bytesPerChannel = parseInt(bits) / 8;
-  const bytesPerElement = numChannels * bytesPerChannel;
-  const Type = kFormatToTypedArray[`${bits}${typeName}`];
-
-  return {
-    channels,
-    numChannels,
-    bytesPerChannel,
-    bytesPerElement,
-    Type,
-  };
-}
-
-
 /**
  * Gets the size of a mipLevel. Returns an array of 3 numbers [width, height, depthOrArrayLayers]
  */
@@ -131,7 +99,7 @@ export function getSizeForMipFromTexture(texture: GPUTexture, mipLevel: number):
     texture.width,
     texture.height,
     texture.depthOrArrayLayers,
-  ].map(v => Math.max(1, Math.floor(v / 2 ** mipLevel)));
+  ].map((v, i) => i < 3 || texture.dimension !== '3d' ? Math.max(1, Math.floor(v / 2 ** mipLevel)) : texture.depthOrArrayLayers);
 }
 
 /**
@@ -141,19 +109,42 @@ function uploadDataToTexture(
   device: GPUDevice,
   texture: GPUTexture,
   source: TextureRawDataSource,
-  options: { origin?: GPUOrigin3D },
+  options: { origin?: GPUOrigin3D, mipLevel?: number },
 ) {
   const data = toTypedArray((source as TextureData).data || source, texture.format);
-  const mipLevel = 0;
-  const size = getSizeForMipFromTexture(texture, mipLevel);
-  const { bytesPerElement } = getTextureFormatInfo(texture.format);
-  const origin = options.origin || [0, 0, 0];
-  device.queue.writeTexture(
-    { texture, origin },
-    data,
-    { bytesPerRow: bytesPerElement * size[0], rowsPerImage: size[1] },
-    size,
-  );
+  let dataOffset = 0;
+  let localLayer = 0;
+  let mipLevel = options.mipLevel ?? 0;
+  while (dataOffset < data.byteLength) {
+    const size = getSizeForMipFromTexture(texture, mipLevel);
+    const { blockWidth, blockHeight, bytesPerBlock } = getTextureFormatInfo(texture.format);
+    const blocksAcross = Math.ceil(size[0] / blockWidth);
+    const blocksDown = Math.ceil(size[1] / blockHeight);
+    const bytesPerRow = blocksAcross * bytesPerBlock!;
+    const bytesPerLayer = bytesPerRow * blocksDown;
+    const numLayers = texture.dimension == '3d'
+      ? data.byteLength / bytesPerLayer
+      : 1;
+    size[2] = numLayers;
+    const origin = addOrigin3D(options.origin ?? [0, 0, 0], [0, 0, localLayer]);
+    device.queue.writeTexture(
+      { texture, origin, mipLevel },
+      data as unknown as GPUAllowSharedBufferSource,
+      {
+        bytesPerRow: bytesPerBlock * blocksAcross,
+        rowsPerImage: blocksDown,
+        offset: dataOffset,
+      },
+      size,
+    );
+    const bytesUsed = size[2] * bytesPerLayer;
+    dataOffset += bytesUsed;
+    ++mipLevel;
+    if (mipLevel === texture.mipLevelCount) {
+      mipLevel = options.mipLevel ?? 0;
+      ++localLayer;
+    }
+  }
 }
 /**
  * Copies a an array of "sources" (Video, Canvas, OffscreenCanvas, ImageBitmap)
@@ -209,7 +200,7 @@ export function copySourcesToTexture(
     tempTexture.destroy();
   }
 
-  if (texture.mipLevelCount > 1) {
+  if (options.mips) {
     const viewDimension =  options.viewDimension ?? guessTextureBindingViewDimensionForTexture(
       texture.dimension, texture.depthOrArrayLayers);
     generateMipmap(device, texture, viewDimension);
@@ -233,7 +224,7 @@ export function copySourceToTexture(
  * @property mips if true and mipLevelCount is not set then wll automatically generate
  *    the correct number of mip levels.
  * @property format Defaults to "rgba8unorm"
- * @property mipLeveLCount Defaults to 1 or the number of mips needed for a full mipmap if `mips` is true
+ * @property mipLevelCount Defaults to 1 or the number of mips needed for a full mipmap if `mips` is true
  */
 export type CreateTextureOptions = CopyTextureOptions & {
   mips?: boolean,
@@ -247,7 +238,7 @@ export type CreateTextureOptions = CopyTextureOptions & {
  * sources have a different way to get their size.
  */
 export function getSizeFromSource(source: TextureSource, options: CreateTextureOptions): number[] {
-  if ('videoWidth' in source  && 'videoHeight' in source) {
+  if ('videoWidth' in source && 'videoHeight' in source) {
     return [source.videoWidth, source.videoHeight, 1];
   } else {
     const maybeHasWidthAndHeight = source as { width: number, height: number };
@@ -257,14 +248,14 @@ export function getSizeFromSource(source: TextureSource, options: CreateTextureO
       return [width, height, 1];
     }
     const format = options.format || 'rgba8unorm';
-    const { bytesPerElement, bytesPerChannel } = getTextureFormatInfo(format);
+    const { bytesPerBlock, unitsPerElement, Type } = getTextureFormatInfo(format);
     const data = isTypedArray(source) || Array.isArray(source)
        ? source
        : (source as TextureData).data;
     const numBytes = isTypedArray(data)
         ? (data as TypedArray).byteLength
-        : ((data as number[]).length * bytesPerChannel);
-    const numElements = numBytes / bytesPerElement;
+        : ((data as number[]).length * Type.BYTES_PER_ELEMENT);
+    const numElements = numBytes / bytesPerBlock;
     return guessDimensions(width, height, numElements);
   }
 }
