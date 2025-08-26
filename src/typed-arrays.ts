@@ -10,6 +10,7 @@ export type TypedArrayConstructor =
     | Uint16ArrayConstructor
     | Int32ArrayConstructor
     | Uint32ArrayConstructor
+    | Float16ArrayConstructor
     | Float32ArrayConstructor
     | Float64ArrayConstructor;
 
@@ -21,6 +22,7 @@ export type TypedArray =
     | Uint16Array
     | Int32Array
     | Uint32Array
+    | Float16Array
     | Float32Array
     | Float64Array;
 
@@ -39,11 +41,13 @@ export class TypedArrayViewGenerator {
         this.byteOffset += numBytes;
     }
     getView<T extends TypedArray>(Ctor: TypedArrayConstructor, numElements: number): T {
+        // @ts-ignore
         const view = new Ctor(this.arrayBuffer, this.byteOffset, numElements);
         this.byteOffset += view.byteLength;
         return view as T;
     }
 }
+
 
 export function subarray<T extends TypedArray>(arr: TypedArray, offset: number, length: number): T {
   return arr.subarray(offset, offset + length) as T;

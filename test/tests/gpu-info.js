@@ -12,6 +12,7 @@ export async function getInfo() {
   const adapter = await navigator.gpu.requestAdapter();
   const title = JSON.stringify({
     gpu: objLikeToObj(adapter?.info || await adapter?.requestAdapterInfo() || { webgpuError: 'no info' }),
+    features: [...adapter.features],
     userAgentData: JSON.parse(JSON.stringify(navigator.userAgentData || { userAgentData: 'none' })),
   }, null, 2);
 
