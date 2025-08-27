@@ -11,8 +11,8 @@ const kTypedArrayToAttribFormat = new Map<TypedArrayConstructor, {formats: [stri
   [ Uint16Array,  { formats: ['uint16',  'unorm16'], defaultForType: 1 } ],
   [ Int32Array,   { formats: ['sint32',  'snorm32'], defaultForType: 0 } ],
   [ Uint32Array,  { formats: ['uint32',  'unorm32'], defaultForType: 0 } ],
+  [ Float16Array, { formats: ['float16', 'float16'], defaultForType: 0 } ],
   [ Float32Array, { formats: ['float32', 'float32'], defaultForType: 0 } ],
-  // TODO: Add Float16Array
 ]);
 
 const kVertexFormatPrefixToType = new Map<string, TypedArrayConstructor>(
@@ -59,6 +59,7 @@ export type ArrayUnion = number | number[] | TypedArray | FullArraySpec;
  * | Uint16Array   | uint16      | unorm16 (d) |
  * | Int32Array    | sint32 (d)  | snorm32     |
  * | Uint32Array   | uint32 (d)  | unorm32     |
+ * | Float16Array  | float16 (d) | float16     |
  * | Float32Array  | float32 (d) | float32     |
  *
  */

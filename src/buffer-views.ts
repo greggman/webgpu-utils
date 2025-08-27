@@ -127,7 +127,7 @@ function makeIntrinsicTypedArrayView(typeDef: TypeDefinition, buffer: ArrayBuffe
               ? (buffer.byteLength - baseOffset) / sizeInBytes
               : numElements)
            : 1;
-
+        // @ts-expect-error   this is a bug in ts https://github.com/microsoft/TypeScript/issues/62343
         return new View(buffer, baseOffset, baseNumElements * effectiveNumElements);
     } catch {
         throw new Error(`unknown type: ${type}`);
@@ -524,6 +524,7 @@ function getView<T extends TypedArray>(arrayBuffer: ArrayBuffer, Ctor: TypedArra
     const viewsByCtor = getViewsByCtor(arrayBuffer);
     let view = viewsByCtor.get(Ctor);
     if (!view) {
+        // @ts-expect-error   this is a bug in ts https://github.com/microsoft/TypeScript/issues/62343
         view = new Ctor(arrayBuffer);
         viewsByCtor.set(Ctor, view);
     }

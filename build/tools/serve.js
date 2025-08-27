@@ -8,7 +8,9 @@ spawn('npm', [
   stdio: 'inherit',
 });
 
-spawn('./node_modules/.bin/servez', [
+spawn('npm', [
+  'run',
+  'serve',
 ], {
   shell: true,
   stdio: 'inherit',

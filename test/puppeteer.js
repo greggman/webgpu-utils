@@ -1,16 +1,22 @@
 #!/usr/bin/env node
 
+import process from  'node:process';
 import puppeteer from  'puppeteer';
-import path from  'path';
-import fs from 'fs';
+import path from  'node:path';
+import fs from 'node:fs';
 import express from 'express';
-import url from 'url';
+import url from 'node:url';
 const app = express();
 const port = 3000;
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));  // eslint-disable-line
 
 app.use(express.static(path.dirname(__dirname)));
-const server = app.listen(port, () => {
+const server = app.listen(port, (err) => {
+  if (err) {
+    console.error('Error starting server:', err);
+    // eslint-disable-next-line no-process-exit
+    process.exit(1);
+  }
   console.log(`Example app listening on port ${port}!`);
   test(port);
 });
@@ -39,6 +45,7 @@ function getExamples(port) {
 async function test(port) {
   const browser = await puppeteer.launch({
     headless: "new",
+    protocolTimeout: 4 * 60 * 1000, // 4 mins
     args: [
       //'--enable-unsafe-webgpu',
       //'--enable-webgpu-developer-features',

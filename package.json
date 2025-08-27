@@ -1,10 +1,10 @@
 {
   "name": "webgpu-utils",
-  "version": "1.11.0",
+  "version": "2.0.0",
   "description": "webgpu utilities",
-  "main": "dist/1.x/webgpu-utils.module.js",
-  "module": "dist/1.x/webgpu-utils.module.js",
-  "types": "dist/1.x/webgpu-utils.d.ts",
+  "main": "dist/2.x/webgpu-utils.module.js",
+  "module": "dist/2.x/webgpu-utils.module.js",
+  "types": "dist/2.x/webgpu-utils.d.ts",
   "type": "module",
   "directories": {
     "test": "test"
@@ -20,6 +20,7 @@
     "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
     "pre-push": "npm run lint && npm run build && npm run test",
     "watch": "rollup -c -w",
+    "serve": "servez",
     "start": "node build/tools/serve.js",
     "test": "node test/puppeteer.js"
   },
@@ -45,11 +46,11 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^12.1.2",
-    "@tsconfig/recommended": "^1.0.8",
-    "@typescript-eslint/eslint-plugin": "^8.34.0",
-    "@typescript-eslint/parser": "^8.34.0",
-    "@webgpu/types": "^0.1.61",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@tsconfig/recommended": "^1.0.10",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "@webgpu/types": "^0.1.64",
     "eslint": "^8.57.1",
     "eslint-plugin-html": "^7.1.0",
     "eslint-plugin-one-variable-per-var": "^0.0.3",
@@ -57,13 +58,13 @@
     "eslint-plugin-require-trailing-comma": "^0.0.1",
     "express": "^4.21.2",
     "markdown-it": "^14.1.0",
-    "mocha": "^11.6.0",
-    "puppeteer": "^24.10.0",
-    "rollup": "^4.42.0",
-    "servez": "^2.3.0",
+    "mocha": "^11.7.1",
+    "puppeteer": "^24.17.0",
+    "rollup": "^4.49.0",
+    "servez": "^2.3.2",
     "tslib": "^2.8.1",
-    "typedoc": "^0.28.5",
-    "typescript": "^5.8.3",
+    "typedoc": "^0.28.11",
+    "typescript": "^5.9.2",
     "wgsl_reflect": "github:brendan-duncan/wgsl_reflect#7ea42bc30920f0244ade6b0d1ab7fc7ab6f2e95b"
   }
 }

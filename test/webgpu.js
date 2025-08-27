@@ -33,7 +33,9 @@ GPUDevice.prototype.createBuffer = (function (origFn) {
 export function testWithDeviceWithOptions(options, fn, ...args) {
   return async function () {
     const adapter = await globalThis?.navigator?.gpu?.requestAdapter(options);
-    const device = await adapter?.requestDevice();
+    const device = await adapter?.requestDevice({
+      requiredFeatures: adapter.features,
+    });
     if (!device) {
       this.skip();
       return;
@@ -83,10 +85,57 @@ export const mipSize = (texture, mipLevel) => [
       : 1,
 ];
 
-// assumes rgba8unorm
+function getTextureFormatInfo(texture) {
+  const m = /^([a-z]+)(\d+)([a-z]+)$/.exec(texture.format);
+  const [, channels, bits, encoding] = m;
+  const numChannels = channels.length;
+  const bytesPerPixel = bits * numChannels / 8;
+
+  const types = {
+    unorm: {
+      '8': Uint8Array,
+      '16': Uint16Array,
+      '32': Uint32Array,
+    },
+    snorm: {
+      '8': Int8Array,
+      '16': Int16Array,
+      '32': Int32Array,
+    },
+    uint: {
+      '8': Uint8Array,
+      '16': Uint16Array,
+      '32': Uint32Array,
+    },
+    sint: {
+      '8': Int8Array,
+      '16': Int16Array,
+      '32': Int32Array,
+    },
+    float: {
+      '16': Float16Array,
+      '32': Float32Array,
+    },
+  };
+  const Ctor = types[encoding]?.[bits];
+  if (!Ctor) {
+    throw new Error(`Unsupported texture format: ${texture.format}`);
+  }
+
+  return {
+    numChannels,
+    bits,
+    encoding,
+    bytesPerPixel,
+    Ctor,
+  };
+}
+
 export async function readTexturePadded(device, texture, mipLevel = 0, layer = 0) {
+  // Super hacky
+  const { bytesPerPixel, Ctor } = getTextureFormatInfo(texture);
   const size = mipSize(texture, mipLevel);
-  const bytesPerRow = roundUp(size[0] * 4, 256);
+  const bytesPerRow = roundUp(size[0] * bytesPerPixel, 256);
   const buffer = device.createBuffer({
     size: bytesPerRow * size[1] * size[2],
     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
@@ -101,19 +150,20 @@ export async function readTexturePadded(device, texture, mipLevel = 0, layer = 0
 
   await buffer.mapAsync(GPUMapMode.READ);
   // Get a copy of the result because on unmap the view dies.
-  const result = new Uint8Array(buffer.getMappedRange()).slice();
+  const result = new Ctor(buffer.getMappedRange()).slice();
   buffer.unmap();
   buffer.destroy();
   return result;
 }
 
 export async function readTextureUnpadded(device, texture, mipLevel = 0, layer = 0) {
+  const { bytesPerPixel, Ctor } = getTextureFormatInfo(texture);
   const size = mipSize(texture, mipLevel);
-  const bytesPerRow = size[0] * 4;
+  const bytesPerRow = size[0] * bytesPerPixel;
   const paddedBytesPerRow = roundUp(bytesPerRow, 256);
   const bytesPerImage = bytesPerRow * size[1];
 
-  const padded = await readTexturePadded(device, texture, mipLevel, layer);
+  const padded = new Uint8Array((await readTexturePadded(device, texture, mipLevel, layer)).buffer);
   const unpadded = new Uint8Array(bytesPerImage * size[2]);
   let paddedOffset = 0;
   let unpaddedOffset = 0;
@@ -124,7 +174,7 @@ export async function readTextureUnpadded(device, texture, mipLevel = 0, layer =
       paddedOffset += paddedBytesPerRow;
     }
   }
-  return unpadded;
+  return new Ctor(unpadded.buffer);
 }
 
 export async function readBuffer(device, srcBuffer) {

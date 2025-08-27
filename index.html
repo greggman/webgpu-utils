@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- this file is auto-generated from README.md. Do not edited directly -->
 <!--
-@license webgpu-utils 1.11.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
+@license webgpu-utils 2.0.0 Copyright (c) 2023, Gregg Tavares All Rights Reserved.
 Available via the MIT license.
 see: http://github.com/greggman/webgpu-utils for details
 -->
@@ -152,7 +152,7 @@ const texture2x2 = createTextureFromSource(device, data2x2, {
   data: [ r, g, b, y ].flat();
   width: 4,
 };
-const texture4x1 = createTextureFromSource(device, data2x2, {
+const texture4x1 = createTextureFromSource(device, data4x1, {
   mips: true,
 });
 </code></pre>
@@ -392,7 +392,7 @@ const buf1 = makeStructuredView(
 <ul>
 <li>include from the net</li>
 </ul>
-<pre><code class="lang-js">import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/1.x/webgpu-utils.module.js'
+<pre><code class="lang-js">import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/2.x/webgpu-utils.module.js'
 
 ...
 </code></pre>
@@ -428,7 +428,7 @@ npm ci
 npm start
 </code></pre>
 <p>This will run rollup in watch mode, building from typescript into
-<code>dist/1.x/webgpu-utils.js</code> and start a server</p>
+<code>dist/2.x/webgpu-utils.js</code> and start a server</p>
 <p>Now open <a href="http://localhost:8080/test/"><code>http://localhost:8080/test/</code></a> to run tests.</p>
 <h2>Thanks</h2>
 <p>Super thanks to Brendan Duncan for <a href="https://github.com/brendan-duncan/wgsl_reflect">wgsl-reflect</a> on which much of this is based.</p>

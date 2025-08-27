@@ -1,5 +1,5 @@
 import { describe, it } from '../mocha-support.js';
-import { createBuffersAndAttributesFromArrays}  from '../../dist/1.x/webgpu-utils.module.js';
+import { createBuffersAndAttributesFromArrays}  from '../../dist/2.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertEqual, assertDeepEqual, assertTruthy, assertFalsy } from '../assert.js';
 import { testWithDevice, readBuffer } from '../webgpu.js';
 

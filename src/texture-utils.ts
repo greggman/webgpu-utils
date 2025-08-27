@@ -1,6 +1,5 @@
 import {
   TypedArray,
-  TypedArrayConstructor,
   isTypedArray,
 } from './typed-arrays.js';
 import {
@@ -8,14 +7,20 @@ import {
   numMipLevels,
   guessTextureBindingViewDimensionForTexture,
 } from './generate-mipmap.js';
+import {
+  getTextureFormatInfo,
+} from './format-info.js';
+import { addOrigin3D, normalizeExtent3D } from './utils.js';
 
 export type CopyTextureOptions = {
   flipY?: boolean,
+  mips?: boolean,
   premultipliedAlpha?: boolean,
   colorSpace?: PredefinedColorSpace;
   dimension?: GPUTextureDimension;
   viewDimension?: GPUTextureViewDimension;
   baseArrayLayer?: number;
+  mipLevel?: number;
 };
 
 export type TextureData = {
@@ -85,44 +90,6 @@ function textureViewDimensionToDimension(viewDimension: GPUTextureViewDimension 
   }
 }
 
-const kFormatToTypedArray: {[key: string]: TypedArrayConstructor} = {
-  '8snorm': Int8Array,
-  '8unorm': Uint8Array,
-  '8sint': Int8Array,
-  '8uint': Uint8Array,
-  '16snorm': Int16Array,
-  '16unorm': Uint16Array,
-  '16sint': Int16Array,
-  '16uint': Uint16Array,
-  '32snorm': Int32Array,
-  '32unorm': Uint32Array,
-  '32sint': Int32Array,
-  '32uint': Uint32Array,
-  '16float': Uint16Array,  // TODO: change to Float16Array
-  '32float': Float32Array,
-};
-
-const kTextureFormatRE = /([a-z]+)(\d+)([a-z]+)/;
-
-function getTextureFormatInfo(format: GPUTextureFormat) {
-  // this is a hack! It will only work for common formats
-  const [, channels, bits, typeName] = kTextureFormatRE.exec(format)!;
-  // TODO: if the regex fails, use table for other formats?
-  const numChannels = channels.length;
-  const bytesPerChannel = parseInt(bits) / 8;
-  const bytesPerElement = numChannels * bytesPerChannel;
-  const Type = kFormatToTypedArray[`${bits}${typeName}`];
-
-  return {
-    channels,
-    numChannels,
-    bytesPerChannel,
-    bytesPerElement,
-    Type,
-  };
-}
-
-
 /**
  * Gets the size of a mipLevel. Returns an array of 3 numbers [width, height, depthOrArrayLayers]
  */
@@ -131,7 +98,7 @@ export function getSizeForMipFromTexture(texture: GPUTexture, mipLevel: number):
     texture.width,
     texture.height,
     texture.depthOrArrayLayers,
-  ].map(v => Math.max(1, Math.floor(v / 2 ** mipLevel)));
+  ].map((v, i) => i < 3 || texture.dimension !== '3d' ? Math.max(1, Math.floor(v / 2 ** mipLevel)) : texture.depthOrArrayLayers);
 }
 
 /**
@@ -141,23 +108,91 @@ function uploadDataToTexture(
   device: GPUDevice,
   texture: GPUTexture,
   source: TextureRawDataSource,
-  options: { origin?: GPUOrigin3D },
+  options: { origin?: GPUOrigin3D, mipLevel?: number },
 ) {
   const data = toTypedArray((source as TextureData).data || source, texture.format);
-  const mipLevel = 0;
-  const size = getSizeForMipFromTexture(texture, mipLevel);
-  const { bytesPerElement } = getTextureFormatInfo(texture.format);
-  const origin = options.origin || [0, 0, 0];
-  device.queue.writeTexture(
-    { texture, origin },
-    data,
-    { bytesPerRow: bytesPerElement * size[0], rowsPerImage: size[1] },
-    size,
-  );
+  let dataOffset = 0;
+  let localLayer = 0;
+  let mipLevel = options.mipLevel ?? 0;
+  while (dataOffset < data.byteLength) {
+    const size = getSizeForMipFromTexture(texture, mipLevel);
+    const { blockWidth, blockHeight, bytesPerBlock } = getTextureFormatInfo(texture.format);
+    const blocksAcross = Math.ceil(size[0] / blockWidth);
+    const blocksDown = Math.ceil(size[1] / blockHeight);
+    const bytesPerRow = blocksAcross * bytesPerBlock!;
+    const bytesPerLayer = bytesPerRow * blocksDown;
+    const numLayers = texture.dimension === '3d'
+      ? data.byteLength / bytesPerLayer
+      : 1;
+    size[0] = blocksAcross * blockWidth;
+    size[1] = blocksDown * blockHeight;
+    size[2] = numLayers;
+    const origin = addOrigin3D(options.origin ?? [0, 0, 0], [0, 0, localLayer]);
+    device.queue.writeTexture(
+      { texture, origin, mipLevel },
+      data as unknown as GPUAllowSharedBufferSource,
+      {
+        bytesPerRow: bytesPerBlock * blocksAcross,
+        rowsPerImage: blocksDown,
+        offset: dataOffset,
+      },
+      size,
+    );
+    const bytesUsed = size[2] * bytesPerLayer;
+    dataOffset += bytesUsed;
+    ++mipLevel;
+    if (mipLevel === texture.mipLevelCount) {
+      mipLevel = options.mipLevel ?? 0;
+      ++localLayer;
+    }
+  }
 }
 /**
- * Copies a an array of "sources" (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * Copies a an array of "sources" (Video, Canvas, OffscreenCanvas, ImageBitmap, Array, TypedArray)
  * to a texture and then optionally generates mip levels
+ *
+ * Note that if the source is a `TypeArray`, then it will try to upload mips levels, then layers.
+ * So, imagine you have a 4x4x3 2d-array r8unorm texture. If you pass in 16 bytes (4x4) it will
+ * set mip level 0 layer 0 (4x4). If you pass in 24 bytes it will set mip level 0 layer 0(4x4)
+ * and mip level 1 layer 0 (2x2). If you pass in 25 bytes it will set mip level 0, 1, 2, layer 0
+ * If you pass in 75 bytes it would do all layers, all mip levels.
+ *
+ * Note that for 3d textures there are no "layers" from the POV of this function. There is mip level 0 (which is a cube)
+ * and mip level 1 (which is a cube). So a '3d' 4x4x3 r8unorm texture, you're expected to provide 48 bytes for mip level 0
+ * where as for '2d' 4x4x3 you're expected to provide 16 bytes for mip level 0 layer 0. If you want to provide data
+ * to each layer separately then pass them in as an array
+ *
+ * ```js
+ * // fill layer 0, mips 0
+ * copySourcesToTexture(device, tex_4x4x3_r8_2d, [data16Bytes]);
+ *
+ * // fill layer 0, mips 0, 1, 2
+ * copySourcesToTexture(device, tex_4x4x3_r8_2d, [data25Bytes]);
+ *
+ * // fill layer 0, mips 0, 1, 2, then layer 1, mips 0, 1, 2, then layer 2, mips 0, 1, 2
+ * copySourcesToTexture(device, tex_4x4x3_r8_2d, [data75Bytes]);
+ *
+ * // (same as previous) fill layer 0, mips 0, 1, 2, then layer 1, mips 0, 1, 2, then layer 2, mips 0, 1, 2
+ * copySourcesToTexture(device, tex_4x4x3_r8_2d, [data25Bytes, data25bytes, data25Bytes]);
+ *
+ * // fills layer 0, mips 0, layer 1, mips 0, layer 2, mips 0
+ * copySourcesToTexture(device, tex_4x4x3_r8_2d, [data16Bytes, data16bytes, data16Bytes]);
+ * ```
+ *
+ * This also works for compressed textures, so you can load an entire compressed texture, all mips, all layers in one call.
+ * See texture-utils-tests.js for examples.
+ *
+ * If the source is an `Array` is it converted to a typed array that matches the format.
+ *
+ * * ????8snorm ????8sint -> `Int8Array`
+ * * ????8unorm ????8uint -> `Uint8Array`
+ * * ????16snorm ???16sint -> `Int16Array`
+ * * ????16unorm ???16uint -> `Uint16Array`
+ * * ????32snorm ???32sint -> `Int32Array`
+ * * ????32unorm ???32uint -> `Uint32Array`
+ * * ????16Float -> `Float16Array`
+ * * ????32Float -> `Float32Array`
+ * * rgb10a2uint, rgb10a2unorm, rg11b10ufloat, rgb8e5ufloat -> `UInt32Array`
  */
 export function copySourcesToTexture(
     device: GPUDevice,
@@ -209,7 +244,7 @@ export function copySourcesToTexture(
     tempTexture.destroy();
   }
 
-  if (texture.mipLevelCount > 1) {
+  if (options.mips) {
     const viewDimension =  options.viewDimension ?? guessTextureBindingViewDimensionForTexture(
       texture.dimension, texture.depthOrArrayLayers);
     generateMipmap(device, texture, viewDimension);
@@ -218,8 +253,9 @@ export function copySourcesToTexture(
 
 
 /**
- * Copies a "source" (Video, Canvas, OffscreenCanvas, ImageBitmap)
+ * Copies a "source" (Video, Canvas, OffscreenCanvas, ImageBitmap, Array, TypedArray)
  * to a texture and then optionally generates mip levels
+ * See {@link copySourcesToTexture}
  */
 export function copySourceToTexture(
     device: GPUDevice,
@@ -233,13 +269,13 @@ export function copySourceToTexture(
  * @property mips if true and mipLevelCount is not set then wll automatically generate
  *    the correct number of mip levels.
  * @property format Defaults to "rgba8unorm"
- * @property mipLeveLCount Defaults to 1 or the number of mips needed for a full mipmap if `mips` is true
+ * @property mipLevelCount Defaults to 1 or the number of mips needed for a full mipmap if `mips` is true
  */
 export type CreateTextureOptions = CopyTextureOptions & {
-  mips?: boolean,
   usage?: GPUTextureUsageFlags,
   format?: GPUTextureFormat,
   mipLevelCount?: number,
+  size?: GPUExtent3D,
 };
 
 /**
@@ -247,24 +283,37 @@ export type CreateTextureOptions = CopyTextureOptions & {
  * sources have a different way to get their size.
  */
 export function getSizeFromSource(source: TextureSource, options: CreateTextureOptions): number[] {
-  if ('videoWidth' in source  && 'videoHeight' in source) {
+  if ('videoWidth' in source && 'videoHeight' in source) {
     return [source.videoWidth, source.videoHeight, 1];
   } else {
     const maybeHasWidthAndHeight = source as { width: number, height: number };
-    const { width, height } = maybeHasWidthAndHeight;
+    let { width, height } = maybeHasWidthAndHeight;
     if (width > 0 && height > 0 && !isTextureRawDataSource(source)) {
       // this should cover Canvas, Image, ImageData, ImageBitmap, TextureCreationData
       return [width, height, 1];
     }
+    if (options.size) {
+      let depthOrArrayLayers;
+      if (Array.isArray(options.size)) {
+        [ width, height, depthOrArrayLayers ] = options.size;
+      } else {
+        width = (options.size as GPUExtent3DDict).width;
+        height = (options.size as GPUExtent3DDict).height!;
+        depthOrArrayLayers = (options.size as GPUExtent3DDict).depthOrArrayLayers!;
+      }
+      if (width > 0 && height > 0) {
+        return normalizeExtent3D([width, height, depthOrArrayLayers]);
+      }
+    }
     const format = options.format || 'rgba8unorm';
-    const { bytesPerElement, bytesPerChannel } = getTextureFormatInfo(format);
+    const { bytesPerBlock, Type } = getTextureFormatInfo(format);
     const data = isTypedArray(source) || Array.isArray(source)
        ? source
        : (source as TextureData).data;
     const numBytes = isTypedArray(data)
         ? (data as TypedArray).byteLength
-        : ((data as number[]).length * bytesPerChannel);
-    const numElements = numBytes / bytesPerElement;
+        : ((data as number[]).length * Type.BYTES_PER_ELEMENT);
+    const numElements = numBytes / bytesPerBlock;
     return guessDimensions(width, height, numElements);
   }
 }
@@ -328,11 +377,13 @@ export function createTextureFromSources(
   const viewDimension = options.viewDimension ?? guessTextureBindingViewDimensionForTexture(
     options.dimension, size[2]);
   const dimension = textureViewDimensionToDimension(viewDimension);
-
+  const format = options.format ?? 'rgba8unorm';
+  const { blockWidth, blockHeight } = getTextureFormatInfo(format);
+  const compressed = blockWidth > 1 || blockHeight > 1;
   const texture = device.createTexture({
     dimension,
     textureBindingViewDimension: viewDimension,
-    format: options.format || 'rgba8unorm',
+    format,
     mipLevelCount: options.mipLevelCount
         ? options.mipLevelCount
         : options.mips ? numMipLevels(size) : 1,
@@ -340,7 +391,7 @@ export function createTextureFromSources(
     usage: (options.usage ?? 0) |
            GPUTextureUsage.TEXTURE_BINDING |
            GPUTextureUsage.COPY_DST |
-           GPUTextureUsage.RENDER_ATTACHMENT,
+           (compressed ? 0 : GPUTextureUsage.RENDER_ATTACHMENT),
   });
 
   copySourcesToTexture(device, texture, sources, options);

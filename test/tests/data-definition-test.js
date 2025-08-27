@@ -2,7 +2,7 @@ import { describe, it } from '../mocha-support.js';
 import {
     makeShaderDataDefinitions,
     makeBindGroupLayoutDescriptors,
-} from '../../dist/1.x/webgpu-utils.module.js';
+} from '../../dist/2.x/webgpu-utils.module.js';
 import { assertDeepEqual, assertEqual, assertFalsy, assertTruthy } from '../assert.js';
 
 describe('data-definition-tests', () => {

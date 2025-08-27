@@ -1,5 +1,16 @@
 # Change List
 
+### 2.0.0
+
+* Allow uploading multiple mip levels from data
+
+Note: The breaking change here is that the 1.x would call `generateMipmap` automatically
+if `texture.mipLevelCount > 1`. That was arguably a bug and in fact you can see all the
+examples were passing in an option of `{ mips: true }` even though `mips` wasn't an option. 😅
+`mips` is now an option. Set it to `true` if you want `generateMipmap` on creation and/or
+on `copySourceToTexture` / `copySourcesToTexture`. Code that wasn't setting it before
+and was getting lucky to have mip maps generated will need to pass it in.
+
 ### 1.11.0
 
 * Switch to undefined bindGroupLayouts instead of empty bindGroupLayouts
