@@ -5,7 +5,7 @@ import {
   createTextureFromSources,
   createTextureFromImage,
   copySourcesToTexture,
-} from '../../dist/1.x/webgpu-utils.module.js';
+} from '../../dist/2.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertArrayEqualApproximately, assertEqual } from '../assert.js';
 import { readTextureUnpadded, testWithDevice, testWithDeviceAndDocument } from '../webgpu.js';
 

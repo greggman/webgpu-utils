@@ -413,7 +413,7 @@ const buf1 = makeStructuredView(
 * include from the net
 
 ```js
-import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/1.x/webgpu-utils.module.js'
+import { createTextureFromImage } from 'https://greggman.github.io/webgpu-utils/dist/2.x/webgpu-utils.module.js'
 
 ...
 ```
@@ -453,7 +453,7 @@ npm start
 ```
 
 This will run rollup in watch mode, building from typescript into
-`dist/1.x/webgpu-utils.js` and start a server
+`dist/2.x/webgpu-utils.js` and start a server
 
 Now open [`http://localhost:8080/test/`](http://localhost:8080/test/) to run tests.
 

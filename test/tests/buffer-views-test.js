@@ -6,7 +6,7 @@ import {
     makeShaderDataDefinitions,
     setIntrinsicsToView,
     getSizeAndAlignmentOfUnsizedArrayElement,
-} from '../../dist/1.x/webgpu-utils.module.js';
+} from '../../dist/2.x/webgpu-utils.module.js';
 import { assertArrayEqual, assertEqual, assertTruthy } from '../assert.js';
 
 describe('buffer-views-tests', () => {

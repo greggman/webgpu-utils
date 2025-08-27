@@ -1,6 +1,6 @@
 /* global GPUBufferUsage */
 import { mat4 } from 'https://wgpu-matrix.org/dist/2.x/wgpu-matrix.module.js';
-import * as wgh from '../dist/1.x/webgpu-utils.module.js';
+import * as wgh from '../dist/2.x/webgpu-utils.module.js';
 import GUI from './3rdparty/muigui-0.x.module.js';
 
 async function main() {

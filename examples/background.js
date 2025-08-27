@@ -1,7 +1,7 @@
 /* global GPUBufferUsage */
 /* global GPUTextureUsage */
 import { mat4, vec3 } from 'https://wgpu-matrix.org/dist/2.x/wgpu-matrix.module.js';
-import * as wgh from '../dist/1.x/webgpu-utils.module.js';
+import * as wgh from '../dist/2.x/webgpu-utils.module.js';
 
 async function main() {
   const adapter = await navigator.gpu?.requestAdapter({
