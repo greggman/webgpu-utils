@@ -20,7 +20,7 @@ jobs:
 
       - name: Test 🧪
         env:
-          DEBUG: *
+          DEBUG: '*'
         run: |
           npm ci
           npm run check-ci
