@@ -8,7 +8,7 @@ on:
   pull_request:
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout 🍔🍟🥤
         uses: actions/checkout@v4
@@ -21,8 +21,6 @@ jobs:
           node-version: 18
 
       - name: Test 🧪
-        env:
-          DEBUG: '*'
         run: |
           npm ci
           npm run check-ci
