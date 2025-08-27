@@ -19,6 +19,8 @@ jobs:
           node-version: 18
 
       - name: Test 🧪
+        env:
+          DEBUG: *
         run: |
           npm ci
           npm run check-ci
