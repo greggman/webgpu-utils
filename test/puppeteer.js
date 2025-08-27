@@ -39,6 +39,7 @@ function getExamples(port) {
 async function test(port) {
   const browser = await puppeteer.launch({
     headless: "new",
+    protocolTimeout: 30 * 1000,
     args: [
       //'--enable-unsafe-webgpu',
       //'--enable-webgpu-developer-features',
