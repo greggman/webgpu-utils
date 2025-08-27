@@ -3,10 +3,12 @@ on:
   push:
     branches:
       - main
+      - dev
+      - test
   pull_request:
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - name: Checkout 🍔🍟🥤
         uses: actions/checkout@v4
@@ -16,7 +18,7 @@ jobs:
       - name: Use Node.js 😂
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Test 🧪
         run: |
