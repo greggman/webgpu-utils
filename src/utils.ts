@@ -9,7 +9,7 @@ export function range<T>(count: number, fn: (i: number) => T) {
 }
 
 const isIterable = (v: any) =>
-  v != null && typeof v[Symbol.iterator] === 'function';
+  v !== null && typeof v[Symbol.iterator] === 'function';
 
 export function normalizeExtent3D(extent: GPUExtent3D): [number, number, number] {
   if (!extent) {

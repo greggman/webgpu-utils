@@ -41,7 +41,7 @@ export class TypedArrayViewGenerator {
         this.byteOffset += numBytes;
     }
     getView<T extends TypedArray>(Ctor: TypedArrayConstructor, numElements: number): T {
-        // @ts-ignore
+        // @ts-expect-error   this is a bug in ts https://github.com/microsoft/TypeScript/issues/62343
         const view = new Ctor(this.arrayBuffer, this.byteOffset, numElements);
         this.byteOffset += view.byteLength;
         return view as T;

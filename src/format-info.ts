@@ -1,8 +1,6 @@
 import { TypedArrayConstructor } from "./typed-arrays.js";
 
 // [blockWidth, blockHeight, bytesPerBlock, units per TypedArray element, TypedArrayConstructor]
-type PackedFormatInfo = [number, number, number, number, TypedArrayConstructor?];
-
 const kFormatInfo = {
   'rgba8unorm-srgb': [1, 1, 4, 4, Uint8Array],
   'bgra8unorm-srgb': [1, 1, 4, 4, Uint8Array],
@@ -111,7 +109,7 @@ export function getTextureFormatInfo(format: GPUTextureFormat): FormatInfo {
       Type,
     };
   }
-  
+
   // this is a hack! It will only work for common formats
   const [, channels, bits, typeName] = kTextureFormatRE.exec(format)!;
   // TODO: if the regex fails, use table for other formats?

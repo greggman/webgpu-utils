@@ -1,6 +1,5 @@
 import {
   TypedArray,
-  TypedArrayConstructor,
   isTypedArray,
 } from './typed-arrays.js';
 import {
@@ -122,7 +121,7 @@ function uploadDataToTexture(
     const blocksDown = Math.ceil(size[1] / blockHeight);
     const bytesPerRow = blocksAcross * bytesPerBlock!;
     const bytesPerLayer = bytesPerRow * blocksDown;
-    const numLayers = texture.dimension == '3d'
+    const numLayers = texture.dimension === '3d'
       ? data.byteLength / bytesPerLayer
       : 1;
     size[0] = blocksAcross * blockWidth;
@@ -157,15 +156,15 @@ function uploadDataToTexture(
  * set mip level 0 layer 0 (4x4). If you pass in 24 bytes it will set mip level 0 layer 0(4x4)
  * and mip level 1 layer 0 (2x2). If you pass in 25 bytes it will set mip level 0, 1, 2, layer 0
  * If you pass in 75 bytes it would do all layers, all mip levels.
- * 
+ *
  * Note that for 3d textures there are no "layers" from the POV of this function. There is mip level 0 (which is a cube)
  * and mip level 1 (which is a cube). So a '3d' 4x4x3 r8unorm texture, you're expected to provide 48 bytes for mip level 0
  * where as for '2d' 4x4x3 you're expected to provide 16 bytes for mip level 0 layer 0. If you want to provide data
  * to each layer separately then pass them in as an array
- * 
+ *
  * ```js
  * // fill layer 0, mips 0
- * copySourcesToTexture(device, tex_4x4x3_r8_2d, [data16Bytes]);  
+ * copySourcesToTexture(device, tex_4x4x3_r8_2d, [data16Bytes]);
  *
  * // fill layer 0, mips 0, 1, 2
  * copySourcesToTexture(device, tex_4x4x3_r8_2d, [data25Bytes]);
@@ -179,12 +178,12 @@ function uploadDataToTexture(
  * // fills layer 0, mips 0, layer 1, mips 0, layer 2, mips 0
  * copySourcesToTexture(device, tex_4x4x3_r8_2d, [data16Bytes, data16bytes, data16Bytes]);
  * ```
- * 
+ *
  * This also works for compressed textures, so you can load an entire compressed texture, all mips, all layers in one call.
  * See texture-utils-tests.js for examples.
- * 
+ *
  * If the source is an `Array` is it converted to a typed array that matches the format.
- * 
+ *
  * * ????8snorm ????8sint -> `Int8Array`
  * * ????8unorm ????8uint -> `Uint8Array`
  * * ????16snorm ???16sint -> `Int16Array`
@@ -273,7 +272,6 @@ export function copySourceToTexture(
  * @property mipLevelCount Defaults to 1 or the number of mips needed for a full mipmap if `mips` is true
  */
 export type CreateTextureOptions = CopyTextureOptions & {
-  mips?: boolean,
   usage?: GPUTextureUsageFlags,
   format?: GPUTextureFormat,
   mipLevelCount?: number,
