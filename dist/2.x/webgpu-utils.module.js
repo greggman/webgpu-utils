@@ -1,4 +1,4 @@
-/* webgpu-utils@2.0.0, license MIT */
+/* webgpu-utils@2.0.1, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -2002,7 +2002,7 @@ function uploadDataToTexture(device, texture, source, options) {
         const bytesPerRow = blocksAcross * bytesPerBlock;
         const bytesPerLayer = bytesPerRow * blocksDown;
         const numLayers = texture.dimension === '3d'
-            ? data.byteLength / bytesPerLayer
+            ? size[2]
             : 1;
         size[0] = blocksAcross * blockWidth;
         size[1] = blocksDown * blockHeight;
