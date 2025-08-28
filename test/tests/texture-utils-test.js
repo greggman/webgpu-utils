@@ -378,6 +378,59 @@ describe('texture-utils tests', () => {
       });
     }));
 
+    it('test uploads multiple mip levels to 3d texture', testWithDevice(async device => {
+      const r = [255,   0,   0, 255];
+      const y = [255, 255,   0, 255];
+      const g = [  0, 255,   0, 255];
+
+      const mips = [
+        [
+          y, y, y, y,
+          y, y, y, y,
+          y, y, y, y,
+          y, y, y, y,
+
+          y, y, y, y,
+          y, y, y, y,
+          y, y, y, y,
+          y, y, y, y,
+
+          y, y, y, y,
+          y, y, y, y,
+          y, y, y, y,
+          y, y, y, y,
+
+          y, y, y, y,
+          y, y, y, y,
+          y, y, y, y,
+          y, y, y, y,
+        ],
+        [
+          r, r,
+          r, r,
+
+          r, r,
+          r, r,
+        ],
+        [
+          g,
+        ],
+      ];
+
+      const data = new Uint8Array(mips.flat(2));
+      const texture = createTextureFromSource(device, data, {
+        size: [4, 4, 4],
+        mipLevelCount: 3,
+        dimension: '3d',
+        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_SRC,
+      });
+      const mipTexels = await Promise.all(mips.map((_, i) => readTextureUnpadded(device, texture, i, 0)));
+
+      mipTexels.forEach((texels, i) => {
+        assertArrayEqual(texels, new Uint8Array(mips[i].flat()), `mipLevel: ${i}`);
+      });
+    }));
+
     it(`works with format bc7-rgba-unorm`, testWithDevice(async device => {
       if (!device.features.has('texture-compression-bc')) {
         this.skip();

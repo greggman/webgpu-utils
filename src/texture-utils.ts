@@ -122,7 +122,7 @@ function uploadDataToTexture(
     const bytesPerRow = blocksAcross * bytesPerBlock!;
     const bytesPerLayer = bytesPerRow * blocksDown;
     const numLayers = texture.dimension === '3d'
-      ? data.byteLength / bytesPerLayer
+      ? size[2]
       : 1;
     size[0] = blocksAcross * blockWidth;
     size[1] = blocksDown * blockHeight;
