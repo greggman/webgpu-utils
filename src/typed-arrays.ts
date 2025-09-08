@@ -48,11 +48,8 @@ export class TypedArrayViewGenerator {
     }
 }
 
-
 export function subarray<T extends TypedArray>(arr: TypedArray, offset: number, length: number): T {
   return arr.subarray(offset, offset + length) as T;
 }
 
-// TODO: fix better?
-export const isTypedArray = (arr: any) =>
-  arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';
+export const isTypedArray = (arr: any) => ArrayBuffer.isView(arr) && !(arr instanceof DataView);

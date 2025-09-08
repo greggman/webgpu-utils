@@ -1,4 +1,4 @@
-/* webgpu-utils@2.0.1, license MIT */
+/* webgpu-utils@2.0.2, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -58,8 +58,7 @@ class TypedArrayViewGenerator {
 function subarray(arr, offset, length) {
     return arr.subarray(offset, offset + length);
 }
-// TODO: fix better?
-const isTypedArray = (arr) => arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';
+const isTypedArray = (arr) => ArrayBuffer.isView(arr) && !(arr instanceof DataView);
 
 const createTypeDefs = (defs) => defs;
 const b$1 = createTypeDefs({

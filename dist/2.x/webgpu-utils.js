@@ -1,4 +1,4 @@
-/* webgpu-utils@2.0.1, license MIT */
+/* webgpu-utils@2.0.2, license MIT */
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -64,8 +64,7 @@
     function subarray(arr, offset, length) {
         return arr.subarray(offset, offset + length);
     }
-    // TODO: fix better?
-    const isTypedArray = (arr) => arr && typeof arr.length === 'number' && arr.buffer instanceof ArrayBuffer && typeof arr.byteLength === 'number';
+    const isTypedArray = (arr) => ArrayBuffer.isView(arr) && !(arr instanceof DataView);
 
     const createTypeDefs = (defs) => defs;
     const b$1 = createTypeDefs({
