@@ -108,7 +108,7 @@ async function main() {
     // 'images/yokohama/negz.jpg',
   ], {
     mips: true,
-    viewDimension: 'cube',
+    textureBindingViewDimension: 'cube',
   });
 
   const defs = wgh.makeShaderDataDefinitions(code);

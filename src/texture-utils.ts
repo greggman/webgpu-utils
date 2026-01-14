@@ -5,7 +5,6 @@ import {
 import {
   generateMipmap,
   numMipLevels,
-  guessTextureBindingViewDimensionForTexture,
 } from './generate-mipmap.js';
 import {
   getTextureFormatInfo,
@@ -18,7 +17,6 @@ export type CopyTextureOptions = {
   premultipliedAlpha?: boolean,
   colorSpace?: PredefinedColorSpace;
   dimension?: GPUTextureDimension;
-  viewDimension?: GPUTextureViewDimension;
   baseArrayLayer?: number;
   mipLevel?: number;
 };
@@ -245,9 +243,7 @@ export function copySourcesToTexture(
   }
 
   if (options.mips) {
-    const viewDimension =  options.viewDimension ?? guessTextureBindingViewDimensionForTexture(
-      texture.dimension, texture.depthOrArrayLayers);
-    generateMipmap(device, texture, viewDimension);
+    generateMipmap(device, texture);
   }
 }
 
@@ -276,6 +272,8 @@ export type CreateTextureOptions = CopyTextureOptions & {
   format?: GPUTextureFormat,
   mipLevelCount?: number,
   size?: GPUExtent3D,
+  textureBindingViewDimension?: GPUTextureViewDimension, // only needed in compat mode for 'cube' textures.
+  viewDimension?: GPUTextureViewDimension,  // a backward compatible synonym for textureBindingViewDimension. textureBindingViewDimension takes precedence.
 };
 
 /**
@@ -360,7 +358,7 @@ export function getSizeFromSource(source: TextureSource, options: CreateTextureO
  *              GPUTextureUsage.RENDER_ATTACHMENT |
  *              GPUTextureUsage.COPY_DST,
  *       mips: true,
- *       viewDimension: 'cube', // <=- Required for compatibility mode
+ *       textureBindingViewDimension: 'cube', // <=- Required for compatibility mode
  *     }
  * );
  * ```
@@ -374,15 +372,14 @@ export function createTextureFromSources(
   const size = getSizeFromSource(sources[0], options);
   size[2] = size[2] > 1 ? size[2] : sources.length;
 
-  const viewDimension = options.viewDimension ?? guessTextureBindingViewDimensionForTexture(
-    options.dimension, size[2]);
-  const dimension = textureViewDimensionToDimension(viewDimension);
+  const textureBindingViewDimension = options.textureBindingViewDimension ?? options.viewDimension;
+  const dimension = options.dimension ?? textureViewDimensionToDimension(textureBindingViewDimension);
   const format = options.format ?? 'rgba8unorm';
   const { blockWidth, blockHeight } = getTextureFormatInfo(format);
   const compressed = blockWidth > 1 || blockHeight > 1;
   const texture = device.createTexture({
     dimension,
-    textureBindingViewDimension: viewDimension,
+    textureBindingViewDimension,
     format,
     mipLevelCount: options.mipLevelCount
         ? options.mipLevelCount

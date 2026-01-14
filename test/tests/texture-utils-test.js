@@ -205,7 +205,6 @@ describe('texture-utils tests', () => {
             dimension: '3d',
           }
       );
-
       const result = await readTextureUnpadded(device, texture, 0);
       assertArrayEqualApproximately(result, [255, 0, 0, 255, 0, 0, 255, 255], 0);
     }));

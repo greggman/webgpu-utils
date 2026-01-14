@@ -159,7 +159,7 @@ describe('generate-mipmap tests', () => {
               { width: kTextureWidth, height: kTextureHeight },
           );
         });
-        generateMipmap(device, texture, textureOptions.textureBindingViewDimension === 'cube' ? 'cube' : undefined);
+        generateMipmap(device, texture);
 
         const results = await Promise.all(textureData.map((_, layer) => readTextureUnpadded(device, texture, 2, layer)));
 
