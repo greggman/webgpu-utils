@@ -27,7 +27,5 @@ export declare function numMipLevels(size: GPUExtent3D, dimension?: GPUTextureDi
  *
  * @param device A GPUDevice
  * @param texture The texture to create mips for
- * @param textureBindingViewDimension This is only needed in compatibility mode
- *   and it is only needed when the texture is going to be used as a cube map.
  */
-export declare function generateMipmap(device: GPUDevice, texture: GPUTexture, textureBindingViewDimension?: GPUTextureViewDimension): void;
+export declare function generateMipmap(device: GPUDevice, texture: GPUTexture): void;

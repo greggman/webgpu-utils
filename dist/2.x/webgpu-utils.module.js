@@ -1,4 +1,4 @@
-/* webgpu-utils@2.0.2, license MIT */
+/* webgpu-utils@2.0.3, license MIT */
 const roundUpToMultipleOf = (v, multiple) => (((v + multiple - 1) / multiple) | 0) * multiple;
 function keysOf(obj) {
     return Object.keys(obj);
@@ -1237,10 +1237,8 @@ const byDevice = new WeakMap();
  *
  * @param device A GPUDevice
  * @param texture The texture to create mips for
- * @param textureBindingViewDimension This is only needed in compatibility mode
- *   and it is only needed when the texture is going to be used as a cube map.
  */
-function generateMipmap(device, texture, textureBindingViewDimension) {
+function generateMipmap(device, texture) {
     let perDeviceInfo = byDevice.get(device);
     if (!perDeviceInfo) {
         perDeviceInfo = {
@@ -1251,9 +1249,9 @@ function generateMipmap(device, texture, textureBindingViewDimension) {
     }
     let { sampler, module, } = perDeviceInfo;
     const { pipelineByFormatAndViewDimension, } = perDeviceInfo;
-    textureBindingViewDimension = device.features.has('core-features-and-limits')
+    const textureBindingViewDimension = device.features.has('core-features-and-limits')
         ? '2d-array'
-        : textureBindingViewDimension ?? guessTextureBindingViewDimensionForTexture(texture.dimension, texture.depthOrArrayLayers);
+        : texture.textureBindingViewDimension;
     if (!module) {
         module = device.createShaderModule({
             label: `mip level generation for ${textureBindingViewDimension}`,
@@ -2103,8 +2101,7 @@ function copySourcesToTexture(device, texture, sources, options = {}) {
         tempTexture.destroy();
     }
     if (options.mips) {
-        const viewDimension = options.viewDimension ?? guessTextureBindingViewDimensionForTexture(texture.dimension, texture.depthOrArrayLayers);
-        generateMipmap(device, texture, viewDimension);
+        generateMipmap(device, texture);
     }
 }
 /**
@@ -2198,7 +2195,7 @@ function getSizeFromSource(source, options) {
  *              GPUTextureUsage.RENDER_ATTACHMENT |
  *              GPUTextureUsage.COPY_DST,
  *       mips: true,
- *       viewDimension: 'cube', // <=- Required for compatibility mode
+ *       textureBindingViewDimension: 'cube', // <=- Required for compatibility mode
  *     }
  * );
  * ```
@@ -2208,14 +2205,14 @@ function createTextureFromSources(device, sources, options = {}) {
     // an error.
     const size = getSizeFromSource(sources[0], options);
     size[2] = size[2] > 1 ? size[2] : sources.length;
-    const viewDimension = options.viewDimension ?? guessTextureBindingViewDimensionForTexture(options.dimension, size[2]);
-    const dimension = textureViewDimensionToDimension(viewDimension);
+    const textureBindingViewDimension = options.textureBindingViewDimension ?? options.viewDimension;
+    const dimension = options.dimension ?? textureViewDimensionToDimension(textureBindingViewDimension);
     const format = options.format ?? 'rgba8unorm';
     const { blockWidth, blockHeight } = getTextureFormatInfo(format);
     const compressed = blockWidth > 1 || blockHeight > 1;
     const texture = device.createTexture({
         dimension,
-        textureBindingViewDimension: viewDimension,
+        textureBindingViewDimension,
         format,
         mipLevelCount: options.mipLevelCount
             ? options.mipLevelCount

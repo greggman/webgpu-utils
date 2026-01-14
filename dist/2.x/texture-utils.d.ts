@@ -5,7 +5,6 @@ export type CopyTextureOptions = {
     premultipliedAlpha?: boolean;
     colorSpace?: PredefinedColorSpace;
     dimension?: GPUTextureDimension;
-    viewDimension?: GPUTextureViewDimension;
     baseArrayLayer?: number;
     mipLevel?: number;
 };
@@ -87,6 +86,8 @@ export type CreateTextureOptions = CopyTextureOptions & {
     format?: GPUTextureFormat;
     mipLevelCount?: number;
     size?: GPUExtent3D;
+    textureBindingViewDimension?: GPUTextureViewDimension;
+    viewDimension?: GPUTextureViewDimension;
 };
 /**
  * Gets the size from a source. This is to smooth out the fact that different
@@ -135,7 +136,7 @@ export declare function getSizeFromSource(source: TextureSource, options: Create
  *              GPUTextureUsage.RENDER_ATTACHMENT |
  *              GPUTextureUsage.COPY_DST,
  *       mips: true,
- *       viewDimension: 'cube', // <=- Required for compatibility mode
+ *       textureBindingViewDimension: 'cube', // <=- Required for compatibility mode
  *     }
  * );
  * ```

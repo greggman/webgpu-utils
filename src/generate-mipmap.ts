@@ -58,13 +58,10 @@ const byDevice = new WeakMap();
  *
  * @param device A GPUDevice
  * @param texture The texture to create mips for
- * @param textureBindingViewDimension This is only needed in compatibility mode
- *   and it is only needed when the texture is going to be used as a cube map.
  */
 export function generateMipmap(
     device: GPUDevice,
-    texture: GPUTexture,
-    textureBindingViewDimension?: GPUTextureViewDimension) {
+    texture: GPUTexture) {
   let perDeviceInfo = byDevice.get(device);
   if (!perDeviceInfo) {
     perDeviceInfo = {
@@ -80,11 +77,9 @@ export function generateMipmap(
   const {
     pipelineByFormatAndViewDimension,
   } = perDeviceInfo;
-  textureBindingViewDimension = device.features.has('core-features-and-limits')
+  const textureBindingViewDimension = device.features.has('core-features-and-limits')
     ? '2d-array'
-    : textureBindingViewDimension ?? guessTextureBindingViewDimensionForTexture(
-        texture.dimension, texture.depthOrArrayLayers
-      );
+    : texture.textureBindingViewDimension as GPUTextureViewDimension;
   if (!module) {
     module = device.createShaderModule({
       label: `mip level generation for ${textureBindingViewDimension}`,
