@@ -50,7 +50,7 @@
     "@tsconfig/recommended": "^1.0.10",
     "@typescript-eslint/eslint-plugin": "^8.41.0",
     "@typescript-eslint/parser": "^8.41.0",
-    "@webgpu/types": "^0.1.64",
+    "@webgpu/types": "^0.1.69",
     "eslint": "^8.57.1",
     "eslint-plugin-html": "^7.1.0",
     "eslint-plugin-one-variable-per-var": "^0.0.3",
