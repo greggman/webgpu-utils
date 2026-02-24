@@ -1,60 +1,6 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import html from 'eslint-plugin-html';
-import oneVariablePerVar from 'eslint-plugin-one-variable-per-var';
-import optionalCommaSpacing from 'eslint-plugin-optional-comma-spacing';
-import requireTrailingComma from 'eslint-plugin-require-trailing-comma';
 import globals from 'globals';
-
-const shimContext = (context) => {
-  const sourceCode = context.sourceCode;
-  return new Proxy(context, {
-    get(target, prop) {
-      if (prop in target) {
-        return target[prop];
-      }
-      if (sourceCode && prop in sourceCode && typeof sourceCode[prop] === 'function') {
-        return sourceCode[prop].bind(sourceCode);
-      }
-      return undefined;
-    },
-  });
-};
-
-const fixRuleWithMissingSchema = (rule) => {
-  const originalRule = typeof rule === 'function' ? { create: rule } : rule;
-  return {
-    ...originalRule,
-    meta: {
-      ...originalRule.meta,
-      schema: originalRule.meta?.schema || [{ type: 'object', additionalProperties: true }],
-    },
-    create(context) {
-      return originalRule.create(shimContext(context));
-    },
-  };
-};
-
-const wrappedOneVariablePerVar = {
-  ...oneVariablePerVar,
-  rules: Object.fromEntries(
-    Object.entries(oneVariablePerVar.rules).map(([k, v]) => [k, fixRuleWithMissingSchema(v)])
-  ),
-};
-
-const wrappedOptionalCommaSpacing = {
-  ...optionalCommaSpacing,
-  rules: Object.fromEntries(
-    Object.entries(optionalCommaSpacing.rules).map(([k, v]) => [k, fixRuleWithMissingSchema(v)])
-  ),
-};
-
-const wrappedRequireTrailingComma = {
-  ...requireTrailingComma,
-  rules: Object.fromEntries(
-    Object.entries(requireTrailingComma.rules).map(([k, v]) => [k, fixRuleWithMissingSchema(v)])
-  ),
-};
 
 export default tseslint.config(
   {
@@ -78,30 +24,18 @@ export default tseslint.config(
       },
       parserOptions: {
         project: ['./tsconfig.json'],
-        extraFileExtensions: ['.html'],
       },
-    },
-    plugins: {
-      html,
-      'one-variable-per-var': wrappedOneVariablePerVar,
-      'optional-comma-spacing': wrappedOptionalCommaSpacing,
-      'require-trailing-comma': wrappedRequireTrailingComma,
-    },
-    settings: {
-        react: {
-            version: 'detect',
-        },
     },
     rules: {
         'brace-style': [2, '1tbs', { allowSingleLine: false }],
         camelcase: [0],
-        'comma-dangle': 0,
-        'comma-spacing': 0,
+        'comma-dangle': [2, 'always-multiline'],
+        'comma-spacing': [2, { before: false, after: true }],
         'comma-style': [2, 'last'],
         'consistent-return': 2,
         curly: [2, 'all'],
         'dot-notation': 0,
-        'eol-last': [0],
+        'eol-last': 0,
         eqeqeq: 2,
         'key-spacing': [0],
         'keyword-spacing': [1, { before: true, after: true, overrides: {} }],
@@ -145,10 +79,8 @@ export default tseslint.config(
         'no-use-before-define': 0,
         'no-var': 2,
         'no-with': 2,
-        'one-variable-per-var/one-variable-per-var': [2],
-        'optional-comma-spacing/optional-comma-spacing': [2, { after: true }],
+        'one-var': [2, 'never'],
         'prefer-const': 2,
-        'require-trailing-comma/require-trailing-comma': [2],
         'semi-spacing': [2, { before: false, after: true }],
         semi: [2, 'always'],
         'space-before-function-paren': [

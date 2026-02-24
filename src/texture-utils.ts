@@ -221,7 +221,7 @@ export function copySourcesToTexture(
 
       const {flipY, premultipliedAlpha, colorSpace} = options;
       device.queue.copyExternalImageToTexture(
-        { source: s, flipY, },
+        { source: s, flipY },
         { texture: dstTexture, premultipliedAlpha, colorSpace, origin: copyOrigin },
         getSizeFromSource(s, options),
       );
