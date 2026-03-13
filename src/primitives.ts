@@ -115,7 +115,7 @@ function createAugmentedTypedArrayFromExisting(numComponents: number, numElement
  * @return the created XY Quad vertices
  */
 export function createXYQuadVertices({
-    size: inSize = 2, xOffset = 0, yOffset = 0
+    size: inSize = 2, xOffset = 0, yOffset = 0,
   } = {}): Arrays {
   const size = inSize * 0.5;
   return {
@@ -184,8 +184,8 @@ export function createPlaneVertices({
   const indices = createAugmentedTypedArray(
       3, subdivisionsWidth * subdivisionsDepth * 2, Uint16Array);
 
-  for (let z = 0; z < subdivisionsDepth; z++) {  // eslint-disable-line
-    for (let x = 0; x < subdivisionsWidth; x++) {  // eslint-disable-line
+  for (let z = 0; z < subdivisionsDepth; z++) {
+    for (let x = 0; x < subdivisionsWidth; x++) {
       // Make triangle 1 of quad.
       indices.push(
           (z + 0) * numVertsAcross + x,
@@ -274,8 +274,8 @@ export function createSphereVertices({
 
   const numVertsAround = subdivisionsAxis + 1;
   const indices = createAugmentedTypedArray(3, subdivisionsAxis * subdivisionsHeight * 2, Uint16Array);
-  for (let x = 0; x < subdivisionsAxis; x++) {  // eslint-disable-line
-    for (let y = 0; y < subdivisionsHeight; y++) {  // eslint-disable-line
+  for (let x = 0; x < subdivisionsAxis; x++) {
+    for (let y = 0; y < subdivisionsHeight; y++) {
       // Make triangle 1 of quad.
       indices.push(
           (y + 0) * numVertsAround + x,
@@ -352,7 +352,7 @@ export function createCubeVertices({size = 1} = {}): Arrays {
   const numVertices = 6 * 4;
   const positions = createAugmentedTypedArray(3, numVertices, Float32Array);
   const normals   = createAugmentedTypedArray(3, numVertices, Float32Array);
-  const texcoords = createAugmentedTypedArray(2 , numVertices, Float32Array);
+  const texcoords = createAugmentedTypedArray(2, numVertices, Float32Array);
   const indices   = createAugmentedTypedArray(3, 6 * 2, Uint16Array);
 
   for (let f = 0; f < 6; ++f) {
@@ -475,11 +475,11 @@ export function createTruncatedConeVertices({
     }
   }
 
-  for (let yy = 0; yy < verticalSubdivisions + extra; ++yy) {  // eslint-disable-line
+  for (let yy = 0; yy < verticalSubdivisions + extra; ++yy) {
     if (yy === 1 && topCap || yy === verticalSubdivisions + extra - 2 && bottomCap) {
       continue;
     }
-    for (let ii = 0; ii < radialSubdivisions; ++ii) {  // eslint-disable-line
+    for (let ii = 0; ii < radialSubdivisions; ++ii) {
       indices.push(vertsAroundEdge * (yy + 0) + 0 + ii,
                    vertsAroundEdge * (yy + 0) + 1 + ii,
                    vertsAroundEdge * (yy + 1) + 1 + ii);
@@ -982,8 +982,8 @@ export function createTorusVertices({
     }
   }
 
-  for (let slice = 0; slice < bodySubdivisions; ++slice) {  // eslint-disable-line
-    for (let ring = 0; ring < radialSubdivisions; ++ring) {  // eslint-disable-line
+  for (let slice = 0; slice < bodySubdivisions; ++slice) {
+    for (let ring = 0; ring < radialSubdivisions; ++ring) {
       const nextRingIndex  = 1 + ring;
       const nextSliceIndex = 1 + slice;
       indices.push(radialParts * slice          + ring,
@@ -1154,7 +1154,7 @@ export function generateTriangleNormals(positions: Float32Array): Float32Array {
   const normals = new Float32Array(positions.length);
   for (let ii = 0; ii < positions.length; ii += 9) {
     // pull out the 3 positions for this triangle
-    const p0 = positions.subarray(ii    , ii + 3);
+    const p0 = positions.subarray(ii, ii + 3);
     const p1 = positions.subarray(ii + 3, ii + 6);
     const p2 = positions.subarray(ii + 6, ii + 9);
 

@@ -16,7 +16,7 @@ const kTypedArrayToAttribFormat = new Map<TypedArrayConstructor, {formats: [stri
 ]);
 
 const kVertexFormatPrefixToType = new Map<string, TypedArrayConstructor>(
-  [...kTypedArrayToAttribFormat.entries()].map(([Type, {formats: [s1, s2]}]) => [[s1, Type], [s2, Type]] as [[string, TypedArrayConstructor], [string, TypedArrayConstructor]]).flat()
+  [...kTypedArrayToAttribFormat.entries()].map(([Type, {formats: [s1, s2]}]) => [[s1, Type], [s2, Type]] as [[string, TypedArrayConstructor], [string, TypedArrayConstructor]]).flat(),
 );
 
 /**
@@ -140,7 +140,7 @@ function guessNumComponentsFromName(name: string, length: number) {
   return numComponents;
 }
 
-export function getNumComponents(array: ArrayUnion , arrayName: string): number {
+export function getNumComponents(array: ArrayUnion, arrayName: string): number {
   return (array as FullArraySpec).numComponents || guessNumComponentsFromName(arrayName, getArray(array).length);
 }
 

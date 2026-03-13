@@ -7,7 +7,7 @@ async function main() {
   const adapter = await navigator.gpu?.requestAdapter({
     featureLevel: 'compatibility',
   });
-  const { maxStorageBuffersInVertexStage } = adapter?.limits.maxStorageBuffersInVertexStage ?? {};
+  const { maxStorageBuffersInVertexStage } = adapter?.limits ?? {};
   if (maxStorageBuffersInVertexStage < 2) {
     fail('your device does not support support the needed functionality for this example');
     return;

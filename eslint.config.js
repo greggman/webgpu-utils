@@ -1,46 +1,42 @@
-/* global module, __dirname */
-module.exports = {
-    parser: '@typescript-eslint/parser',
-    env: {
-        browser: true,
-        es2022: true,
-    },
-    parserOptions: {
-        sourceType: 'module',
-        ecmaVersion: 2022,
-        tsconfigRootDir: __dirname,
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import globals from 'globals';
+
+export default tseslint.config(
+  {
+    // Ignore patterns
+    ignores: [
+      'dist/**/*',
+      'src/3rdParty/**/*',
+      'examples/*.html',
+      'test/mocha*',
+    ],
+  },
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['src/**/*.{js,ts,tsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.es2022,
+        ...globals.node,
+      },
+      parserOptions: {
         project: ['./tsconfig.json'],
-        extraFileExtensions: ['.html'],
+      },
     },
-    settings: {
-        react: {
-            version: 'detect', // Tells eslint-plugin-react to automatically detect the version of React to use
-        },
-    },
-    root: true,
-    plugins: [
-        '@typescript-eslint',
-        'eslint-plugin-html',
-        'eslint-plugin-optional-comma-spacing',
-        'eslint-plugin-one-variable-per-var',
-        'eslint-plugin-require-trailing-comma',
-    ],
-    extends: [
-        'eslint:recommended',
-        'plugin:@typescript-eslint/recommended', // Uses the recommended rules from the @typescript-eslint/eslint-plugin
-    ],
     rules: {
         'brace-style': [2, '1tbs', { allowSingleLine: false }],
         camelcase: [0],
-        'comma-dangle': 0,
-        'comma-spacing': 0,
+        'comma-dangle': [2, 'always-multiline'],
+        'comma-spacing': [2, { before: false, after: true }],
         'comma-style': [2, 'last'],
         'consistent-return': 2,
         curly: [2, 'all'],
         'dot-notation': 0,
-        'eol-last': [0],
+        'eol-last': 0,
         eqeqeq: 2,
-        'global-strict': [0],
         'key-spacing': [0],
         'keyword-spacing': [1, { before: true, after: true, overrides: {} }],
         'new-cap': 2,
@@ -48,8 +44,6 @@ module.exports = {
         'no-alert': 2,
         'no-array-constructor': 2,
         'no-caller': 2,
-        'no-catch-shadow': 2,
-        'no-comma-dangle': [0],
         'no-const-assign': 2,
         'no-eval': 2,
         'no-extend-native': 2,
@@ -64,7 +58,6 @@ module.exports = {
         'no-loop-func': 2,
         'no-multi-spaces': [0],
         'no-multi-str': 2,
-        'no-native-reassign': 2,
         'no-new-func': 2,
         'no-new-object': 2,
         'no-new-wrappers': 2,
@@ -78,20 +71,16 @@ module.exports = {
         'no-sequences': 2,
         'no-shadow-restricted-names': 2,
         'no-shadow': [0],
-        'no-spaced-func': 2,
         'no-trailing-spaces': 2,
         'no-undef-init': 2,
-        //'no-undef': 2, // ts recommends this be off: https://typescript-eslint.io/linting/troubleshooting
         'no-underscore-dangle': 2,
         'no-unreachable': 2,
         'no-unused-expressions': 2,
         'no-use-before-define': 0,
         'no-var': 2,
         'no-with': 2,
-        'one-variable-per-var/one-variable-per-var': [2],
-        'optional-comma-spacing/optional-comma-spacing': [2, { after: true }],
+        'one-var': [2, 'never'],
         'prefer-const': 2,
-        'require-trailing-comma/require-trailing-comma': [2],
         'semi-spacing': [2, { before: false, after: true }],
         semi: [2, 'always'],
         'space-before-function-paren': [
@@ -107,8 +96,9 @@ module.exports = {
         strict: [2, 'function'],
         yoda: [2, 'never'],
         '@typescript-eslint/no-empty-function': 'off',
-        '@typescript-eslint/no-explicit-any': 'off', // TODO: Reenable this and figure out how to fix code.
+        '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
         '@typescript-eslint/no-unused-vars': 2,
     },
-};
+  }
+);

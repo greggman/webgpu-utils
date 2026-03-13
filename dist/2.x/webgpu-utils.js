@@ -55,7 +55,6 @@
             this.byteOffset += numBytes;
         }
         getView(Ctor, numElements) {
-            // @ts-expect-error   this is a bug in ts https://github.com/microsoft/TypeScript/issues/62343
             const view = new Ctor(this.arrayBuffer, this.byteOffset, numElements);
             this.byteOffset += view.byteLength;
             return view;
@@ -246,7 +245,6 @@
                     ? (buffer.byteLength - baseOffset) / sizeInBytes
                     : numElements)
                 : 1;
-            // @ts-expect-error   this is a bug in ts https://github.com/microsoft/TypeScript/issues/62343
             return new View(buffer, baseOffset, baseNumElements * effectiveNumElements);
         }
         catch {
@@ -599,7 +597,6 @@
         const viewsByCtor = getViewsByCtor(arrayBuffer);
         let view = viewsByCtor.get(Ctor);
         if (!view) {
-            // @ts-expect-error   this is a bug in ts https://github.com/microsoft/TypeScript/issues/62343
             view = new Ctor(arrayBuffer);
             viewsByCtor.set(Ctor, view);
         }
@@ -1255,9 +1252,7 @@
         }
         let { sampler, module, } = perDeviceInfo;
         const { pipelineByFormatAndViewDimension, } = perDeviceInfo;
-        const textureBindingViewDimension = device.features.has('core-features-and-limits')
-            ? '2d-array'
-            : texture.textureBindingViewDimension;
+        const textureBindingViewDimension = texture.textureBindingViewDimension ?? '2d-array';
         if (!module) {
             module = device.createShaderModule({
                 label: `mip level generation for ${textureBindingViewDimension}`,
@@ -1316,14 +1311,6 @@
             ourTextureCube,
             ourSampler,
             faceMat[fsInput.baseArrayLayer] * vec3f(fract(fsInput.texcoord), 1));
-        }
-
-        @group(0) @binding(1) var ourTextureCubeArray: texture_cube_array<f32>;
-        @fragment fn fscubearray(fsInput: VSOutput) -> @location(0) vec4f {
-          return textureSample(
-            ourTextureCubeArray,
-            ourSampler,
-            faceMat[fsInput.baseArrayLayer] * vec3f(fract(fsInput.texcoord), 1), fsInput.baseArrayLayer);
         }
       `,
             });
@@ -2095,7 +2082,7 @@
                     copyOrigin = [0, 0, 0];
                 }
                 const { flipY, premultipliedAlpha, colorSpace } = options;
-                device.queue.copyExternalImageToTexture({ source: s, flipY, }, { texture: dstTexture, premultipliedAlpha, colorSpace, origin: copyOrigin }, getSizeFromSource(s, options));
+                device.queue.copyExternalImageToTexture({ source: s, flipY }, { texture: dstTexture, premultipliedAlpha, colorSpace, origin: copyOrigin }, getSizeFromSource(s, options));
                 if (tempTexture) {
                     const encoder = device.createCommandEncoder();
                     encoder.copyTextureToTexture({ texture: tempTexture }, { texture, origin }, tempTexture);
@@ -2422,7 +2409,7 @@
      * @param params.yOffset the amount to offset the quad in Y. Default = 0
      * @return the created XY Quad vertices
      */
-    function createXYQuadVertices({ size: inSize = 2, xOffset = 0, yOffset = 0 } = {}) {
+    function createXYQuadVertices({ size: inSize = 2, xOffset = 0, yOffset = 0, } = {}) {
         const size = inSize * 0.5;
         return {
             position: {
@@ -2477,8 +2464,8 @@
         }
         const numVertsAcross = subdivisionsWidth + 1;
         const indices = createAugmentedTypedArray(3, subdivisionsWidth * subdivisionsDepth * 2, Uint16Array);
-        for (let z = 0; z < subdivisionsDepth; z++) { // eslint-disable-line
-            for (let x = 0; x < subdivisionsWidth; x++) { // eslint-disable-line
+        for (let z = 0; z < subdivisionsDepth; z++) {
+            for (let x = 0; x < subdivisionsWidth; x++) {
                 // Make triangle 1 of quad.
                 indices.push((z + 0) * numVertsAcross + x, (z + 1) * numVertsAcross + x, (z + 0) * numVertsAcross + x + 1);
                 // Make triangle 2 of quad.
@@ -2546,8 +2533,8 @@
         }
         const numVertsAround = subdivisionsAxis + 1;
         const indices = createAugmentedTypedArray(3, subdivisionsAxis * subdivisionsHeight * 2, Uint16Array);
-        for (let x = 0; x < subdivisionsAxis; x++) { // eslint-disable-line
-            for (let y = 0; y < subdivisionsHeight; y++) { // eslint-disable-line
+        for (let x = 0; x < subdivisionsAxis; x++) {
+            for (let y = 0; y < subdivisionsHeight; y++) {
                 // Make triangle 1 of quad.
                 indices.push((y + 0) * numVertsAround + x, (y + 0) * numVertsAround + x + 1, (y + 1) * numVertsAround + x);
                 // Make triangle 2 of quad.
@@ -2717,11 +2704,11 @@
                 texcoords.push((ii / radialSubdivisions), 1 - v);
             }
         }
-        for (let yy = 0; yy < verticalSubdivisions + extra; ++yy) { // eslint-disable-line
+        for (let yy = 0; yy < verticalSubdivisions + extra; ++yy) {
             if (yy === 1 && topCap || yy === verticalSubdivisions + extra - 2 && bottomCap) {
                 continue;
             }
-            for (let ii = 0; ii < radialSubdivisions; ++ii) { // eslint-disable-line
+            for (let ii = 0; ii < radialSubdivisions; ++ii) {
                 indices.push(vertsAroundEdge * (yy + 0) + 0 + ii, vertsAroundEdge * (yy + 0) + 1 + ii, vertsAroundEdge * (yy + 1) + 1 + ii);
                 indices.push(vertsAroundEdge * (yy + 0) + 0 + ii, vertsAroundEdge * (yy + 1) + 1 + ii, vertsAroundEdge * (yy + 1) + 0 + ii);
             }
@@ -3137,8 +3124,8 @@
                 texcoords.push(u, 1 - v);
             }
         }
-        for (let slice = 0; slice < bodySubdivisions; ++slice) { // eslint-disable-line
-            for (let ring = 0; ring < radialSubdivisions; ++ring) { // eslint-disable-line
+        for (let slice = 0; slice < bodySubdivisions; ++slice) {
+            for (let ring = 0; ring < radialSubdivisions; ++ring) {
                 const nextRingIndex = 1 + ring;
                 const nextSliceIndex = 1 + slice;
                 indices.push(radialParts * slice + ring, radialParts * nextSliceIndex + ring, radialParts * slice + nextRingIndex);

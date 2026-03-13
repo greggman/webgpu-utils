@@ -33,8 +33,12 @@ GPUDevice.prototype.createBuffer = (function (origFn) {
 export function testWithDeviceWithOptions(options, fn, ...args) {
   return async function () {
     const adapter = await globalThis?.navigator?.gpu?.requestAdapter(options);
+    const requiredFeatures = new Set([...(adapter?.features ?? [])]);
+    if (options?.featureLevel === 'compatibility') {
+      requiredFeatures.delete('core-features-and-limits');
+    }
     const device = await adapter?.requestDevice({
-      requiredFeatures: adapter.features,
+      requiredFeatures,
     });
     if (!device) {
       this.skip();

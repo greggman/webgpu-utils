@@ -40,7 +40,7 @@ export declare class TypedArrayWrapper<T extends TypedArray> {
  * @param params.yOffset the amount to offset the quad in Y. Default = 0
  * @return the created XY Quad vertices
  */
-export declare function createXYQuadVertices({ size: inSize, xOffset, yOffset }?: {
+export declare function createXYQuadVertices({ size: inSize, xOffset, yOffset, }?: {
     size?: number | undefined;
     xOffset?: number | undefined;
     yOffset?: number | undefined;

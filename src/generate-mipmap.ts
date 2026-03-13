@@ -77,9 +77,8 @@ export function generateMipmap(
   const {
     pipelineByFormatAndViewDimension,
   } = perDeviceInfo;
-  const textureBindingViewDimension = device.features.has('core-features-and-limits')
-    ? '2d-array'
-    : texture.textureBindingViewDimension as GPUTextureViewDimension;
+  const textureBindingViewDimension = texture.textureBindingViewDimension ?? '2d-array';
+
   if (!module) {
     module = device.createShaderModule({
       label: `mip level generation for ${textureBindingViewDimension}`,
@@ -138,14 +137,6 @@ export function generateMipmap(
             ourTextureCube,
             ourSampler,
             faceMat[fsInput.baseArrayLayer] * vec3f(fract(fsInput.texcoord), 1));
-        }
-
-        @group(0) @binding(1) var ourTextureCubeArray: texture_cube_array<f32>;
-        @fragment fn fscubearray(fsInput: VSOutput) -> @location(0) vec4f {
-          return textureSample(
-            ourTextureCubeArray,
-            ourSampler,
-            faceMat[fsInput.baseArrayLayer] * vec3f(fract(fsInput.texcoord), 1), fsInput.baseArrayLayer);
         }
       `,
     });
