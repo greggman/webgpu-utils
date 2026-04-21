@@ -51,6 +51,54 @@ describe('data-definition-tests', () => {
         assertEqual(defs.uni4.group, 1);
     });
 
+    it('handles immediates', () => {
+        const shader = `
+          struct MyImmediates1 {
+            a: u32,
+            v: vec4f,
+          };
+
+          struct MyImmediates2 {
+            offset: vec4f,
+            size: vec4f,
+          };
+
+          @group(0) @binding(0) var<immediate> imm1: MyImmediates1;
+          @group(0) @binding(1) var<immediate> imm2: MyImmediates2;
+
+          @vertex fn vs1(
+            @builtin(vertex_index) vertexIndex : u32
+          ) -> @builtin(position) vec4f {
+            let pos = array(
+              vec2f( 0.0,  0.5),  // top center
+              vec2f(-0.5, -0.5),  // bottom left
+              vec2f( 0.5, -0.5)   // bottom right
+            );
+
+            return vec4f(pos[vertexIndex], 0.0, 1.0) + imm1.v;
+          }
+
+          @vertex fn vs2(
+            @builtin(vertex_index) vertexIndex : u32
+          ) -> @builtin(position) vec4f {
+            let pos = array(
+              vec2f( 0.0,  0.5),  // top center
+              vec2f(-0.5, -0.5),  // bottom left
+              vec2f( 0.5, -0.5)   // bottom right
+            );
+
+            return vec4f(pos[vertexIndex], 0.0, 1.0) + imm2.offset;
+          }
+        `;
+        const d = makeShaderDataDefinitions(shader);
+        const defs = d.immediates;
+        assertTruthy(defs);
+        assertEqual(defs.imm1.typeDefinition.fields.a.type.type, 'u32');
+        assertEqual(defs.imm1.typeDefinition.fields.v.type.type, 'vec4f');
+        assertEqual(defs.imm2.typeDefinition.fields.offset.type.type, 'vec4f');
+        assertEqual(defs.imm2.typeDefinition.fields.size.type.type, 'vec4f');
+    });
+
     it('generates expected offsets', () => {
       const code = `
         struct VSUniforms {
@@ -250,6 +298,7 @@ describe('data-definition-tests', () => {
             "size": 0,
           },
         },
+        "immediates": {},
         "samplers": {
           "samp": {
             "typeDefinition": {
