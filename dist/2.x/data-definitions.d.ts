@@ -68,6 +68,10 @@ export type ShaderDataDefinitions = {
      */
     storages: VariableDefinitions;
     /**
+     * definitions for immediate by name
+     */
+    immediates: VariableDefinitions;
+    /**
      * definitions for sampler bindings by name
      */
     samplers: VariableDefinitions;

@@ -102,6 +102,10 @@ export type ShaderDataDefinitions = {
      */
     storages: VariableDefinitions,
     /**
+     * definitions for immediate by name
+     */
+    immediates: VariableDefinitions,
+    /**
      * definitions for sampler bindings by name
      */
     samplers: VariableDefinitions,
@@ -474,6 +478,7 @@ export function makeShaderDataDefinitions(code: string): ShaderDataDefinitions {
     }));
 
     const uniforms = getNamedVariables(reflect, reflect.uniforms);
+    const immediates = getNamedVariables(reflect, reflect.immediates);
     const storages = getNamedVariables(reflect, reflect.storage.filter(v => v.resourceType === ResourceType.Storage));
     const storageTextures = getNamedVariables(reflect, reflect.storage.filter(v => v.resourceType === ResourceType.StorageTexture));
     const textures = getNamedVariables(reflect, reflect.textures.filter(v => v.type.name !== 'texture_external'));
@@ -488,6 +493,7 @@ export function makeShaderDataDefinitions(code: string): ShaderDataDefinitions {
 
     return {
         externalTextures,
+        immediates,
         samplers,
         structs,
         storages,
@@ -560,6 +566,7 @@ function addVariableType(reflect: WgslReflect, v: VariableInfo, offset: number):
     TextureDefinition |
     SamplerDefinition {
     switch (v.resourceType) {
+        case ResourceType.Immediate:
         case ResourceType.Uniform:
         case ResourceType.Storage:
         case ResourceType.StorageTexture:
