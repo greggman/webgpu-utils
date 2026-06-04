@@ -7,7 +7,7 @@ import {
     setIntrinsicsToView,
     getSizeAndAlignmentOfUnsizedArrayElement,
 } from '../../dist/2.x/webgpu-utils.module.js';
-import { assertArrayEqual, assertEqual, assertTruthy } from '../assert.js';
+import { assertArrayEqual, assertEqual, assertTruthy, assertInstanceOf } from '../assert.js';
 
 describe('buffer-views-tests', () => {
 
@@ -27,7 +27,7 @@ describe('buffer-views-tests', () => {
         assertEqual(asF32[0], 123);
     });
 
-    it('generates handles built-in type aliases', () => {
+    it('handles built-in type aliases', () => {
         const shader = `
     struct VertexDesc {
         offset: u32,
@@ -175,6 +175,32 @@ describe('buffer-views-tests', () => {
 
     });
 
+    it('handles mat3x4f and mat3x4h', () => {
+        const shader = `
+    struct Uniforms {
+      m34f: mat3x4f, // 12 * 4
+      m34h: mat3x4h, // 12 * 2 + 8
+      m43f: mat4x3f, // 16 * 4
+      m43h: mat4x3h, // 16 * 2
+    };
+
+    @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+    @compute @workgroup_size(1)
+    fn cs() {
+        _ = uniforms;
+    }
+        `;
+        const defs = makeShaderDataDefinitions(shader);
+        const {views, arrayBuffer} = makeStructuredView(defs.structs.Uniforms);
+
+        assertInstanceOf(views.m34f, Float32Array);
+        assertInstanceOf(views.m34h, Float16Array);
+        assertInstanceOf(views.m43f, Float32Array);
+        assertInstanceOf(views.m43h, Float16Array);
+
+        assertEqual(arrayBuffer.byteLength, (12 * 4 + 12 * 2 + 8 + 16 * 4 + 16 * 2));
+    });
 
     it('generates views from structure source', () => {
         const shader = `

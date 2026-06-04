@@ -41,7 +41,7 @@ export function assertEqualApproximately(actual, expected, range = 0.0000001, ms
 
 export function assertInstanceOf(actual, expectedType, msg = '') {
   if (!(actual instanceof expectedType)) {
-    throw new Error(`${formatMsg(msg)}expected: ${actual} to be of type: ${expectedType.constructor.name}`);
+    throw new Error(`${formatMsg(msg)}expected: ${actual.constructor.name} to be of type: ${expectedType.name}`);
   }
 }
 
